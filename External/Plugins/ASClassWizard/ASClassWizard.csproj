@@ -19,6 +19,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -31,7 +32,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -90,6 +90,12 @@
     <Compile Include="Wizards\AS3ClassWizard.designer.cs">
       <DependentUpon>AS3ClassWizard.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizards\AS3InterfaceWizard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Wizards\AS3InterfaceWizard.Designer.cs">
+      <DependentUpon>AS3InterfaceWizard.cs</DependentUpon>
+    </Compile>
     <Compile Include="Wizards\ClassBrowser.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -105,6 +111,7 @@
     <Compile Include="Wizards\PackageBrowser.designer.cs">
       <DependentUpon>PackageBrowser.cs</DependentUpon>
     </Compile>
+    <Compile Include="Wizards\PromptTextBox.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\PluginCore\PluginCore.csproj">
