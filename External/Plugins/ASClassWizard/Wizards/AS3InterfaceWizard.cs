@@ -446,11 +446,11 @@ namespace ASClassWizard.Wizards
                 bool addMember = true;
                 foreach (ListViewItem item in memberList.Items)
                 {
-                    if (item.ForeColor == SystemColors.GrayText) continue;
+                    if (item.ForeColor == SystemColors.GrayText && !existing) continue;
                     var member = (MemberModel)item.Tag;
                     // We'll care about making a full comparison only if we're a property, to check against missing accessor
-                    if ((memberTypeCombo.SelectedIndex != 0 && member.Name == m.Name) || 
-                        (memberTypeCombo.SelectedIndex == 0 && CompareMembers(null, member, member.Flags, null, m) != MemberComparisonResult.DifferentAccessors))
+                    if (member.Name == m.Name && (memberTypeCombo.SelectedIndex != 0 || 
+                        CompareMembers(null, member, member.Flags, null, m) != MemberComparisonResult.DifferentAccessors))
                     {
                         addMember = false;
                         string displayName = string.Empty;
@@ -488,9 +488,11 @@ namespace ASClassWizard.Wizards
                     }
                 }
                 if (!addMember) continue;
+                _addingMethod = true;
                 var newItem = memberList.Items.Add(MemberToItemString(m));
                 newItem.Tag = m;
                 newItem.Checked = true;
+                _addingMethod = false;
                 if (existing) newItem.ForeColor = SystemColors.GrayText;
                 newItem.Selected = true;
                 newItem.EnsureVisible();
