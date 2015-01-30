@@ -295,7 +295,7 @@
             this.memberButton.Name = "memberButton";
             this.memberButton.Size = new System.Drawing.Size(74, 23);
             this.memberButton.TabIndex = 9;
-            this.memberButton.Text = "<< Add";
+            this.memberButton.Text = "<< A&dd";
             this.memberButton.UseVisualStyleBackColor = true;
             this.memberButton.Click += new System.EventHandler(this.MemberButton_Click);
             // 
@@ -361,7 +361,7 @@
             this.createNewMemberButton.Name = "createNewMemberButton";
             this.createNewMemberButton.Size = new System.Drawing.Size(75, 23);
             this.createNewMemberButton.TabIndex = 6;
-            this.createNewMemberButton.Text = "&Create";
+            this.createNewMemberButton.Text = "Crea&te";
             this.createNewMemberButton.UseVisualStyleBackColor = true;
             this.createNewMemberButton.Click += new System.EventHandler(this.CreateNewMemberButton_Click);
             // 

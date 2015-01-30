@@ -3,14 +3,13 @@
  */
 
 /* POSSIBLE IMPROVEMENTS
- *  - A button for the user to extract public methods from other classes, it would clean all current selected data.
+ *  - A button to extract public members from other classes, it would clean all current selected data.
  *  - A check to extract methods and/or interfaces from superclasses.
  *  - Move up and down members and/or different types of sorting methods.
  *  - Better type autocompletion. Use AirProperties/Controls/CheckedComboBox as a base
  */
 
 //TODO: Type autocompletion
-//TODO: Localization
 //TODO: Better error display
 
 using System;
@@ -62,7 +61,8 @@ namespace ASClassWizard.Wizards
                 internalRadio.Text = "internal";
                 if (project.Language == "as3")
                 {
-                    titleLabel.Text = Text = "New ActionScript 3 Interface";
+                    this.titleLabel.Text = TextHelper.GetString("Wizard.Label.NewAs3Interface");
+                    this.Text = TextHelper.GetString("Wizard.Label.NewAs3Interface");
                 }
             }
         }
@@ -318,13 +318,13 @@ namespace ASClassWizard.Wizards
             {
                 newMemberGroup.Visible = false;
                 Width = groupBox2.Width + groupBox2.Left * 3;
-                memberButton.Text = TextHelper.GetString("Wizard.Button.Add") + " >>";
+                memberButton.Text = TextHelper.GetString("Wizard.Button.AddMember") + " >>";
             }
             else
             {
                 newMemberGroup.Visible = true;
                 Width = newMemberGroup.Left + newMemberGroup.Width + groupBox2.Left * 2;
-                memberButton.Text = "<< " + TextHelper.GetString("Wizard.Button.Add");
+                memberButton.Text = "<< " + TextHelper.GetString("Wizard.Button.AddMember");
             }
 
         }
@@ -345,7 +345,7 @@ namespace ASClassWizard.Wizards
             {
                 if (item.Name == name)
                 {
-                    ErrorManager.ShowInfo("An argument with the same name already exists");
+                    ErrorManager.ShowInfo(TextHelper.GetString("Wizard.Error.ExistingArg"));
                     return;
                 }
             }
@@ -372,7 +372,7 @@ namespace ASClassWizard.Wizards
 
             if (string.IsNullOrEmpty(name))
             {
-                ErrorManager.ShowInfo("Name cannot be empty");
+                ErrorManager.ShowInfo(TextHelper.GetString("Wizard.Error.EmptyName"));
                 return;
             }
 
@@ -436,7 +436,8 @@ namespace ASClassWizard.Wizards
                     var compare = CompareMembers(inheritedMember.Owner, inheritedMember.Member, inheritedMember.Properties, null, m);
                     if (compare == MemberComparisonResult.DifferentSignature)
                     {
-                        ErrorManager.ShowInfo("New member would conflict with interface " + inheritedMember.Owner.QualifiedName);
+                        ErrorManager.ShowInfo(string.Format(TextHelper.GetString("Wizard.Warning.ConflictingMember"),
+                                                            inheritedMember.Owner.QualifiedName));
                         return;
                     } else if (compare == MemberComparisonResult.Identical)
                         existing = true;
@@ -464,14 +465,16 @@ namespace ASClassWizard.Wizards
                         if (item.ForeColor == SystemColors.GrayText)
                         {
                             MessageBox.Show(PluginBase.MainForm,
-                                            displayName + " already in list", " " + title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                            string.Format(TextHelper.GetString("Wizard.Warning.ExistingInheritedMember"),
+                                                displayName), " " + title, MessageBoxButtons.OK,
+                                            MessageBoxIcon.Information);
 
                             break;
                         }
 
                         if (
                             MessageBox.Show(PluginBase.MainForm,
-                                            displayName + " already in list, do you wish to replace it?", " " + title,
+                                            string.Format(TextHelper.GetString("Wizard.Warning.ExistingMember"), displayName), " " + title,
                                             MessageBoxButtons.YesNo, MessageBoxIcon.Question) ==
                             DialogResult.Yes)
                         {
@@ -545,6 +548,16 @@ namespace ASClassWizard.Wizards
             this.packageBrowse.Text = TextHelper.GetString("Wizard.Button.Browse");
             this.okButton.Text = TextHelper.GetString("Wizard.Button.Ok");
             this.cancelButton.Text = TextHelper.GetString("Wizard.Button.Cancel");
+            this.membersLabel.Text = TextHelper.GetString("Wizard.Label.Members");
+            this.memberTypeLabel.Text = TextHelper.GetString("Wizard.Label.Member");
+            this.memberNameLabel.Text = this.argNameBox.Prompt = TextHelper.GetString("Wizard.Label.MemberName");
+            this.propertyAccessorsLabel.Text = TextHelper.GetString("Wizard.Label.Accessors");
+            this.functionArgsLabel.Text = TextHelper.GetString("Wizard.Label.Arguments");
+            this.argValueBox.Prompt = TextHelper.GetString("Wizard.Label.Value");
+            this.returnTypeBox.Prompt = this.argTypeBox.Prompt = this.propertyTypeLabel.Text =
+                TextHelper.GetString("Wizard.Label.Type");
+            this.functionReturnLabel.Text = TextHelper.GetString("Wizard.Label.Return");
+            this.createNewMemberButton.Text = TextHelper.GetString("Wizard.Button.Create");
         }
 
         private void InitializeControls()
@@ -565,7 +578,7 @@ namespace ASClassWizard.Wizards
             string errorMessage = string.Empty;
             if (nameBox.Text == string.Empty || !Regex.Match(nameBox.Text, AS3ClassWizard.REG_IDENTIFIER_AS, RegexOptions.Singleline).Success)
             {
-                errorMessage = "Interface name contains invalid characters. ";
+                errorMessage = TextHelper.GetString("Wizard.Error.InvalidInterfaceName");
             }
             if (_memberConflicts.Count > 0)
             {
@@ -575,7 +588,7 @@ namespace ASClassWizard.Wizards
                     conflicting.Append(c.Key).Append(", ");
                 }
                 conflicting.Remove(conflicting.Length - 2, 2);
-                errorMessage += "Conflicting members detected: " + conflicting.ToString();
+                errorMessage += string.Format(TextHelper.GetString("Wizard.Error.ConflictingMembers"), conflicting);
             }
             if (errorMessage != string.Empty)
             {
