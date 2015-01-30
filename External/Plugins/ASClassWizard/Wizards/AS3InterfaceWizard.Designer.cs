@@ -418,26 +418,27 @@
             // 
             // argValueBox
             // 
-            this.argValueBox.Location = new System.Drawing.Point(119, 29);
+            this.argValueBox.Location = new System.Drawing.Point(119, 3);
             this.argValueBox.Name = "argValueBox";
             this.argValueBox.Prompt = "Value";
             this.argValueBox.Size = new System.Drawing.Size(49, 20);
-            this.argValueBox.TabIndex = 8;
+            this.argValueBox.TabIndex = 2;
             // 
             // argNameBox
             // 
-            this.argNameBox.Location = new System.Drawing.Point(68, 29);
+            this.argNameBox.Location = new System.Drawing.Point(68, 3);
             this.argNameBox.Name = "argNameBox";
             this.argNameBox.Prompt = "Name";
             this.argNameBox.Size = new System.Drawing.Size(49, 20);
-            this.argNameBox.TabIndex = 2;
+            this.argNameBox.TabIndex = 1;
             // 
             // returnTypeBox
             // 
             this.returnTypeBox.Location = new System.Drawing.Point(68, 159);
             this.returnTypeBox.Name = "returnTypeBox";
+            this.returnTypeBox.Prompt = "Type";
             this.returnTypeBox.Size = new System.Drawing.Size(100, 20);
-            this.returnTypeBox.TabIndex = 7;
+            this.returnTypeBox.TabIndex = 8;
             // 
             // functionReturnLabel
             // 
@@ -445,16 +446,17 @@
             this.functionReturnLabel.Location = new System.Drawing.Point(3, 162);
             this.functionReturnLabel.Name = "functionReturnLabel";
             this.functionReturnLabel.Size = new System.Drawing.Size(39, 13);
-            this.functionReturnLabel.TabIndex = 6;
+            this.functionReturnLabel.TabIndex = 7;
             this.functionReturnLabel.Text = "Return";
             // 
             // argRemoveButton
             // 
+            this.argRemoveButton.Enabled = false;
             this.argRemoveButton.ForeColor = System.Drawing.Color.DarkRed;
             this.argRemoveButton.Location = new System.Drawing.Point(127, 55);
             this.argRemoveButton.Name = "argRemoveButton";
             this.argRemoveButton.Size = new System.Drawing.Size(23, 23);
-            this.argRemoveButton.TabIndex = 4;
+            this.argRemoveButton.TabIndex = 5;
             this.argRemoveButton.Text = "✖";
             this.argRemoveButton.UseVisualStyleBackColor = true;
             this.argRemoveButton.Click += new System.EventHandler(this.ArgRemoveButton_Click);
@@ -464,7 +466,7 @@
             this.argAddButton.Location = new System.Drawing.Point(94, 55);
             this.argAddButton.Name = "argAddButton";
             this.argAddButton.Size = new System.Drawing.Size(23, 23);
-            this.argAddButton.TabIndex = 3;
+            this.argAddButton.TabIndex = 4;
             this.argAddButton.Text = "▼";
             this.argAddButton.UseVisualStyleBackColor = true;
             this.argAddButton.Click += new System.EventHandler(this.ArgAddButton_Click);
@@ -475,17 +477,17 @@
             this.argsList.Location = new System.Drawing.Point(68, 84);
             this.argsList.Name = "argsList";
             this.argsList.Size = new System.Drawing.Size(100, 69);
-            this.argsList.TabIndex = 5;
+            this.argsList.TabIndex = 6;
             this.argsList.SelectedIndexChanged += new System.EventHandler(this.ArgsList_SelectedIndexChanged);
             // 
             // argTypeBox
             // 
             this.argTypeBox.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.argTypeBox.Location = new System.Drawing.Point(68, 3);
+            this.argTypeBox.Location = new System.Drawing.Point(68, 29);
             this.argTypeBox.Name = "argTypeBox";
             this.argTypeBox.Prompt = "Type";
             this.argTypeBox.Size = new System.Drawing.Size(100, 20);
-            this.argTypeBox.TabIndex = 1;
+            this.argTypeBox.TabIndex = 3;
             // 
             // functionArgsLabel
             // 
@@ -513,7 +515,7 @@
             this.propertyAccessorsLabel.Location = new System.Drawing.Point(3, 7);
             this.propertyAccessorsLabel.Name = "propertyAccessorsLabel";
             this.propertyAccessorsLabel.Size = new System.Drawing.Size(56, 13);
-            this.propertyAccessorsLabel.TabIndex = 2;
+            this.propertyAccessorsLabel.TabIndex = 0;
             this.propertyAccessorsLabel.Text = "Accessors";
             // 
             // propertyAccessorsCombo
@@ -523,14 +525,14 @@
             this.propertyAccessorsCombo.Location = new System.Drawing.Point(68, 4);
             this.propertyAccessorsCombo.Name = "propertyAccessorsCombo";
             this.propertyAccessorsCombo.Size = new System.Drawing.Size(100, 21);
-            this.propertyAccessorsCombo.TabIndex = 3;
+            this.propertyAccessorsCombo.TabIndex = 1;
             // 
             // propertyTypeBox
             // 
             this.propertyTypeBox.Location = new System.Drawing.Point(68, 31);
             this.propertyTypeBox.Name = "propertyTypeBox";
             this.propertyTypeBox.Size = new System.Drawing.Size(100, 20);
-            this.propertyTypeBox.TabIndex = 1;
+            this.propertyTypeBox.TabIndex = 3;
             // 
             // propertyTypeLabel
             // 
@@ -538,7 +540,7 @@
             this.propertyTypeLabel.Location = new System.Drawing.Point(3, 34);
             this.propertyTypeLabel.Name = "propertyTypeLabel";
             this.propertyTypeLabel.Size = new System.Drawing.Size(31, 13);
-            this.propertyTypeLabel.TabIndex = 0;
+            this.propertyTypeLabel.TabIndex = 2;
             this.propertyTypeLabel.Text = "Type";
             // 
             // errorIcon

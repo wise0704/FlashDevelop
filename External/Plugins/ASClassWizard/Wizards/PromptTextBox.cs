@@ -1,16 +1,16 @@
 ﻿// There is a native API to show a prompt in TextBoxes and ComboBoxes, but I'm not using it in order to not have native code...
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace ASClassWizard.Wizards
 {
     public class PromptTextBox : TextBox
     {
+
+        private bool _inControl;
 
         private string _prompt = "";
         [DefaultValue("")]
@@ -23,10 +23,38 @@ namespace ASClassWizard.Wizards
                 if (value == null) value = string.Empty;
 
                 _prompt = value;
-                if (string.IsNullOrEmpty(_text) && _prompt != string.Empty)
+                if (_text == string.Empty)
                 {
-                    base.Text = value;
+                    base.Text = _prompt;
+                    base.ForeColor = PromptForeColor;
                 }
+            }
+        }
+        
+        private Color _promptForeColor = SystemColors.GrayText;
+        [Localizable(true)]
+        public Color PromptForeColor
+        {
+            get { return _promptForeColor; }
+            set
+            {
+                if (_text == string.Empty && Prompt != string.Empty)
+                    base.ForeColor = _promptForeColor;
+            }
+        }
+
+        private Color _foreColor = SystemColors.ControlText;
+        public override Color ForeColor
+        {
+            get
+            {
+                return Text != string.Empty || DesignMode ? _foreColor : PromptForeColor;
+            }
+            set
+            {
+                _foreColor = value;
+                if (Text != string.Empty)
+                    base.ForeColor = value;
             }
         }
 
@@ -35,33 +63,40 @@ namespace ASClassWizard.Wizards
         {
             get
             {
-                return _text;
+                return _inControl ? base.Text : _text;
             }
             set
             {
                 if (value == null) value = string.Empty;
-
+                
                 _text = value;
-                if (_text == string.Empty && !string.IsNullOrEmpty(Prompt))
-                {
+                if (_text == string.Empty && Prompt != string.Empty && !_inControl)
                     base.Text = Prompt;
-                }
                 else
-                {
                     base.Text = value;
-                }
             }
         }
 
         protected override void OnEnter(EventArgs e)
         {
+            _inControl = true;
             base.OnEnter(e);
-            if (_text == string.Empty) base.Text = string.Empty;
+            if (_text == string.Empty)
+            {
+                base.Text = string.Empty;
+                base.ForeColor = ForeColor;
+            }
         }
 
         protected override void OnLeave(EventArgs e)
         {
-            if (base.Text == string.Empty && !string.IsNullOrEmpty(Prompt)) base.Text = Prompt;
+            _inControl = false;
+            _text = base.Text;
+            if (_text == string.Empty && Prompt != string.Empty)
+            {
+                base.Text = Prompt;
+                base.ForeColor = PromptForeColor;
+            }
             base.OnLeave(e);
         }
     }

@@ -9,9 +9,9 @@
  *  - Better type autocompletion. Use AirProperties/Controls/CheckedComboBox as a base
  */
 
-//TODO: Prompt fields
 //TODO: Type autocompletion
 //TODO: Localization
+//TODO: Better error display
 
 using System;
 using System.Collections.Generic;
