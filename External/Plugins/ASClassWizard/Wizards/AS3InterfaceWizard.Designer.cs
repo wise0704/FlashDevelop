@@ -556,6 +556,7 @@
             // 
             this.errorLabel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.errorLabel.AutoEllipsis = true;
             this.errorLabel.AutoSize = true;
             this.errorLabel.ForeColor = System.Drawing.Color.Black;
             this.errorLabel.Location = new System.Drawing.Point(34, 349);
@@ -563,6 +564,7 @@
             this.errorLabel.Size = new System.Drawing.Size(29, 13);
             this.errorLabel.TabIndex = 4;
             this.errorLabel.Text = "Error";
+            this.errorLabel.Resize += ErrorLabel_Resize;
             // 
             // cancelButton
             // 
@@ -609,6 +611,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "New ActionScript Interface";
             this.Load += new System.EventHandler(this.AS3InterfaceWizard_Load);
+            this.Resize += new System.EventHandler(this.AS3InterfaceWizard_Resize);
             this.flowLayoutPanel4.ResumeLayout(false);
             this.flowLayoutPanel2.ResumeLayout(false);
             this.flowLayoutPanel2.PerformLayout();

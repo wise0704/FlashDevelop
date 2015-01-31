@@ -123,7 +123,7 @@ namespace ASClassWizard.Wizards
 
                     CheckForCollisioningMethods();
                     memberList.Columns[0].AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent);
-                    memberList.Columns[0].Width += 4;
+                    memberList.Columns[0].Width += SystemInformation.VerticalScrollBarWidth;
 
                     _addingMethod = false;
                 }
@@ -232,9 +232,22 @@ namespace ASClassWizard.Wizards
         private void AS3InterfaceWizard_Load(object sender, EventArgs e)
         {
             Font = PluginBase.Settings.DefaultFont;
+            errorLabel.MaximumSize = new Size(okButton.Left - errorLabel.Left - errorLabel.Margin.Right - okButton.Margin.Left,
+                TextRenderer.MeasureText("A" + Environment.NewLine + "A", errorLabel.Font).Height);
             memberButton.PerformClick();
             nameBox.Select();
             ValidateInterface();
+        }
+
+        private void AS3InterfaceWizard_Resize(object sender, EventArgs e)
+        {
+            errorLabel.MaximumSize = new Size(okButton.Left - errorLabel.Left - errorLabel.Margin.Right - okButton.Margin.Left,
+                errorLabel.MaximumSize.Height);
+        }
+
+        private void ErrorLabel_Resize(object sender, EventArgs e)
+        {
+            errorLabel.Top = (int)(okButton.Top + okButton.Height * .5 - errorLabel.Height * .5);
         }
 
         /// <summary>
@@ -498,7 +511,7 @@ namespace ASClassWizard.Wizards
                 newItem.EnsureVisible();
             }
             memberList.Columns[0].AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent);
-            memberList.Columns[0].Width += 4;
+            memberList.Columns[0].Width += SystemInformation.VerticalScrollBarWidth;
         }
 
         private void MemberTypeCombo_SelectedIndexChanged(object sender, EventArgs e)
@@ -578,7 +591,11 @@ namespace ASClassWizard.Wizards
         private void ValidateInterface()
         {
             string errorMessage = string.Empty;
-            if (nameBox.Text == string.Empty || !Regex.Match(nameBox.Text, AS3ClassWizard.REG_IDENTIFIER_AS, RegexOptions.Singleline).Success)
+            if (nameBox.Text == string.Empty)
+            {
+                errorMessage = TextHelper.GetString("Wizard.Error.EmptyName");
+            }
+            if (!Regex.Match(nameBox.Text, AS3ClassWizard.REG_IDENTIFIER_AS, RegexOptions.Singleline).Success)
             {
                 errorMessage = TextHelper.GetString("Wizard.Error.InvalidInterfaceName");
             }
