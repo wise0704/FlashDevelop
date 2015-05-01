@@ -74,11 +74,12 @@ namespace FlashDebugger
             {
                 imageList = new ImageList();
                 imageList.ColorDepth = ColorDepth.Depth32Bit;
-                imageList.Images.Add("DeleteBreakpoint", PluginBase.MainForm.ImageSetAdjust(Resource.DeleteBreakpoint));
-                imageList.Images.Add("DeleteBreakpoints", PluginBase.MainForm.ImageSetAdjust(Resource.DeleteBreakpoints));
-                imageList.Images.Add("ToggleBreakpoints", PluginBase.MainForm.ImageSetAdjust(Resource.ToggleBreakpoints));
-                imageList.Images.Add("ExportBreakpoints", PluginBase.MainForm.ImageSetAdjust(Resource.ExportBreakpoints));
-                imageList.Images.Add("ImportBreakpoints", PluginBase.MainForm.ImageSetAdjust(Resource.ImportBreakpoints));
+                imageList.ImageSize = ScaleHelper.Scale(new Size(16, 16));
+                imageList.Images.Add("DeleteBreakpoint", PluginBase.MainForm.FindImage("548|27|5|5"));
+                imageList.Images.Add("DeleteBreakpoints", PluginBase.MainForm.FindImage("549|27|5|5"));
+                imageList.Images.Add("ToggleBreakpoints", PluginBase.MainForm.FindImage("136|23|5|5"));
+                imageList.Images.Add("ExportBreakpoints", PluginBase.MainForm.FindImage("549|22|4|4"));
+                imageList.Images.Add("ImportBreakpoints", PluginBase.MainForm.FindImage("549|8|4|4"));
             }
 
             this.dgv = new DataGridView();
@@ -260,8 +261,7 @@ namespace FlashDebugger
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BreakPointUI));
-            this.tsActions = new System.Windows.Forms.ToolStrip();
+            this.tsActions = new PluginCore.Controls.ToolStripEx();
             this.tsbRemoveSelected = new System.Windows.Forms.ToolStripButton();
             this.tsbRemoveFiltered = new System.Windows.Forms.ToolStripButton();
             this.tsbAlternateFiltered = new System.Windows.Forms.ToolStripButton();
@@ -276,6 +276,7 @@ namespace FlashDebugger
             // tsActions
             // 
             this.tsActions.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            this.tsActions.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
             this.tsActions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsbRemoveSelected,
             this.tsbRemoveFiltered,
@@ -294,7 +295,6 @@ namespace FlashDebugger
             // tsbRemoveSelected
             // 
             this.tsbRemoveSelected.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbRemoveSelected.Image = ((System.Drawing.Image)(resources.GetObject("tsbRemoveSelected.Image")));
             this.tsbRemoveSelected.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbRemoveSelected.Name = "tsbRemoveSelected";
             this.tsbRemoveSelected.Size = new System.Drawing.Size(23, 24);
@@ -304,7 +304,6 @@ namespace FlashDebugger
             // tsbRemoveFiltered
             // 
             this.tsbRemoveFiltered.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbRemoveFiltered.Image = ((System.Drawing.Image)(resources.GetObject("tsbRemoveFiltered.Image")));
             this.tsbRemoveFiltered.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbRemoveFiltered.Name = "tsbRemoveFiltered";
             this.tsbRemoveFiltered.Size = new System.Drawing.Size(23, 24);
@@ -314,7 +313,6 @@ namespace FlashDebugger
             // tsbAlternateFiltered
             // 
             this.tsbAlternateFiltered.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbAlternateFiltered.Image = ((System.Drawing.Image)(resources.GetObject("tsbAlternateFiltered.Image")));
             this.tsbAlternateFiltered.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbAlternateFiltered.Name = "tsbAlternateFiltered";
             this.tsbAlternateFiltered.Size = new System.Drawing.Size(23, 24);
@@ -329,7 +327,6 @@ namespace FlashDebugger
             // tsbExportFiltered
             // 
             this.tsbExportFiltered.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbExportFiltered.Image = ((System.Drawing.Image)(resources.GetObject("tsbExportFiltered.Image")));
             this.tsbExportFiltered.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbExportFiltered.Name = "tsbExportFiltered";
             this.tsbExportFiltered.Size = new System.Drawing.Size(23, 24);
@@ -339,7 +336,6 @@ namespace FlashDebugger
             // tsbImport
             // 
             this.tsbImport.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.tsbImport.Image = ((System.Drawing.Image)(resources.GetObject("tsbImport.Image")));
             this.tsbImport.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tsbImport.Name = "tsbImport";
             this.tsbImport.Size = new System.Drawing.Size(23, 24);
@@ -349,14 +345,14 @@ namespace FlashDebugger
             // tstxtFilter
             // 
             this.tstxtFilter.Name = "tstxtFilter";
-            this.tstxtFilter.Size = new System.Drawing.Size(90, 23);
+            this.tstxtFilter.Size = new System.Drawing.Size(ScaleHelper.Scale(90), 23);
             this.tstxtFilter.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TstxtFilter_KeyDown);
             // 
             // tscbFilterColumns
             // 
             this.tscbFilterColumns.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.tscbFilterColumns.Name = "tscbFilterColumns";
-            this.tscbFilterColumns.Size = new System.Drawing.Size(116, 23);
+            this.tscbFilterColumns.Size = new System.Drawing.Size(ScaleHelper.Scale(116), 23);
             // 
             // BreakPointUI
             // 
@@ -463,10 +459,7 @@ namespace FlashDebugger
                     if (!m)
                     {
                         doc.SciControl.MarkerAdd(line, newMarker);
-                        doc.SciControl.MarkerDelete(line,
-                                                    value
-                                                        ? ScintillaHelper.markerBPDisabled
-                                                        : ScintillaHelper.markerBPEnabled);
+                        doc.SciControl.MarkerDelete(line, value ? ScintillaHelper.markerBPDisabled : ScintillaHelper.markerBPEnabled);
                     }
                 }
                 else
@@ -563,8 +556,7 @@ namespace FlashDebugger
                 }
                 catch (Exception ex)
                 {
-                    ErrorManager.ShowWarning(
-                        "Error filtering list, please, ensure you've entered a valid RegEx pattern", ex);
+                    ErrorManager.ShowWarning("Error filtering list, please ensure you've entered a valid RegEx pattern", ex);
                 }
             }
         }

@@ -162,7 +162,7 @@ namespace HaXeContext
                 string hxPath = currentSDK;
                 if (hxPath != null && Path.IsPathRooted(hxPath))
                 {
-                    SetHaxeEnvironment(hxPath);
+                    if (hxPath != currentEnv) SetHaxeEnvironment(hxPath);
                     haxelib = Path.Combine(hxPath, haxelib);
                 }
                 
@@ -177,13 +177,22 @@ namespace HaXeContext
                 p.WaitForExit();
 
                 List<string> paths = new List<string>();
-                string path = "";
+                string line = "";
                 do { 
-                    path = p.StandardOutput.ReadLine();
-                    if (path != null && path.Length > 0 && !path.StartsWith("-") && Directory.Exists(path))
+                    line = p.StandardOutput.ReadLine();
+                    if (string.IsNullOrEmpty(line)) continue;
+                    if (line.IndexOf("not installed") > 0)
                     {
-                        path = NormalizePath(path).TrimEnd(Path.DirectorySeparatorChar);
-                        paths.Add(path);
+                        TraceManager.Add(line, 3);
+                    }
+                    else if (!line.StartsWith("-"))
+                    {
+                        try
+                        {
+                            if (Directory.Exists(line))
+                                paths.Add(NormalizePath(line).TrimEnd(Path.DirectorySeparatorChar));
+                        }
+                        catch (Exception) { }
                     }
                 }
                 while (!p.StandardOutput.EndOfStream);
@@ -208,6 +217,8 @@ namespace HaXeContext
         public override void UserRefreshRequest()
         {
             haxelibsCache.Clear();
+            HaxeProject proj = PluginBase.CurrentProject as HaxeProject;
+            if (proj != null) proj.UpdateVars(false);
         }
 
         /// <summary>
@@ -242,6 +253,7 @@ namespace HaXeContext
             features.metadata = new Dictionary<string, string>();
 
             Process process = createHaxeProcess("--help-metas");
+            if (process == null) return;
             process.Start();
 
             String metaList = process.StandardOutput.ReadToEnd();
@@ -249,7 +261,6 @@ namespace HaXeContext
 
             Regex regex = new Regex("@:([a-zA-Z]*)(?: : )(.*?)(?= @:[a-zA-Z]* :)");
             metaList = Regex.Replace(metaList, "\\s+", " ");
-            metaList += "@:fake :";
 
             MatchCollection matches = regex.Matches(metaList);
 
@@ -864,11 +875,11 @@ namespace HaXeContext
         }
 
         /// <summary>
-		/// Retrieves a class model from its name
-		/// </summary>
-		/// <param name="cname">Class (short or full) name</param>
-		/// <param name="inClass">Current file</param>
-		/// <returns>A parsed class or an empty ClassModel if the class is not found</returns>
+        /// Retrieves a class model from its name
+        /// </summary>
+        /// <param name="cname">Class (short or full) name</param>
+        /// <param name="inClass">Current file</param>
+        /// <returns>A parsed class or an empty ClassModel if the class is not found</returns>
         public override ClassModel ResolveType(string cname, FileModel inFile)
         {
             // unknown type
@@ -1129,11 +1140,8 @@ namespace HaXeContext
             // compiler path
             var hxPath = currentSDK ?? ""; 
             var process = Path.Combine(hxPath, "haxe.exe");
-            /*if (!File.Exists(process))
-            {
-                ErrorManager.ShowInfo(String.Format(TextHelper.GetString("Info.HaXeExeError"), "\n"));
+            if (!File.Exists(process))
                 return null;
-            }*/
 
             // Run haxe compiler
             Process proc = new Process();
