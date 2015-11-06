@@ -1,23 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using System.Reflection;
 using PluginCore;
 using PluginCore.Localization;
 using ASCompletion.Model;
-using ASClassWizard.Wizards;
-using ASClassWizard.Resources;
 using PluginCore.Controls;
 
 namespace ASClassWizard.Wizards
 {
     public partial class ClassBrowser : SmartForm
     {
-
         private MemberList all;
         private List<GListBoxItemEx> dataProvider;
         private FlagType invalidFlag;
@@ -90,6 +82,8 @@ namespace ASClassWizard.Wizards
             {
                 foreach (MemberModel item in this.ClassList)
                 {
+                    // exclude types imported in the current file
+                    if (item.Name != item.Type) continue;
                     if (ExcludeFlag > 0) if ((item.Flags & ExcludeFlag) > 0) continue;
                     if (IncludeFlag > 0)
                     {
@@ -111,11 +105,10 @@ namespace ASClassWizard.Wizards
         }
 
         /// <summary>
-        /// Filder the list
+        /// Filter the list
         /// </summary>
-        private void filterBox_TextChanged( Object sender, EventArgs e)
+        private void filterBox_TextChanged(Object sender, EventArgs e)
         {
-            string text = this.filterBox.Text;
             this.itemList.BeginUpdate();
             this.itemList.Items.Clear();
 
@@ -143,11 +136,11 @@ namespace ASClassWizard.Wizards
         }
 
         /// <summary>
-        /// Filder the results
+        /// Filter the results
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        private bool FindAllItems( GListBoxItemEx item )
+        private bool FindAllItems(GListBoxItemEx item)
         {
             if (matchLen == 0) return true;
             int score = PluginCore.Controls.CompletionList.SmartMatch(item.Text, matchToken, matchLen);
@@ -167,28 +160,12 @@ namespace ASClassWizard.Wizards
         /// <summary>
         /// Select None button click
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void cancelButton_Click(object sender, EventArgs e)
         {
             this.itemList.SelectedItem = null;
-            this.DialogResult = DialogResult.OK;
-            this.Close();
         }
 
-
-        /// <summary>
-        /// Ok button click
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void okButton_Click(object sender, EventArgs e)
-        {
-            this.DialogResult = DialogResult.OK;
-            this.Close();
-        }
-
-        private void itemList_DoubleClick( object sender, EventArgs e )
+        private void itemList_DoubleClick(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.OK;
             this.Close();
