@@ -224,7 +224,7 @@ namespace ASClassWizard
                     }
                 }
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
                 package = "";
             }
@@ -512,7 +512,9 @@ namespace ASClassWizard
             if (lastFileOptions.ClassModel.Members != null)
             {
                 IASContext context = ASContext.Context;
-                // For now only supported on AS3 and interfaces, so I'm avoiding many checks and cases
+                var boundary = lastFileOptions.Language == "as3" ? "\t\t" : "\t";
+                if (!PluginBase.Settings.UseTabs)
+                    boundary = boundary.Replace("\t", new string(' ', PluginBase.Settings.IndentSize));
                 foreach (var m in lastFileOptions.ClassModel.Members.Items)
                 {
                     if ((m.Flags & FlagType.Getter) > 0)
@@ -520,7 +522,8 @@ namespace ASClassWizard
                         var type = m.Type ?? context.Features.voidKey;
                         var dot = type.LastIndexOf('.');
                         if (dot > -1) imports.Add(type);
-                        membersSrc.Append("function get ").Append(m.Name).Append("():").Append(type.Substring(dot + 1)).Append(";").Append(lineBreak).Append("\t\t");
+                        membersSrc.Append("function get ").Append(m.Name).Append("():").Append(type.Substring(dot + 1)).Append(";")
+                            .Append(lineBreak).Append(boundary);
                     }
                     else if ((m.Flags & FlagType.Setter) > 0)
                     {
@@ -536,7 +539,7 @@ namespace ASClassWizard
                         else
                             membersSrc.Append(context.Features.objectKey);
 
-                        membersSrc.Append("):").Append(context.Features.voidKey).Append(";").Append(lineBreak).Append("\t\t");
+                        membersSrc.Append("):").Append(context.Features.voidKey).Append(";").Append(lineBreak).Append(boundary);
                     }
                     else if ((m.Flags & FlagType.Function) > 0)
                     {
@@ -562,12 +565,8 @@ namespace ASClassWizard
                         var rtype = m.Type ?? context.Features.voidKey;
                         var rdot = rtype.LastIndexOf('.');
                         if (rdot > -1) imports.Add(rtype);
-                        membersSrc.Append("):").Append(rtype.Substring(rdot + 1)).Append(";").Append(lineBreak).Append("\t\t");
+                        membersSrc.Append("):").Append(rtype.Substring(rdot + 1)).Append(";").Append(lineBreak).Append(boundary);
                     }
-                }
-                if (membersSrc.Length > 0)
-                {
-                    membersSrc.Append(lineBreak).Append(lastFileOptions.Language == "as3" ? "\t\t" : string.Empty);
                 }
             }
             var importsSrc = new StringBuilder();

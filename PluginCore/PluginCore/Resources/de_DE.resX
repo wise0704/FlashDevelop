@@ -3090,6 +3090,10 @@ Bitte bedenken Sie, dass Sie viele Projektoptionen nicht mehr nutzen können, so
     <value>New ActionScript 3 Interface</value>
     <comment>Added after 4.7.1</comment>
   </data>
+  <data name="ASClassWizard.Wizard.Label.NewHaxeInterface" xml:space="preserve">
+    <value>New Haxe Interface</value>
+    <comment>Added after 5.1</comment>
+  </data>
   <data name="ASClassWizard.Wizard.Label.Members" xml:space="preserve">
     <value>Members:</value>
     <comment>Added after 4.7.1</comment>

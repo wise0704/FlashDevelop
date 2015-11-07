@@ -64,6 +64,11 @@ namespace ASClassWizard.Wizards
                     this.titleLabel.Text = TextHelper.GetString("Wizard.Label.NewAs3Interface");
                     this.Text = TextHelper.GetString("Wizard.Label.NewAs3Interface");
                 }
+                else if (project.Language == "haxe")
+                {
+                    this.titleLabel.Text = TextHelper.GetString("Wizard.Label.NewHaxeInterface");
+                    this.Text = TextHelper.GetString("Wizard.Label.NewHaxeInterface");
+                }
             }
         }
 
@@ -100,7 +105,11 @@ namespace ASClassWizard.Wizards
                                 }
                             }
 
-                            if (mc.Type != null) mc.Type = ASContext.Context.ResolveType(mc.Type, value.InFile).QualifiedName;
+                            if (mc.Type != null)
+                            {
+                                var type = ASContext.Context.ResolveType(mc.Type, value.InFile);
+                                mc.Type = !type.IsVoid() ? type.QualifiedName : ASContext.Context.Features.voidKey;
+                            }
 
                             var item = memberList.Items.Add(MemberToItemString(mc));
                             item.Tag = mc;

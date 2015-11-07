@@ -92,10 +92,10 @@
             this.flowLayoutPanel4.Controls.Add(this.implementRemove);
             this.flowLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel4.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flowLayoutPanel4.Location = new System.Drawing.Point(362, 192);
+            this.flowLayoutPanel4.Location = new System.Drawing.Point(379, 192);
             this.flowLayoutPanel4.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.flowLayoutPanel4.Name = "flowLayoutPanel4";
-            this.flowLayoutPanel4.Size = new System.Drawing.Size(98, 71);
+            this.flowLayoutPanel4.Size = new System.Drawing.Size(81, 71);
             this.flowLayoutPanel4.TabIndex = 12;
             // 
             // implementBrowse
@@ -124,9 +124,9 @@
             // nameBox
             // 
             this.nameBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.nameBox.Location = new System.Drawing.Point(101, 62);
+            this.nameBox.Location = new System.Drawing.Point(106, 62);
             this.nameBox.Name = "nameBox";
-            this.nameBox.Size = new System.Drawing.Size(255, 20);
+            this.nameBox.Size = new System.Drawing.Size(267, 20);
             this.nameBox.TabIndex = 6;
             this.nameBox.Text = "INewInterface";
             this.nameBox.TextChanged += new System.EventHandler(this.NameBox_TextChanged);
@@ -134,9 +134,9 @@
             // packageBox
             // 
             this.packageBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.packageBox.Location = new System.Drawing.Point(101, 5);
+            this.packageBox.Location = new System.Drawing.Point(106, 5);
             this.packageBox.Name = "packageBox";
-            this.packageBox.Size = new System.Drawing.Size(255, 20);
+            this.packageBox.Size = new System.Drawing.Size(267, 20);
             this.packageBox.TabIndex = 1;
             this.packageBox.Click += new System.EventHandler(this.PackageBox_TextChanged);
             // 
@@ -165,9 +165,9 @@
             this.flowLayoutPanel2.Controls.Add(this.publicRadio);
             this.flowLayoutPanel2.Controls.Add(this.internalRadio);
             this.flowLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel2.Location = new System.Drawing.Point(101, 33);
+            this.flowLayoutPanel2.Location = new System.Drawing.Point(106, 33);
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
-            this.flowLayoutPanel2.Size = new System.Drawing.Size(255, 22);
+            this.flowLayoutPanel2.Size = new System.Drawing.Size(267, 22);
             this.flowLayoutPanel2.TabIndex = 4;
             // 
             // publicRadio
@@ -215,7 +215,7 @@
             // packageBrowse
             // 
             this.packageBrowse.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.packageBrowse.Location = new System.Drawing.Point(372, 3);
+            this.packageBrowse.Location = new System.Drawing.Point(381, 3);
             this.packageBrowse.Name = "packageBrowse";
             this.packageBrowse.Size = new System.Drawing.Size(74, 23);
             this.packageBrowse.TabIndex = 2;
@@ -263,7 +263,7 @@
             this.tableLayoutPanel2.ColumnCount = 3;
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 27.42382F));
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 72.57618F));
-            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 100F));
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 83F));
             this.tableLayoutPanel2.Controls.Add(this.memberButton, 2, 3);
             this.tableLayoutPanel2.Controls.Add(this.flowLayoutPanel4, 2, 4);
             this.tableLayoutPanel2.Controls.Add(this.packageBrowse, 2, 0);
@@ -291,7 +291,7 @@
             // memberButton
             // 
             this.memberButton.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.memberButton.Location = new System.Drawing.Point(372, 89);
+            this.memberButton.Location = new System.Drawing.Point(381, 89);
             this.memberButton.Name = "memberButton";
             this.memberButton.Size = new System.Drawing.Size(74, 23);
             this.memberButton.TabIndex = 9;
@@ -316,9 +316,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.implementList.FormattingEnabled = true;
             this.implementList.IntegralHeight = false;
-            this.implementList.Location = new System.Drawing.Point(101, 195);
+            this.implementList.Location = new System.Drawing.Point(106, 195);
             this.implementList.Name = "implementList";
-            this.implementList.Size = new System.Drawing.Size(255, 65);
+            this.implementList.Size = new System.Drawing.Size(267, 65);
             this.implementList.TabIndex = 11;
             this.implementList.SelectedIndexChanged += new System.EventHandler(this.ImplementList_SelectedIndexChanged);
             // 
@@ -332,9 +332,9 @@
             this.columnHeader1});
             this.memberList.FullRowSelect = true;
             this.memberList.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.memberList.Location = new System.Drawing.Point(101, 89);
+            this.memberList.Location = new System.Drawing.Point(106, 89);
             this.memberList.Name = "memberList";
-            this.memberList.Size = new System.Drawing.Size(255, 100);
+            this.memberList.Size = new System.Drawing.Size(267, 100);
             this.memberList.TabIndex = 8;
             this.memberList.UseCompatibleStateImageBehavior = false;
             this.memberList.View = System.Windows.Forms.View.Details;
@@ -418,25 +418,31 @@
             // 
             // argValueBox
             // 
+            this.argValueBox.ForeColor = System.Drawing.SystemColors.ControlText;
             this.argValueBox.Location = new System.Drawing.Point(119, 3);
             this.argValueBox.Name = "argValueBox";
             this.argValueBox.Prompt = "Value";
+            this.argValueBox.PromptForeColor = System.Drawing.SystemColors.GrayText;
             this.argValueBox.Size = new System.Drawing.Size(49, 20);
             this.argValueBox.TabIndex = 2;
             // 
             // argNameBox
             // 
+            this.argNameBox.ForeColor = System.Drawing.SystemColors.ControlText;
             this.argNameBox.Location = new System.Drawing.Point(68, 3);
             this.argNameBox.Name = "argNameBox";
             this.argNameBox.Prompt = "Name";
+            this.argNameBox.PromptForeColor = System.Drawing.SystemColors.GrayText;
             this.argNameBox.Size = new System.Drawing.Size(49, 20);
             this.argNameBox.TabIndex = 1;
             // 
             // returnTypeBox
             // 
+            this.returnTypeBox.ForeColor = System.Drawing.SystemColors.ControlText;
             this.returnTypeBox.Location = new System.Drawing.Point(68, 159);
             this.returnTypeBox.Name = "returnTypeBox";
             this.returnTypeBox.Prompt = "Type";
+            this.returnTypeBox.PromptForeColor = System.Drawing.SystemColors.GrayText;
             this.returnTypeBox.Size = new System.Drawing.Size(100, 20);
             this.returnTypeBox.TabIndex = 8;
             // 
@@ -486,6 +492,7 @@
             this.argTypeBox.Location = new System.Drawing.Point(68, 29);
             this.argTypeBox.Name = "argTypeBox";
             this.argTypeBox.Prompt = "Type";
+            this.argTypeBox.PromptForeColor = System.Drawing.SystemColors.GrayText;
             this.argTypeBox.Size = new System.Drawing.Size(100, 20);
             this.argTypeBox.TabIndex = 3;
             // 
@@ -531,6 +538,7 @@
             // 
             this.propertyTypeBox.Location = new System.Drawing.Point(68, 31);
             this.propertyTypeBox.Name = "propertyTypeBox";
+            this.propertyTypeBox.PromptForeColor = System.Drawing.SystemColors.GrayText;
             this.propertyTypeBox.Size = new System.Drawing.Size(100, 20);
             this.propertyTypeBox.TabIndex = 3;
             // 
@@ -564,7 +572,6 @@
             this.errorLabel.Size = new System.Drawing.Size(29, 13);
             this.errorLabel.TabIndex = 4;
             this.errorLabel.Text = "Error";
-            this.errorLabel.Resize += ErrorLabel_Resize;
             // 
             // cancelButton
             // 
