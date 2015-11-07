@@ -110,7 +110,7 @@ namespace ASCompletion.Completion
                     }
                     if ((resolve.Member.Flags & (FlagType.Function | FlagType.Constructor)) >= (FlagType.Function | FlagType.Constructor))
                     {
-                        if (PluginBase.CurrentProject.Language == "as3")    // Just as3 for now
+                        if (PluginBase.CurrentProject.Language == "as3" || PluginBase.CurrentProject.Language == "haxe")
                         {
                             contextMatch = null;
                             ShowExtractInterface(found, ReimplementExtractedAs3Interface);
@@ -2700,6 +2700,7 @@ namespace ASCompletion.Completion
             string projTemplateDir = Path.Combine(projFilesDir, project.GetType().Name);
             Hashtable info = new Hashtable();
             if (project.Language == "as3") info["templatePath"] = Path.Combine(projTemplateDir, "Interface.as.fdt");
+            else if (project.Language.StartsWith("haxe")) info["templatePath"] = Path.Combine(projTemplateDir, "Interface.hx.fdt");
             info["interfaceName"] = "I" + fromClass.Name;
             info["inDirectory"] = Path.GetDirectoryName(fromClass.InFile.FileName);
             info["fromClass"] = fromClass;

@@ -1,0 +1,10 @@
+package $(Package);
+$(Import)/**
+$(CBI)* @author $(DefaultUser)
+$(CBI)*/
+
+$(Access)interface $(FileName)$(Implements) $(CSLB){
+	
+	$(Members)$(EntryPoint)
+	
+}

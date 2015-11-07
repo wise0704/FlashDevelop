@@ -131,7 +131,7 @@ namespace ASClassWizard
                                 table["result"] = lastFileOptions.ClassModel;
                             lastFileOptions = null;
                         }
-                        else if (type == "INTERFACE" && project.Language == "as3")
+                        else if (type == "INTERFACE" && (project.Language == "as3" || project.Language == "haxe"))
                         {
                             evt.Handled = true;
                             String interfaceName = table.ContainsKey("interfaceName") ? table["interfaceName"] as String : "INewInterface";
