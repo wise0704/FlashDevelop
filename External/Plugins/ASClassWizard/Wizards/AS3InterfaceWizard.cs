@@ -100,16 +100,11 @@ namespace ASClassWizard.Wizards
                             {
                                 foreach (var p in mc.Parameters)
                                 {
-                                    if (p.Type != null && p.Type != "*")
-                                        p.Type = ASContext.Context.ResolveType(p.Type, value.InFile).QualifiedName;
+                                    p.Type = ResolveClassQualifiedName(p.Type, value.InFile);
                                 }
                             }
 
-                            if (mc.Type != null)
-                            {
-                                var type = ASContext.Context.ResolveType(mc.Type, value.InFile);
-                                mc.Type = !type.IsVoid() ? type.QualifiedName : ASContext.Context.Features.voidKey;
-                            }
+                            mc.Type = ResolveClassQualifiedName(mc.Type, value.InFile);
 
                             var item = memberList.Items.Add(MemberToItemString(mc));
                             item.Tag = mc;
@@ -121,6 +116,9 @@ namespace ASClassWizard.Wizards
                         foreach (var i in value.Implements)
                         {
                             var iModel = ASContext.Context.ResolveType(i, value.InFile);
+
+                            if (iModel.IsVoid()) continue;
+
                             implementList.Items.Add(new InterfaceListItem {Model = iModel});
 
                             iModel.ResolveExtends();
@@ -733,10 +731,21 @@ namespace ASClassWizard.Wizards
             }
 
             retVal.Append(":");
-            var rType = m.Type ?? ASContext.Context.Features.voidKey;
+            var rType = m.Type ?? "";
             retVal.Append(rType.Substring(rType.LastIndexOf('.') + 1));
             
             return retVal.ToString();
+        }
+
+        internal static string ResolveClassQualifiedName(string type, FileModel inFile)
+        {
+            if (!string.IsNullOrEmpty(type) && type != "*" && type != ASContext.Context.Features.voidKey)
+            {
+                var pType = ASContext.Context.ResolveType(type, inFile);
+                if (!pType.IsVoid()) type = pType.QualifiedName;
+            }
+
+            return type;
         }
 
         #region Members Comparison
@@ -759,17 +768,17 @@ namespace ASClassWizard.Wizards
                     string typeA, typeB;
                     if ((memberA.Flags & FlagType.Getter) > 0)
                         typeA = ownerA != null ?
-                            ASContext.Context.ResolveType(memberA.Type, ownerA.InFile).QualifiedName : memberA.Type;
+                            ResolveClassQualifiedName(memberA.Type, ownerA.InFile) : memberA.Type;
                     else
                         typeA = ownerA != null ?
-                            ASContext.Context.ResolveType(memberA.Parameters[0].Type, ownerA.InFile).QualifiedName : memberA.Parameters[0].Type;
+                            ResolveClassQualifiedName(memberA.Parameters[0].Type, ownerA.InFile) : memberA.Parameters[0].Type;
 
                     if ((memberB.Flags & FlagType.Getter) > 0)
                         typeB = ownerB != null ?
-                            ASContext.Context.ResolveType(memberB.Type, ownerB.InFile).QualifiedName : memberB.Type;
+                            ResolveClassQualifiedName(memberB.Type, ownerB.InFile) : memberB.Type;
                     else
                         typeB = ownerB != null ?
-                            ASContext.Context.ResolveType(memberB.Parameters[0].Type, ownerB.InFile).QualifiedName : 
+                            ResolveClassQualifiedName(memberB.Parameters[0].Type, ownerB.InFile) : 
                             memberB.Parameters[0].Type;
 
                     if (typeA != typeB) return MemberComparisonResult.DifferentSignature;
@@ -801,9 +810,9 @@ namespace ASClassWizard.Wizards
                     return false;
 
                 string typeA = ownerA != null && memberA.Type != null && memberA.Type != "*"
-                                    ? context.ResolveType(memberA.Type, ownerA.InFile).QualifiedName : memberA.Type;
+                                    ? ResolveClassQualifiedName(memberA.Type, ownerA.InFile) : memberA.Type;
                 string typeB = ownerB != null && memberB.Type != null && memberB.Type != "*"
-                                    ? context.ResolveType(memberB.Type, ownerB.InFile).QualifiedName : memberB.Type;
+                                    ? ResolveClassQualifiedName(memberB.Type, ownerB.InFile) : memberB.Type;
 
                 if (typeA != typeB) return false;
 
@@ -813,9 +822,9 @@ namespace ASClassWizard.Wizards
                     var bParam = memberB.Parameters[i];
                     // We're using owner=null for members from the listview
                     typeA = ownerA != null && aParam.Type != null && aParam.Type != "*"
-                                    ? context.ResolveType(aParam.Type, ownerA.InFile).QualifiedName : aParam.Type;
+                                    ? ResolveClassQualifiedName(aParam.Type, ownerA.InFile) : aParam.Type;
                     typeB = ownerB != null && bParam.Type != null && bParam.Type != "*"
-                                    ? context.ResolveType(bParam.Type, ownerB.InFile).QualifiedName : bParam.Type;
+                                    ? ResolveClassQualifiedName(bParam.Type, ownerB.InFile) : bParam.Type;
                     if (typeA != typeB ||
                         aParam.Value != bParam.Value)
                     {
