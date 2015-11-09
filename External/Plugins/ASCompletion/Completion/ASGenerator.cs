@@ -2731,7 +2731,7 @@ namespace ASCompletion.Completion
                                 : fromClass.LineTo;
 
             for (int i = fromClass.LineFrom; i <= lineTo; i++)
-                classDeclaration.Append(sci.GetLine(i)).Append('\n');
+                classDeclaration.Append(sci.GetLine(i));
 
             var declMatch = Regex.Match(classDeclaration.ToString(),
                                         string.Format(

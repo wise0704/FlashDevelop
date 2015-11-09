@@ -519,10 +519,32 @@ namespace ASClassWizard
                 {
                     if ((m.Flags & FlagType.Getter) > 0)
                     {
-                        var type = m.Type ?? context.Features.voidKey;
+                        var type = m.Type ?? context.Features.objectKey;
                         var dot = type.LastIndexOf('.');
                         if (dot > -1) imports.Add(type);
-                        membersSrc.Append("function get ").Append(m.Name).Append("():").Append(type.Substring(dot + 1)).Append(";")
+
+                        if (lastFileOptions.Language == "haxe")
+                        {
+                            membersSrc.Append("var ").Append(m.Name).Append("(");
+
+                            if (m.Parameters != null)
+                            {
+                                foreach (var p in m.Parameters)
+                                {
+                                    membersSrc.Append(p.Name).Append(", ");
+                                }
+
+                                membersSrc.Remove(membersSrc.Length - 2, 2);
+                            }
+
+                            membersSrc.Append(")");
+                        }
+                        else
+                        {
+                            membersSrc.Append("function get ").Append(m.Name).Append("()");
+                        }
+
+                        membersSrc.Append(":").Append(type.Substring(dot + 1)).Append(";")
                             .Append(lineBreak).Append(boundary);
                     }
                     else if ((m.Flags & FlagType.Setter) > 0)
@@ -560,6 +582,19 @@ namespace ASClassWizard
                             }
 
                             membersSrc.Remove(membersSrc.Length - 2, 2);
+                        }
+                        else if ((m.Flags & FlagType.Variable) > 0)
+                        {
+                            membersSrc.Append("var ").Append(m.Name);
+                            
+                            if (!string.IsNullOrEmpty(m.Type))
+                            {
+                                var type = m.Type;
+                                var dot = type.LastIndexOf('.');
+                                if (dot > -1) imports.Add(type);
+                                membersSrc.Append(":").Append(type.Substring(dot + 1));
+                            }
+                            membersSrc.Append(";").Append(lineBreak).Append(boundary);
                         }
 
                         var rtype = m.Type ?? context.Features.voidKey;

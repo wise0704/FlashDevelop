@@ -91,6 +91,8 @@ namespace ASClassWizard.Wizards
                     _addingMethod = true;
                     FlagType flags = FlagType.Function | FlagType.Getter | FlagType.Setter;
                     FlagType exclude = FlagType.Constructor | FlagType.Static;
+
+                    if (project.Language == "haxe") flags |= FlagType.Variable;
                     foreach (var m in value.Members.Items)
                     {
                         if (m.Access == Visibility.Public && (m.Flags & flags) > 0 && (m.Flags & exclude) == 0)
@@ -267,7 +269,7 @@ namespace ASClassWizard.Wizards
             ClassBrowser browser = new ClassBrowser();
             MemberList known = null;
             browser.IncludeFlag = FlagType.Interface;
-            IASContext context = ASContext.GetLanguageContext(PluginBase.CurrentProject.Language);
+            IASContext context = ASContext.GetLanguageContext(project.Language);
             try
             {
                 known = context.GetAllProjectClasses();
@@ -707,9 +709,15 @@ namespace ASClassWizard.Wizards
             var retVal = new StringBuilder();
 
             var isFunc = (m.Flags & (FlagType.Getter | FlagType.Setter | FlagType.Function)) > 0;
+            var isHaxeGetter = false;
 
             if ((m.Flags & FlagType.Getter) > 0)
-                retVal.Append("get_");
+            {
+                if (project.Language == "as3")
+                    retVal.Append("get_");
+                else
+                    isHaxeGetter = true;
+            }
             else if ((m.Flags & FlagType.Setter) > 0)
                 retVal.Append("set_");
 
@@ -722,8 +730,16 @@ namespace ASClassWizard.Wizards
                 {
                     foreach (var p in m.Parameters)
                     {
-                        var type = p.Type ?? ASContext.Context.Features.objectKey;
-                        retVal.Append(type.Substring(type.LastIndexOf('.') + 1)).Append(", ");
+                        if (!isHaxeGetter)
+                        {
+                            var type = p.Type ?? ASContext.Context.Features.objectKey;
+                            retVal.Append(type.Substring(type.LastIndexOf('.') + 1));
+                        }
+                        else
+                        {
+                            retVal.Append(p.Name);
+                        }
+                        retVal.Append(", ");
                     }
                     retVal.Remove(retVal.Length - 2, 2);
                 }
