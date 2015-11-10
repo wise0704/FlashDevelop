@@ -152,14 +152,6 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Wizards\AS3ClassWizard.resx">
-      <DependentUpon>AS3ClassWizard.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Wizards\AS3InterfaceWizard.resx">
-      <DependentUpon>AS3InterfaceWizard.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>

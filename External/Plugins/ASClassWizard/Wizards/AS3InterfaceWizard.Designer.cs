@@ -33,11 +33,6 @@
             this.implementRemove = new System.Windows.Forms.Button();
             this.nameBox = new System.Windows.Forms.TextBox();
             this.packageBox = new System.Windows.Forms.TextBox();
-            this.classLabel = new System.Windows.Forms.Label();
-            this.accessLabel = new System.Windows.Forms.Label();
-            this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
-            this.publicRadio = new System.Windows.Forms.RadioButton();
-            this.internalRadio = new System.Windows.Forms.RadioButton();
             this.membersLabel = new System.Windows.Forms.Label();
             this.packageLabel = new System.Windows.Forms.Label();
             this.packageBrowse = new System.Windows.Forms.Button();
@@ -75,8 +70,8 @@
             this.errorLabel = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.okButton = new System.Windows.Forms.Button();
+            this.classLabel = new System.Windows.Forms.Label();
             this.flowLayoutPanel4.SuspendLayout();
-            this.flowLayoutPanel2.SuspendLayout();
             this.flowLayoutPanel9.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -92,10 +87,10 @@
             this.flowLayoutPanel4.Controls.Add(this.implementRemove);
             this.flowLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel4.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flowLayoutPanel4.Location = new System.Drawing.Point(379, 192);
+            this.flowLayoutPanel4.Location = new System.Drawing.Point(378, 181);
             this.flowLayoutPanel4.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
             this.flowLayoutPanel4.Name = "flowLayoutPanel4";
-            this.flowLayoutPanel4.Size = new System.Drawing.Size(81, 71);
+            this.flowLayoutPanel4.Size = new System.Drawing.Size(82, 82);
             this.flowLayoutPanel4.TabIndex = 12;
             // 
             // implementBrowse
@@ -124,9 +119,9 @@
             // nameBox
             // 
             this.nameBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.nameBox.Location = new System.Drawing.Point(106, 62);
+            this.nameBox.Location = new System.Drawing.Point(106, 34);
             this.nameBox.Name = "nameBox";
-            this.nameBox.Size = new System.Drawing.Size(267, 20);
+            this.nameBox.Size = new System.Drawing.Size(266, 20);
             this.nameBox.TabIndex = 6;
             this.nameBox.Text = "INewInterface";
             this.nameBox.TextChanged += new System.EventHandler(this.NameBox_TextChanged);
@@ -136,66 +131,14 @@
             this.packageBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.packageBox.Location = new System.Drawing.Point(106, 5);
             this.packageBox.Name = "packageBox";
-            this.packageBox.Size = new System.Drawing.Size(267, 20);
+            this.packageBox.Size = new System.Drawing.Size(266, 20);
             this.packageBox.TabIndex = 1;
             this.packageBox.Click += new System.EventHandler(this.PackageBox_TextChanged);
-            // 
-            // classLabel
-            // 
-            this.classLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.classLabel.AutoSize = true;
-            this.classLabel.Location = new System.Drawing.Point(3, 65);
-            this.classLabel.Name = "classLabel";
-            this.classLabel.Size = new System.Drawing.Size(35, 13);
-            this.classLabel.TabIndex = 5;
-            this.classLabel.Text = "Name";
-            // 
-            // accessLabel
-            // 
-            this.accessLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.accessLabel.AutoSize = true;
-            this.accessLabel.Location = new System.Drawing.Point(3, 37);
-            this.accessLabel.Name = "accessLabel";
-            this.accessLabel.Size = new System.Drawing.Size(42, 13);
-            this.accessLabel.TabIndex = 3;
-            this.accessLabel.Text = "Access";
-            // 
-            // flowLayoutPanel2
-            // 
-            this.flowLayoutPanel2.Controls.Add(this.publicRadio);
-            this.flowLayoutPanel2.Controls.Add(this.internalRadio);
-            this.flowLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel2.Location = new System.Drawing.Point(106, 33);
-            this.flowLayoutPanel2.Name = "flowLayoutPanel2";
-            this.flowLayoutPanel2.Size = new System.Drawing.Size(267, 22);
-            this.flowLayoutPanel2.TabIndex = 4;
-            // 
-            // publicRadio
-            // 
-            this.publicRadio.AutoSize = true;
-            this.publicRadio.Checked = true;
-            this.publicRadio.Location = new System.Drawing.Point(3, 3);
-            this.publicRadio.Name = "publicRadio";
-            this.publicRadio.Size = new System.Drawing.Size(53, 17);
-            this.publicRadio.TabIndex = 0;
-            this.publicRadio.TabStop = true;
-            this.publicRadio.Text = "public";
-            this.publicRadio.UseVisualStyleBackColor = true;
-            // 
-            // internalRadio
-            // 
-            this.internalRadio.AutoSize = true;
-            this.internalRadio.Location = new System.Drawing.Point(62, 3);
-            this.internalRadio.Name = "internalRadio";
-            this.internalRadio.Size = new System.Drawing.Size(59, 17);
-            this.internalRadio.TabIndex = 1;
-            this.internalRadio.Text = "internal";
-            this.internalRadio.UseVisualStyleBackColor = true;
             // 
             // membersLabel
             // 
             this.membersLabel.AutoSize = true;
-            this.membersLabel.Location = new System.Drawing.Point(3, 86);
+            this.membersLabel.Location = new System.Drawing.Point(3, 58);
             this.membersLabel.Name = "membersLabel";
             this.membersLabel.Padding = new System.Windows.Forms.Padding(0, 6, 0, 0);
             this.membersLabel.Size = new System.Drawing.Size(50, 19);
@@ -215,7 +158,7 @@
             // packageBrowse
             // 
             this.packageBrowse.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.packageBrowse.Location = new System.Drawing.Point(381, 3);
+            this.packageBrowse.Location = new System.Drawing.Point(380, 3);
             this.packageBrowse.Name = "packageBrowse";
             this.packageBrowse.Size = new System.Drawing.Size(74, 23);
             this.packageBrowse.TabIndex = 2;
@@ -263,35 +206,33 @@
             this.tableLayoutPanel2.ColumnCount = 3;
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 27.42382F));
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 72.57618F));
-            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 83F));
-            this.tableLayoutPanel2.Controls.Add(this.memberButton, 2, 3);
-            this.tableLayoutPanel2.Controls.Add(this.flowLayoutPanel4, 2, 4);
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 84F));
+            this.tableLayoutPanel2.Controls.Add(this.memberButton, 2, 2);
+            this.tableLayoutPanel2.Controls.Add(this.flowLayoutPanel4, 2, 3);
             this.tableLayoutPanel2.Controls.Add(this.packageBrowse, 2, 0);
             this.tableLayoutPanel2.Controls.Add(this.packageLabel, 0, 0);
-            this.tableLayoutPanel2.Controls.Add(this.implementLabel, 0, 4);
+            this.tableLayoutPanel2.Controls.Add(this.implementLabel, 0, 3);
             this.tableLayoutPanel2.Controls.Add(this.packageBox, 1, 0);
-            this.tableLayoutPanel2.Controls.Add(this.membersLabel, 0, 3);
-            this.tableLayoutPanel2.Controls.Add(this.accessLabel, 0, 1);
-            this.tableLayoutPanel2.Controls.Add(this.classLabel, 0, 2);
-            this.tableLayoutPanel2.Controls.Add(this.flowLayoutPanel2, 1, 1);
-            this.tableLayoutPanel2.Controls.Add(this.nameBox, 1, 2);
-            this.tableLayoutPanel2.Controls.Add(this.implementList, 1, 4);
-            this.tableLayoutPanel2.Controls.Add(this.memberList, 1, 3);
+            this.tableLayoutPanel2.Controls.Add(this.membersLabel, 0, 2);
+            this.tableLayoutPanel2.Controls.Add(this.classLabel, 0, 1);
+            this.tableLayoutPanel2.Controls.Add(this.nameBox, 1, 1);
+            this.tableLayoutPanel2.Controls.Add(this.implementList, 1, 3);
+            this.tableLayoutPanel2.Controls.Add(this.memberList, 1, 2);
             this.tableLayoutPanel2.Location = new System.Drawing.Point(3, 12);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-            this.tableLayoutPanel2.RowCount = 5;
+            this.tableLayoutPanel2.RowCount = 4;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
-            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 60F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 40F));
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel2.Size = new System.Drawing.Size(460, 263);
             this.tableLayoutPanel2.TabIndex = 0;
             // 
             // memberButton
             // 
             this.memberButton.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.memberButton.Location = new System.Drawing.Point(381, 89);
+            this.memberButton.Location = new System.Drawing.Point(380, 61);
             this.memberButton.Name = "memberButton";
             this.memberButton.Size = new System.Drawing.Size(74, 23);
             this.memberButton.TabIndex = 9;
@@ -302,7 +243,7 @@
             // implementLabel
             // 
             this.implementLabel.AutoSize = true;
-            this.implementLabel.Location = new System.Drawing.Point(3, 192);
+            this.implementLabel.Location = new System.Drawing.Point(3, 181);
             this.implementLabel.Name = "implementLabel";
             this.implementLabel.Padding = new System.Windows.Forms.Padding(0, 6, 0, 0);
             this.implementLabel.Size = new System.Drawing.Size(55, 19);
@@ -316,9 +257,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.implementList.FormattingEnabled = true;
             this.implementList.IntegralHeight = false;
-            this.implementList.Location = new System.Drawing.Point(106, 195);
+            this.implementList.Location = new System.Drawing.Point(106, 184);
             this.implementList.Name = "implementList";
-            this.implementList.Size = new System.Drawing.Size(267, 65);
+            this.implementList.Size = new System.Drawing.Size(266, 76);
             this.implementList.TabIndex = 11;
             this.implementList.SelectedIndexChanged += new System.EventHandler(this.ImplementList_SelectedIndexChanged);
             // 
@@ -332,9 +273,9 @@
             this.columnHeader1});
             this.memberList.FullRowSelect = true;
             this.memberList.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
-            this.memberList.Location = new System.Drawing.Point(106, 89);
+            this.memberList.Location = new System.Drawing.Point(106, 61);
             this.memberList.Name = "memberList";
-            this.memberList.Size = new System.Drawing.Size(267, 100);
+            this.memberList.Size = new System.Drawing.Size(266, 117);
             this.memberList.TabIndex = 8;
             this.memberList.UseCompatibleStateImageBehavior = false;
             this.memberList.View = System.Windows.Forms.View.Details;
@@ -597,6 +538,16 @@
             this.okButton.UseVisualStyleBackColor = true;
             this.okButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
+            // classLabel
+            // 
+            this.classLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.classLabel.AutoSize = true;
+            this.classLabel.Location = new System.Drawing.Point(3, 37);
+            this.classLabel.Name = "classLabel";
+            this.classLabel.Size = new System.Drawing.Size(35, 13);
+            this.classLabel.TabIndex = 5;
+            this.classLabel.Text = "Name";
+            // 
             // AS3InterfaceWizard
             // 
             this.AcceptButton = this.okButton;
@@ -620,8 +571,6 @@
             this.Load += new System.EventHandler(this.AS3InterfaceWizard_Load);
             this.Resize += new System.EventHandler(this.AS3InterfaceWizard_Resize);
             this.flowLayoutPanel4.ResumeLayout(false);
-            this.flowLayoutPanel2.ResumeLayout(false);
-            this.flowLayoutPanel2.PerformLayout();
             this.flowLayoutPanel9.ResumeLayout(false);
             this.flowLayoutPanel9.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -644,12 +593,7 @@
         private System.Windows.Forms.Label packageLabel;
         private System.Windows.Forms.TextBox packageBox;
         private System.Windows.Forms.Button packageBrowse;
-        private System.Windows.Forms.Label classLabel;
         private System.Windows.Forms.TextBox nameBox;
-        private System.Windows.Forms.Label accessLabel;
-        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2;
-        private System.Windows.Forms.RadioButton publicRadio;
-        private System.Windows.Forms.RadioButton internalRadio;
         private System.Windows.Forms.Label membersLabel;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel4;
         private System.Windows.Forms.Button implementBrowse;
@@ -688,5 +632,6 @@
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Button okButton;
         private PromptTextBox argValueBox;
+        private System.Windows.Forms.Label classLabel;
     }
 }

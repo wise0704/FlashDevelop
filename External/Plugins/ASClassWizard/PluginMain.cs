@@ -583,24 +583,24 @@ namespace ASClassWizard
 
                             membersSrc.Remove(membersSrc.Length - 2, 2);
                         }
-                        else if ((m.Flags & FlagType.Variable) > 0)
-                        {
-                            membersSrc.Append("var ").Append(m.Name);
-                            
-                            if (!string.IsNullOrEmpty(m.Type))
-                            {
-                                var type = m.Type;
-                                var dot = type.LastIndexOf('.');
-                                if (dot > -1) imports.Add(type);
-                                membersSrc.Append(":").Append(type.Substring(dot + 1));
-                            }
-                            membersSrc.Append(";").Append(lineBreak).Append(boundary);
-                        }
 
                         var rtype = m.Type ?? context.Features.voidKey;
                         var rdot = rtype.LastIndexOf('.');
                         if (rdot > -1) imports.Add(rtype);
                         membersSrc.Append("):").Append(rtype.Substring(rdot + 1)).Append(";").Append(lineBreak).Append(boundary);
+                    }
+                    else if ((m.Flags & FlagType.Variable) > 0)
+                    {
+                        membersSrc.Append("var ").Append(m.Name);
+
+                        if (!string.IsNullOrEmpty(m.Type))
+                        {
+                            var type = m.Type;
+                            var dot = type.LastIndexOf('.');
+                            if (dot > -1) imports.Add(type);
+                            membersSrc.Append(":").Append(type.Substring(dot + 1));
+                        }
+                        membersSrc.Append(";").Append(lineBreak).Append(boundary);
                     }
                 }
             }

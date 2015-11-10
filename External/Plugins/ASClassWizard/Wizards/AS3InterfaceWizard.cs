@@ -9,7 +9,7 @@
  *  - Better type autocompletion. Use AirProperties/Controls/CheckedComboBox as a base
  */
 
-//TODO: Type autocompletion
+//TODO: Type autocompletion (the idea is to use the rewritten completion list)
 //TODO: Better error display
 
 using System;
@@ -58,7 +58,6 @@ namespace ASClassWizard.Wizards
             set
             {
                 project = value;
-                internalRadio.Text = "internal";
                 if (project.Language == "as3")
                 {
                     this.titleLabel.Text = TextHelper.GetString("Wizard.Label.NewAs3Interface");
@@ -137,11 +136,6 @@ namespace ASClassWizard.Wizards
                     _addingMethod = false;
                 }
             }
-        }
-
-        public bool IsPublic
-        {
-            get { return publicRadio.Checked; }
         }
 
         public AS3InterfaceWizard()
@@ -543,7 +537,7 @@ namespace ASClassWizard.Wizards
             _classModel.InFile.Package = Package;
             _classModel.Name = InterfaceName;
             _classModel.Type = !string.IsNullOrEmpty(_classModel.InFile.Package) ? _classModel.InFile.Package + "." + _classModel.Name : _classModel.Name;
-            if (IsPublic) _classModel.Access = Visibility.Public;
+            _classModel.Access = Visibility.Public;
 
             _classModel.Members.Clear();
             foreach (ListViewItem item in memberList.CheckedItems)
@@ -564,7 +558,6 @@ namespace ASClassWizard.Wizards
         private void LocalizeText()
         {
             this.classLabel.Text = TextHelper.GetString("Wizard.Label.Name");
-            this.accessLabel.Text = TextHelper.GetString("Wizard.Label.Modifiers");
             this.implementLabel.Text = TextHelper.GetString("Wizard.Label.Interfaces");
             this.implementBrowse.Text = TextHelper.GetString("Wizard.Button.Add");
             this.implementRemove.Text = TextHelper.GetString("Wizard.Button.Remove");
