@@ -615,7 +615,6 @@ namespace ASCompletion.Completion
 
         private static void ShowExtractInterface(FoundDeclaration found, Action<ClassModel, ClassModel> callback)
         {
-            List<ICompletionListItem> known = new List<ICompletionListItem>();
             string label = "Extract Interface";
             known.Add(new GeneratorItem(label, GeneratorJobType.ExtractInterface, null, found.inClass, callback));
             CompletionList.Show(known, false);
