@@ -1177,16 +1177,16 @@ namespace ASCompletion.Completion
                     break;
 
                 case GeneratorJobType.ExtractInterface:
-                    Sci.BeginUndoAction();
+                    sci.BeginUndoAction();
                     try
                     {
                         // We are using data to store a delegate, of type Action<ClassModel> which will be used to reimplement the extracted interface
                         // This way we open this generator to external implementations
-                        GenerateInterface(Sci, inClass, data as Action<ClassModel, ClassModel>);
+                        GenerateInterface(sci, inClass, data as Action<ClassModel, ClassModel>);
                     }
                     finally
                     {
-                        Sci.EndUndoAction();
+                        sci.EndUndoAction();
                     }
 
                     break;
