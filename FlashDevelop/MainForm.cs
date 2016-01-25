@@ -2854,7 +2854,7 @@ namespace FlashDevelop
         /// </summary>
         public void ShowSettings(Object sender, System.EventArgs e)
         {
-            SettingDialog.Show("FlashDevelop", "");
+            SettingDialog.Show(DistroConfig.DISTRIBUTION_NAME, "");
         }
 
         /// <summary>
@@ -4075,10 +4075,10 @@ namespace FlashDevelop
         {
             try
             {
-                String dirMarker = "\\FlashDevelop\\";
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.AddExtension = true; sfd.DefaultExt = "fdz";
                 sfd.Filter = TextHelper.GetString("FlashDevelop.Info.ZipFilter");
+                String dirMarker = "\\" + DistroConfig.DISTRIBUTION_NAME + "\\";
                 if (sfd.ShowDialog(this) == DialogResult.OK)
                 {
                     List<String> settingFiles = new List<String>();
