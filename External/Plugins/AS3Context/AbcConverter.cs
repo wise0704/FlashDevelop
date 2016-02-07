@@ -876,7 +876,7 @@ namespace AS3Context
                         break;
 
                     case "example":
-                        doc.LongDesc += "EXAMPLE: <br/><br/>" + ParseDesc(this.ReadInnerXml()) + "\n";
+                        doc.LongDesc += "<br/>EXAMPLE: <br/><br/>" + ParseDesc(this.ReadInnerXml()) + "\n";
                     //    Read();
                         break;
 

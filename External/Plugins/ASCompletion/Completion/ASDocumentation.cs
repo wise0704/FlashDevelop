@@ -292,8 +292,8 @@ namespace ASCompletion.Completion
 
         #region Tooltips
 
-        static private Regex reNewLine = new Regex("[\r\n]", RegexOptions.Compiled);
-        static private Regex reDocTags = new Regex("^\\s*@(?<tag>[a-z]+)(?:\\s|$)", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        static private Regex reNewLine = new Regex("(?:\r\n|\r|\n)", RegexOptions.Compiled);
+        static private Regex reDocTags = new Regex(@"^\s*@(?<tag>[a-z]+)(?:\s|$|<\/p>)", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
         static private Regex reHtmlTags = new Regex(@"<[/]?\w+[^>]*>");
         static private Regex reSplitParams = new Regex("(?<var>[\\w$]+)\\s", RegexOptions.Compiled);
 
@@ -497,16 +497,186 @@ namespace ASCompletion.Completion
         /// </summary>
         static public string Get2LinesOf(string text)
         {
-            return Get2LinesOf(text, false);
+            return GetNLinesOf(text, 2, false);
         }
 
         static public string Get2LinesOf(string text, bool alwaysAddShortcutDocs)
         {
-            string[] lines = text.Split('\n');
-            int n = Math.Min(lines.Length, 2);
-            text = string.Join("\n", lines, 0, n);
-            if (lines.Length > 2 || alwaysAddShortcutDocs) text += " \u2026\x86" + GetShortcutDocs();
-            return text;
+            return GetNLinesOf(text, 2, alwaysAddShortcutDocs);
+        }
+
+        static protected List<string> blockElements = new List<string>
+        {
+            "P", "IMG", "BLOCKQUOTE", "IMG", "PRE", "TR", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "HR", "LI", "OL", "UL", "TABLE"
+        };
+
+        static public string GetNLinesOf(string text, int lineCount, bool alwaysAddShortcutDocs)
+        {
+            // Since we use HTML this is a bit complex and not 100% accurate... maybe we should just separate the shortcut tip from the text,
+            // use different views, and hide the extra height. Maybe we could also use HTMLRenderer for this? it would be slower tho.
+            List<string> tags = new List<string>();
+            string lastTag = null;
+            byte element = 0; // 1:tag, 2:attribute, 3: attribute value, 4:comment
+            int lineNo = 0;
+            int i, count;
+            bool normalLineEnd = false;
+            bool followsAnonBlock = false;
+
+            for (i = 0, count = text.Length; i < count && lineNo < lineCount; i++)
+            {
+                char c = text[i];
+                switch (c)
+                {
+                    case '<':
+                        if (element != 0) continue;
+
+                        if (i >= count - 1) break;
+
+                        if (i < count - 3 && text[i + 1] == '!' && text[i + 2] == '-' && text[i + 3] == '-')
+                        {
+                            i += 3;
+                            element = 4;
+                            continue;
+                        }
+
+                        string tag;
+                        StringBuilder tagBuilder = new StringBuilder();
+                        bool closeTag = false;
+
+                        element = 1;
+                        if (text[i + 1] == '/')
+                        {
+                            i++;
+                            closeTag = true;
+                        }
+
+                        c = text[++i];
+                        while (!char.IsWhiteSpace(c) && c != '>' && c != '/' && i < count)
+                        {
+                            tagBuilder.Append(c);
+                            c = text[++i];
+                        }
+                        i--;
+                        tag = tagBuilder.ToString().ToUpperInvariant();
+
+                        if (!closeTag)
+                        {
+                            if (tag == "BR")
+                            {
+                                lineNo++;
+                                if (lineNo >= lineCount) i -= 3;
+                            }
+                            else
+                            {
+                                if (blockElements.Contains(tag))
+                                {
+                                    if (tag == "PRE")
+                                    {
+                                        normalLineEnd = true;
+                                    }
+                                    if ((!string.IsNullOrEmpty(lastTag) && lastTag != "BR" && lastTag != "TD" && lastTag != "TH") || followsAnonBlock)
+                                    {
+                                        lineNo++;
+
+                                        if (lineNo >= lineCount)
+                                        {
+                                            i -= (tag.Length + 1);
+                                            break;
+                                        }
+                                    }
+                                }
+                                tags.Add(tagBuilder.ToString());
+                            }
+                        }
+                        else
+                        {
+                            if (tag == "PRE")
+                            {
+                                normalLineEnd = false;
+                            }
+
+                            for (int j = tags.Count - 1; j >= 0; j--)
+                            {
+                                if (tags[j].Equals(tag, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    tags.RemoveAt(j);
+                                    break;
+                                }
+                            }
+                        }
+                        followsAnonBlock = false;
+                        lastTag = tag;
+                        break;
+
+                    case '>':
+                        if (element == 1)
+                        {
+                            element = 0;
+
+                            if (text[i - 1] == '/')
+                            {
+                                
+                            }
+                        }
+                        else if (element == 4 && text[i - 1] == '-' && text[i - 2] == '-')
+                        {
+                            element = 0;
+                        }
+
+                        break;
+
+                    case '=':
+                        if (element != 1 && element != 2) continue;
+
+                        element = 3;
+
+                        c = text[++i];
+                        while (!char.IsWhiteSpace(c) && i < count)
+                        {
+                            c = text[++i];
+                        }
+
+                        while (text[++i] != c && i < count)
+                        {
+                        }
+                        i++;
+                        element = 1;
+
+                        break;
+
+                    case '\r':
+                        if (normalLineEnd)
+                        {
+                            lineNo++;
+                        }
+
+                        if (i < count - 1 && text[i + 1] == '\n') i++;
+
+                        break;
+
+                    case '\n':
+                        if (normalLineEnd)
+                        {
+                            lineNo++;
+                        }
+                        break;
+
+                    default:
+                        followsAnonBlock = element == 0 && tags.Count == 0 && (!char.IsWhiteSpace(c) || followsAnonBlock);
+
+                        break;
+                }
+            }
+
+            StringBuilder result = new StringBuilder(text.Substring(0, i).TrimEnd());
+
+            for (int j = tags.Count - 1; j >= 0; j--)
+            {
+                result.Append("</").Append(tags[j]).Append('>');
+            }
+
+            if (i < text.Length || alwaysAddShortcutDocs) result.Append(" \u2026").Append(GetShortcutDocs());
+            return result.ToString();
         }
         
         /// <summary>
@@ -531,15 +701,14 @@ namespace ASCompletion.Completion
         static public string GetTipFullDetails(CommentBlock cb, string highlightParam)
         {
             var details = new StringBuilder();
-            if (cb.Description.Length > 0) 
+            if (cb.Description.Length > 0)
             {
-                string[] lines = cb.Description.Split('\n');
-                int n = Math.Min(lines.Length, ASContext.CommonSettings.DescriptionLinesLimit);
-                for(int i=0; i<n; i++) details.Append(lines[i]+"\n");
-                if (lines.Length > ASContext.CommonSettings.DescriptionLinesLimit)
+                if (ASContext.CommonSettings.DescriptionLinesLimit > 0)
                 {
-                    details = new StringBuilder(details.ToString().TrimEnd()).Append(" \u2026<br/>");
+                    details.Append(GetNLinesOf(cb.Description, ASContext.CommonSettings.DescriptionLinesLimit, false));
+                    if (details.Length != cb.Description.Length) details.Append(" \u2026<br/>");
                 }
+                else details.Append(cb.Description);
             }
             
             // @usage

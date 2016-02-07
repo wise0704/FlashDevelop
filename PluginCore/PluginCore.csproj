@@ -403,16 +403,10 @@
     <Compile Include="HtmlRenderer\WinForms\Adapters\PenAdapter.cs" />
     <Compile Include="HtmlRenderer\WinForms\Adapters\WinFormsAdapter.cs" />
     <Compile Include="HtmlRenderer\WinForms\HtmlContainer.cs" />
-    <Compile Include="HtmlRenderer\WinForms\HtmlLabel.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="HtmlRenderer\WinForms\HtmlPanel.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="HtmlRenderer\WinForms\HtmlRender.cs" />
-    <Compile Include="HtmlRenderer\WinForms\HtmlToolTip.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="HtmlRenderer\WinForms\MetafileExtensions.cs" />
     <Compile Include="HtmlRenderer\WinForms\Utilities\ClipboardHelper.cs" />
     <Compile Include="HtmlRenderer\WinForms\Utilities\Utils.cs" />
