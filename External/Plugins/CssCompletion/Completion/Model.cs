@@ -152,7 +152,7 @@ namespace CssCompletion
                     int comment = description.IndexOfOrdinal("//");
                     if (comment >= 0)
                     {
-                        desc = "[I]" + description.Substring(comment + 2).Trim() + "[/I]\n" 
+                        desc = "<i>" + description.Substring(comment + 2).Trim() + "</i>\n" 
                             + description.Substring(0, comment).Trim();
                     }
                     else desc = description;

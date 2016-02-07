@@ -13,10 +13,10 @@ namespace PluginCore.Controls
         // events
         public event UpdateCallTipHandler OnUpdateCallTip;
 
-        public static string HLTextStyleBeg = "[B]";
-        public static string HLTextStyleEnd = "[/B]";
-        public static string HLBgStyleBeg = "[BGCOLOR=#000:OVERLAY]";
-        public static string HLBgStyleEnd = "[/BGCOLOR]";
+        public static string HLTextStyleBeg = "<b>";
+        public static string HLTextStyleEnd = "</b>";
+        public static string HLBgStyleBeg = "<span style=\"background-color: #000:OVERLAY\">";
+        public static string HLBgStyleEnd = "</span>";
 
         // state
         protected string currentText;
@@ -37,11 +37,11 @@ namespace PluginCore.Controls
             
             Color color = PluginBase.MainForm.GetThemeColor("MethodCallTip.SelectedBack");
             Color fore = PluginBase.MainForm.GetThemeColor("MethodCallTip.SelectedFore");
-            if (color != Color.Empty) HLBgStyleBeg = "[BGCOLOR=" + DataConverter.ColorToHex(color).Replace("0x", "#") + "]";
+            if (color != Color.Empty) HLBgStyleBeg = "<span style=\"background-color: " + DataConverter.ColorToHex(color).Replace("0x", "#") + "\">";
             if (fore != Color.Empty)
             {
-                HLTextStyleBeg = "[B][COLOR=" + DataConverter.ColorToHex(fore).Replace("0x", "#") + "]";
-                HLTextStyleEnd = "[/COLOR][/B]";
+                HLTextStyleBeg = "<b><span style=\"color:" + DataConverter.ColorToHex(fore).Replace("0x", "#") + "\">";
+                HLTextStyleEnd = "</span></b>";
             }
         }
 

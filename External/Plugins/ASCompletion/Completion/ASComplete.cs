@@ -4034,7 +4034,7 @@ namespace ASCompletion.Completion
             {
                 Color themeForeColor = PluginBase.MainForm.GetThemeColor("MethodCallTip.InfoColor");
                 string foreColorString = themeForeColor != Color.Empty ? ColorTranslator.ToHtml(themeForeColor) : "#666666:MULTIPLY";
-                foundIn = "\n[COLOR=" + foreColorString + "]in " + MemberModel.FormatType(inClass.QualifiedName) + "[/COLOR]";
+                foundIn = "<br/><span style=\"color:" + foreColorString + "\">in " + MemberModel.FormatType(inClass.QualifiedName) + "</span>";
             }
             if ((ft & (FlagType.Getter | FlagType.Setter)) > 0)
                 return String.Format("{0}property {1}{2}", modifiers, member.ToString(), foundIn);
@@ -4408,7 +4408,7 @@ namespace ASCompletion.Completion
         {
             get
             {
-                return ClassModel.MemberDeclaration(member) + ASDocumentation.GetTipDetails(member, null); 
+                return ASDocumentation.EscapeComment(ClassModel.MemberDeclaration(member)) + ASDocumentation.GetTipDetails(member, null); 
             }
         }
 
@@ -4449,7 +4449,7 @@ namespace ASCompletion.Completion
             get
             {
                 if (ASComplete.HasSnippet(member.Name))
-                    member.Comments = "[i](" + TextHelper.GetString("Info.InsertKeywordSnippet") + ")[/i]";
+                    member.Comments = "<i>(" + TextHelper.GetString("Info.InsertKeywordSnippet") + ")</i>";
                 return base.Description;
             }
         }

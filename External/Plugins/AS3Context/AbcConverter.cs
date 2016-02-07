@@ -779,7 +779,7 @@ namespace AS3Context
 
                 case "shortdesc": doc.ShortDesc = ReadValue(); break;
                 case "prolog": ReadProlog(doc); break;
-                case "apiDesc": doc.LongDesc = ReadValue(); break;
+                case "apiDesc": doc.LongDesc = ParseDesc(ReadValue()); break;
                 case "apiData": doc.Value = ReadValue(); break;
 
                 case "style": ReadStyleMeta(doc); break;
@@ -828,45 +828,22 @@ namespace AS3Context
 
             string desc = "";
 
-            string prefix = "";
-            string postfix = "";
             string eon = Name;
-            string lcName; // name in lower case
             ReadStartElement();
             while (Name != eon)
             {
-                lcName = Name.ToLower();
-                if (lcName == "codeblock" || lcName == "listing")
-                {
-                    if (NodeType == XmlNodeType.Element)
-                    {
-                        prefix = "\n<" + lcName + ">\n";
-                        postfix = "\n</" + lcName + ">\n";
-                    }
-                    else
-                    {
-                        prefix = "";
-                        postfix = "";
-                    }
-                }
-
                 switch (NodeType)
                 {
-                    case XmlNodeType.Element:
-                        ReadStartElement();
-                        break;
-
-                    case XmlNodeType.EndElement:
-                        ReadEndElement();
-                        break;
-
                     case XmlNodeType.Text:
-                        desc += prefix + ReadString() + postfix;
+                        desc += ReadString();
                         break;
-
+                    case XmlNodeType.Element:
+                        desc += ReadOuterXml();
+                        break;
                     default: Read(); break;
                 }
             }
+
             return desc;
         }
 
@@ -894,12 +871,12 @@ namespace AS3Context
                         break;
 
                     case "apiDesc":
-                        doc.LongDesc += this.ReadInnerXml() +"\n";
+                        doc.LongDesc += ParseDesc(this.ReadInnerXml()) +"\n";
                     //    Read();
                         break;
 
                     case "example":
-                        doc.LongDesc += "\nEXAMPLE: \n\n" + this.ReadInnerXml() +"\n";
+                        doc.LongDesc += "EXAMPLE: <br/><br/>" + ParseDesc(this.ReadInnerXml()) + "\n";
                     //    Read();
                         break;
 
@@ -1084,6 +1061,39 @@ namespace AS3Context
 
 
         //---------------------------
+        //  apiDesc
+        //---------------------------
+
+        private static readonly Regex reTags = new Regex("<([/]?)(\\w+)([^>]*)>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private string ParseDesc(string desc)
+        {
+            // Compiled ASDoc files use non-standard codes, they need to be transformed
+            // For performance, we can clean them in ASDocumentation, although it's more correct here.
+            bool inTableHeader = false;
+            desc = reTags.Replace(desc, match =>
+            {
+                string tag = match.Groups[2].Value;
+                string options = "";
+                switch (tag)
+                {
+                    case "codeph": tag = "code"; break;
+                    case "codeblock": tag = "pre"; break;
+                    case "adobeimage": tag = "img"; options = match.Groups[3].Value; break;
+                    case "xref": tag = "a"; options = match.Groups[3].Value; break;
+                    case "adobetable": tag = "table"; break;
+                    case "thead": inTableHeader = match.Groups[1].Length == 0; break;
+                    case "tgroup": return "";
+                    case "row": tag = "tr"; break;
+                    case "entry": tag = !inTableHeader ? "td" : "th"; break;
+                }
+                return string.Format("<{0}{1}{2}>", match.Groups[1].Value, tag, options);
+            });
+
+            return desc.Replace("~~", "*");
+        }
+
+        //---------------------------
         //  apiType
         //---------------------------
 
@@ -1129,7 +1139,7 @@ namespace AS3Context
                             break;
 
                         case "apiDesc":
-                            desc = ReadValue();
+                            desc = ParseDesc(ReadValue());
                             break;
 
                         case "apiType":
@@ -1162,7 +1172,7 @@ namespace AS3Context
                 switch (this.Name)
                 {
                     case "apiDesc":
-                        doc.Returns = ReadValue();
+                        doc.Returns = ParseDesc(ReadValue());
                         break;
 
                     case "apiType":
@@ -1199,7 +1209,7 @@ namespace AS3Context
                 switch (Name)
                 {
                     case "apiDesc":
-                        apiDesc = ReadValue();
+                        apiDesc = ParseDesc(ReadValue());
                         break;
 
                     case "apiItemName":
@@ -1304,7 +1314,7 @@ namespace AS3Context
                     switch (Name)
                     {
                         case "shortdesc": meta.Comments = ReadValue() ?? ""; break;
-                        case "apiDesc": if (meta.Comments == "") meta.Comments = ReadValue() ?? ""; break;
+                        case "apiDesc": if (meta.Comments == "") meta.Comments = ParseDesc(ReadValue()) ?? ""; break;
                         case "apiName": eName = ReadValue(); break;
                         case "adobeApiEventClassifier": eType = ReadValue().Replace(':', '.'); break;
                         case "apiEventType": eFullType = ReadValue(); break;
