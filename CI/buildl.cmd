@@ -56,8 +56,6 @@ if %errorlevel% neq 0 goto :error
 git clean -f -x -d FlashDevelop\Bin\Debug
 
 :: Remove bad files
-del FlashDevelop\Bin\Debug\FlashDevelop.exe.config
-del FlashDevelop\Bin\Debug\FlashDevelopx64.exe.config
 del FlashDevelop\Bin\Debug\StartPage\images\*.* /Q
 for /d %%G in ("FlashDevelop\Bin\Debug\Projects\*ActionScript 3*") do rd /s /q "%%~G"
 
@@ -81,6 +79,15 @@ msbuild FlashDevelop.sln /p:Configuration=Release /p:Platform=x86 /t:Rebuild
 :: Check for build errors
 if %errorlevel% neq 0 goto :error
 
+:: Rename binaries
+ren FlashDevelop\Bin\Debug\FlashDevelop.exe HaxeDevelop.exe
+ren FlashDevelop\Bin\Debug\FlashDevelopx64.exe HaxeDevelopx64.exe
+ren FlashDevelop\Bin\Debug\FlashDevelop.exe.config HaxeDevelop.exe.config
+ren FlashDevelop\Bin\Debug\FlashDevelopx64.exe.config HaxeDevelopx64.exe.config
+
+:: Check for build errors
+if %errorlevel% neq 0 goto :error
+
 :: Create the installer
 makensis FlashDevelop\Installer\Installer.nsi
 
@@ -91,6 +98,9 @@ if %errorlevel% neq 0 goto :error
 7z a -tzip FlashDevelop\Installer\Binary\HaxeDevelop.zip .\FlashDevelop\Bin\Debug\* -xr!.empty
 
 : finish
+
+:: Revert distro changes with backup
+git stash save "Local CI Backup..."
 
 :: Done, Run FD
 start FlashDevelop\Installer\Binary\FlashDevelop.exe
