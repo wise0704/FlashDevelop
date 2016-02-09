@@ -228,25 +228,25 @@ namespace FlashDevelop.Managers
         /// </summary>
         public static void ExecuteFlagAction(ToolStripItem item, String action, Boolean value)
         {
-            if (action.StartsWith("Check:"))
+            if (action.StartsWithOrdinal("Check:"))
             {
                 if (item is ToolStripMenuItem)
                 {
                     ((ToolStripMenuItem)item).Checked = value;
                 }
             }
-            else if (action.StartsWith("Uncheck:"))
+            else if (action.StartsWithOrdinal("Uncheck:"))
             {
                 if (item is ToolStripMenuItem)
                 {
                     ((ToolStripMenuItem)item).Checked = !value;
                 }
             }
-            else if (action.StartsWith("Enable:"))
+            else if (action.StartsWithOrdinal("Enable:"))
             {
                 item.Enabled = value;
             }
-            else if (action.StartsWith("Disable:"))
+            else if (action.StartsWithOrdinal("Disable:"))
             {
                 item.Enabled = !value;
             }
@@ -326,7 +326,7 @@ namespace FlashDevelop.Managers
                     }
                     else
                     {
-                        String name = TextHelper.GetString("Label.8Bits").Replace("&", "");
+                        String name = TextHelper.GetStringWithoutMnemonics("Label.8Bits");
                         return name + " (" + info.Charset + ")";
                     }
                 }
@@ -360,7 +360,7 @@ namespace FlashDevelop.Managers
         /// </summary>
         public static String GetLabelAsPlainText(String name, Boolean unicode, Boolean hasBOM)
         {
-            String label = TextHelper.GetString(name).Replace("&", "");
+            String label = TextHelper.GetStringWithoutMnemonics(name);
             if (unicode) label = "Unicode (" + label.ToLower() + ")";
             return hasBOM ? label + " (BOM)" : label;
         }

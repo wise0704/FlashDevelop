@@ -233,7 +233,7 @@ namespace ASCompletion
                     case EventType.SyntaxDetect:
                         // detect Actionscript language version
                         if (!doc.IsEditable) return;
-                        if (doc.FileName.ToLower().EndsWith(".as"))
+                        if (doc.FileName.ToLower().EndsWithOrdinal(".as"))
                         {
                             settingObject.LastASVersion = DetectActionscriptVersion(doc);
                             (e as TextEvent).Value = settingObject.LastASVersion;
@@ -268,7 +268,7 @@ namespace ASCompletion
                         de = e as DataEvent;
                         string command = de.Action ?? "";
 
-                        if (command.StartsWith("ASCompletion."))
+                        if (command.StartsWithOrdinal("ASCompletion."))
                         {
                             string cmdData = de.Data as string;
 
@@ -457,7 +457,7 @@ namespace ASCompletion
                                 Hashtable details = ASComplete.ResolveElement(sci, null);
                                 te.Value = ArgumentsProcessor.Process(te.Value, details);
 
-                                if (te.Value.IndexOf("$") >= 0 && reCostlyArgs.IsMatch(te.Value))
+                                if (te.Value.IndexOf('$') >= 0 && reCostlyArgs.IsMatch(te.Value))
                                 {
                                     ASResult result = ASComplete.CurrentResolvedContext.Result ?? new ASResult();
                                     details = new Hashtable();
@@ -691,7 +691,7 @@ namespace ASCompletion
                 image = pluginUI.GetIcon(PluginUI.ICON_CHECK_SYNTAX);
                 button = new ToolStripButton(image);
                 button.Name = "CheckSyntax";
-                button.ToolTipText = TextHelper.GetString("Label.CheckSyntax").Replace("&", "");
+                button.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.CheckSyntax");
                 button.Click += new EventHandler(CheckSyntax);
                 PluginBase.MainForm.RegisterSecondaryItem("FlashToolsMenu.CheckSyntax", button);
                 toolStrip.Items.Add(button);
@@ -782,7 +782,7 @@ namespace ASCompletion
             }
             else if (model.Version > 2) return "as3";
             else if (model.Version > 1) return "as2";
-            else if (settingObject.LastASVersion != null && settingObject.LastASVersion.StartsWith("as"))
+            else if (settingObject.LastASVersion != null && settingObject.LastASVersion.StartsWithOrdinal("as"))
             {
                 return settingObject.LastASVersion;
             }
