@@ -251,7 +251,7 @@ namespace ASCompletion.Model
                     {
                         if (pName.IndexOfOrdinal(replEntry.Key) > -1)
                         {
-                            pName = "[COLOR=#F00][I]InvalidName[/I][/COLOR]";
+                            pName = "<span style=\"color:#F00\"><i>InvalidName</i></span>";
                             break;
                         }
                     }
@@ -264,7 +264,7 @@ namespace ASCompletion.Model
                     {
                         if (pType.IndexOfOrdinal(replEntry.Key) > -1)
                         {
-                            pType = "[COLOR=#F00][I]InvalidType[/I][/COLOR]";
+                            pType = "<span style=\"color:#F00\"><i>InvalidType</i></span>";
                             break;
                         }
                     }
@@ -283,7 +283,7 @@ namespace ASCompletion.Model
                         {
                             if (pVal.IndexOfOrdinal(replEntry.Key) > -1)
                             {
-                                pVal = "[COLOR=#F00][I]InvalidValue[/I][/COLOR]";
+                                pVal = "<span style=\"color:#F00\"><i>InvalidValue</i></span>";
                                 break;
                             }
                         }

@@ -230,8 +230,8 @@ namespace ASCompletion.Model
             int p = type.IndexOf('@');
             if (p > 0)
             {
-                string bbCodeOpen = allowBBCode ? "[BGCOLOR=#EEE:SUBTRACT]" : "";
-                string bbCodeClose = allowBBCode ? "[/BGCOLOR]" : "";
+                string bbCodeOpen = allowBBCode ? "<span style=\"background-color: \"#EEE:SUBTRACT\">" : "";
+                string bbCodeClose = allowBBCode ? "</span>" : "";
 
                 if (type.Substring(0, p) == "Array")
                     return type.Substring(0, p) + bbCodeOpen + "/*" + type.Substring(p + 1) + "*/" + bbCodeClose;

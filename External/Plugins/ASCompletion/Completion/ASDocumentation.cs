@@ -3,13 +3,13 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
 using ASCompletion.Context;
 using ASCompletion.Model;
+using CommonMark;
 using PluginCore;
 using PluginCore.Controls;
 using PluginCore.Localization;
@@ -25,10 +25,10 @@ namespace ASCompletion.Completion
         public string InfoTip;
         public string Return;
         public bool IsFunctionWithArguments;
-        public ArrayList ParamName; // TODO: change ArrayList for List<string>
-        public ArrayList ParamDesc;
-        public ArrayList TagName;
-        public ArrayList TagDesc;
+        public List<string> ParamName;
+        public List<string> ParamDesc;
+        public List<string> TagName;
+        public List<string> TagDesc;
     }
     
     public class ASDocumentation
@@ -51,6 +51,7 @@ namespace ASCompletion.Completion
         {
             boxSimpleClose = new BoxItem(TextHelper.GetString("Label.CompleteDocEmpty"));
             boxMethodParams = new BoxItem(TextHelper.GetString("Label.CompleteDocDetails"));
+                    CommonMarkSettings.Default.AdditionalFeatures = CommonMarkAdditionalFeatures.All;
         }
         
         static public bool OnChar(ScintillaControl Sci, int Value, int position, int style)
@@ -142,7 +143,7 @@ namespace ASCompletion.Completion
             string[] sparam = parameters.Split(',');
             string[] parType;
             MemberModel param;
-            char[] toClean = new char[] { ' ', '\t', '\n', '\r', '*', '?' };
+            char[] toClean = { ' ', '\t', '\n', '\r', '*', '?' };
             foreach (string pt in sparam)
             {
                 parType = pt.Split(':');
@@ -288,45 +289,68 @@ namespace ASCompletion.Completion
             }
         }
         #endregion
-        
+
         #region Tooltips
 
-        static private Regex reNewLine = new Regex("[\r\n]+", RegexOptions.Compiled);
-        static private Regex reKeepTags = new Regex("<([/]?(b|i|s|u))>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        static private Regex reSpecialTags = new Regex("<([/]?)(code|small|strong|em)>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        static private Regex reStripTags = new Regex("<[/]?[a-z]+[^>]*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        static private Regex reDocTags = new Regex("\n@(?<tag>[a-z]+)\\s", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        static private Regex reNewLine = new Regex("(?:\r\n|\r|\n)", RegexOptions.Compiled);
+        static private Regex reDocTags = new Regex(@"^\s*@(?<tag>[a-z]+)(?:\s|$|<\/p>)", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        static private Regex reHtmlTags = new Regex(@"<[/]?\w+[^>]*>");
         static private Regex reSplitParams = new Regex("(?<var>[\\w$]+)\\s", RegexOptions.Compiled);
 
         static public CommentBlock ParseComment(string comment)
         {
-            // cleanup
-            comment = comment.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&nbsp;", " ");
-            comment = reKeepTags.Replace(comment, "[$1]");
-            comment = reSpecialTags.Replace(comment, match =>
+            // check if comment comes from code, should we do this in ASFileParser? would say so, but for now this seems safe enough
+            byte commentType = 0; // 0: html, 1: plain, 2: markdown
+            if (comment.Length > 0 && char.IsWhiteSpace(comment[0]))
             {
-                string tag = match.Groups[2].Value;
-                bool open = match.Groups[1].Length == 0;
-                switch (tag)
+                bool asdoc = false;
+                for (int i = 1, count = comment.Length; i < count; i++)
                 {
-                    case "small": return open ? "[size=-2]" : "[/size]";
-                    case "code": return open ? "[font=Courier New]" : "[/font]";
-                    case "strong": return open ? "[b]" : "[/b]";
-                    case "em": return open ? "[i]" : "[/i]";
+                    char c = comment[i];
+                    if (!char.IsWhiteSpace(c))
+                    {
+                        asdoc = c == '*';
+                        break;
+                    }
                 }
-                return "";
-            });
-            comment = reStripTags.Replace(comment, "");
-            string[] lines = reNewLine.Split(comment);
-            char[] trim = new char[] { ' ', '\t', '*' };
-            bool addNL = false;
-            comment = "";
-            foreach (string line in lines)
-            {
-                string temp = line.Trim(trim);
-                if (addNL) comment += '\n' + temp;
-                else { comment += temp; addNL = true; }
+
+                if (asdoc)
+                {
+                    // If asdoc we are going to look for html tags, if we don't have we are going to insert linebreaks ourselves
+                    if (!reHtmlTags.IsMatch(comment))
+                    {
+                        commentType = 1;
+
+                        string[] lines = reNewLine.Split(comment);
+                        StringBuilder cleanComment = new StringBuilder();
+                    
+                        foreach (string line in lines)
+                        {
+                            string temp = line.Trim();
+                            if (cleanComment.Length > 0) cleanComment.Append(" <br/>\n").Append(temp);
+                            else cleanComment.Append(temp);
+                        }
+                        comment = cleanComment.ToString();
+                    }
+
+                    comment = comment.Replace("*", "").Replace("~~", "*");
+                }
+                else
+                {
+                    commentType = 2;
+
+                    string[] lines = reNewLine.Split(comment);
+                    StringBuilder cleanComment = new StringBuilder();
+                    foreach (string line in lines)
+                    {
+                        string temp = line.Trim();
+                        if (cleanComment.Length > 0) cleanComment.Append('\n').Append(temp);
+                        else cleanComment.Append(temp);
+                    }
+                    comment = CommonMarkConverter.Convert(cleanComment.ToString());
+                }
             }
+
             // extraction
             CommentBlock cb = new CommentBlock();
             MatchCollection tags = reDocTags.Matches(comment);
@@ -339,8 +363,8 @@ namespace ASCompletion.Completion
             
             if (tags[0].Index > 0) cb.Description = comment.Substring(0, tags[0].Index).Trim();
             else cb.Description = "";
-            cb.TagName = new ArrayList();
-            cb.TagDesc = new ArrayList();
+            cb.TagName = new List<string>();
+            cb.TagDesc = new List<string>();
             
             Group gTag;
             for(int i=0; i<tags.Count; i++)
@@ -350,6 +374,7 @@ namespace ASCompletion.Completion
                 int start = gTag.Index+gTag.Length;
                 int end = (i<tags.Count-1) ? tags[i+1].Index : comment.Length;
                 string desc = comment.Substring(start, end-start).Trim();
+                if (commentType == 1 && desc.EndsWith("<br/>")) desc = desc.Substring(0, desc.Length - 5);
                 if (tag == "param")
                 {
                     Match mParam = reSplitParams.Match(desc);
@@ -357,8 +382,8 @@ namespace ASCompletion.Completion
                     {
                         Group mVar = mParam.Groups["var"];
                         if (cb.ParamName == null) {
-                            cb.ParamName = new ArrayList();
-                            cb.ParamDesc = new ArrayList();
+                            cb.ParamName = new List<string>();
+                            cb.ParamDesc = new List<string>();
                         }
                         cb.ParamName.Add(mVar.Value);
                         cb.ParamDesc.Add(desc.Substring(mVar.Index + mVar.Length).TrimStart());
@@ -376,8 +401,13 @@ namespace ASCompletion.Completion
                 cb.TagName.Add(tag);
                 cb.TagDesc.Add(desc);
             }
+
             return cb;
-            
+        }
+
+        static public string EscapeComment(string src)
+        {
+            return src.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
         }
         
         static public string GetTipDetails(MemberModel member, string highlightParam)
@@ -386,7 +416,7 @@ namespace ASCompletion.Completion
             {
                 string tip = (UITools.Manager.ShowDetails) ? GetTipFullDetails(member, highlightParam) : GetTipShortDetails(member, highlightParam);
                 // remove paragraphs from comments
-                return RemoveHTMLTags(tip);
+                return tip;
             }
             catch(Exception ex)
             {
@@ -411,7 +441,7 @@ namespace ASCompletion.Completion
             if (member == null || member.Comments == null || !ASContext.CommonSettings.SmartTipsEnabled) return "";
             CommentBlock cb = ParseComment(member.Comments);
             cb.IsFunctionWithArguments = IsFunctionWithArguments(member);
-            return " \u2026" + GetTipShortDetails(cb, highlightParam);
+            return GetTipShortDetails(cb, highlightParam);
         }
 
         static bool IsFunctionWithArguments(MemberModel member)
@@ -434,10 +464,10 @@ namespace ASCompletion.Completion
             {
                 for(int i=0; i<cb.ParamName.Count; i++)
                 {
-                    if (highlightParam == (string)cb.ParamName[i])
+                    if (highlightParam == cb.ParamName[i])
                     {
-                        details += "\n" + MethodCallTip.HLTextStyleBeg + highlightParam + ":" + MethodCallTip.HLTextStyleEnd 
-                                + " " + Get2LinesOf((string)cb.ParamDesc[i], true).TrimStart();
+                        details += "<br/>" + MethodCallTip.HLTextStyleBeg + highlightParam + ":" + MethodCallTip.HLTextStyleEnd
+                                + Get2LinesOf(cb.ParamDesc[i], true).TrimStart();
                         return details;
                     }
                 }
@@ -445,10 +475,11 @@ namespace ASCompletion.Completion
             // get description extract
             if (ASContext.CommonSettings.SmartTipsEnabled)
             {
-                if (!string.IsNullOrEmpty(cb.InfoTip))
-                    details += "\n"+cb.InfoTip;
-                else if (!string.IsNullOrEmpty(cb.Description)) 
-                    details += Get2LinesOf(cb.Description, cb.IsFunctionWithArguments);
+                string info = !string.IsNullOrEmpty(cb.InfoTip) 
+                    ? cb.InfoTip
+                    : Get2LinesOf(cb.Description, cb.IsFunctionWithArguments);
+
+                details += "<br/><div>" + info + "</div>";
             }
 
             return details;
@@ -458,7 +489,7 @@ namespace ASCompletion.Completion
         {
             Color themeForeColor = PluginBase.MainForm.GetThemeColor("MethodCallTip.InfoColor");
             string foreColorString = themeForeColor != Color.Empty ? DataConverter.ColorToHex(themeForeColor).Replace("0x", "#") : "#666666:MULTIPLY";
-            return "\n[COLOR=" + foreColorString + "][i](" + TextHelper.GetString("Info.ShowDetails") + ")[/i][/COLOR]";
+            return "<br/><span style=\"color:" + foreColorString + "\"><i>(" + TextHelper.GetString("Info.ShowDetails") + ")</i></span>";
         }
 
         /// <summary>
@@ -466,17 +497,186 @@ namespace ASCompletion.Completion
         /// </summary>
         static public string Get2LinesOf(string text)
         {
-            return Get2LinesOf(text, false);
+            return GetNLinesOf(text, 2, false);
         }
 
         static public string Get2LinesOf(string text, bool alwaysAddShortcutDocs)
         {
-            string[] lines = text.Split('\n');
-            text = "";
-            int n = Math.Min(lines.Length, 2);
-            for (int i = 0; i < n; i++) text += "\n" + lines[i];
-            if (lines.Length > 2 || alwaysAddShortcutDocs) text += " \x86" + GetShortcutDocs();
-            return text;
+            return GetNLinesOf(text, 2, alwaysAddShortcutDocs);
+        }
+
+        static protected List<string> blockElements = new List<string>
+        {
+            "P", "IMG", "BLOCKQUOTE", "IMG", "PRE", "TR", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "HR", "LI", "OL", "UL", "TABLE"
+        };
+
+        static public string GetNLinesOf(string text, int lineCount, bool alwaysAddShortcutDocs)
+        {
+            // Since we use HTML this is a bit complex and not 100% accurate... maybe we should just separate the shortcut tip from the text,
+            // use different views, and hide the extra height. Maybe we could also use HTMLRenderer for this? it would be slower tho.
+            List<string> tags = new List<string>();
+            string lastTag = null;
+            byte element = 0; // 1:tag, 2:attribute, 3: attribute value, 4:comment
+            int lineNo = 0;
+            int i, count;
+            bool normalLineEnd = false;
+            bool followsAnonBlock = false;
+
+            for (i = 0, count = text.Length; i < count && lineNo < lineCount; i++)
+            {
+                char c = text[i];
+                switch (c)
+                {
+                    case '<':
+                        if (element != 0) continue;
+
+                        if (i >= count - 1) break;
+
+                        if (i < count - 3 && text[i + 1] == '!' && text[i + 2] == '-' && text[i + 3] == '-')
+                        {
+                            i += 3;
+                            element = 4;
+                            continue;
+                        }
+
+                        string tag;
+                        StringBuilder tagBuilder = new StringBuilder();
+                        bool closeTag = false;
+
+                        element = 1;
+                        if (text[i + 1] == '/')
+                        {
+                            i++;
+                            closeTag = true;
+                        }
+
+                        c = text[++i];
+                        while (!char.IsWhiteSpace(c) && c != '>' && c != '/' && i < count)
+                        {
+                            tagBuilder.Append(c);
+                            c = text[++i];
+                        }
+                        i--;
+                        tag = tagBuilder.ToString().ToUpperInvariant();
+
+                        if (!closeTag)
+                        {
+                            if (tag == "BR")
+                            {
+                                lineNo++;
+                                if (lineNo >= lineCount) i -= 3;
+                            }
+                            else
+                            {
+                                if (blockElements.Contains(tag))
+                                {
+                                    if (tag == "PRE")
+                                    {
+                                        normalLineEnd = true;
+                                    }
+                                    if ((!string.IsNullOrEmpty(lastTag) && lastTag != "BR" && lastTag != "TD" && lastTag != "TH") || followsAnonBlock)
+                                    {
+                                        lineNo++;
+
+                                        if (lineNo >= lineCount)
+                                        {
+                                            i -= (tag.Length + 1);
+                                            break;
+                                        }
+                                    }
+                                }
+                                tags.Add(tagBuilder.ToString());
+                            }
+                        }
+                        else
+                        {
+                            if (tag == "PRE")
+                            {
+                                normalLineEnd = false;
+                            }
+
+                            for (int j = tags.Count - 1; j >= 0; j--)
+                            {
+                                if (tags[j].Equals(tag, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    tags.RemoveAt(j);
+                                    break;
+                                }
+                            }
+                        }
+                        followsAnonBlock = false;
+                        lastTag = tag;
+                        break;
+
+                    case '>':
+                        if (element == 1)
+                        {
+                            element = 0;
+
+                            if (text[i - 1] == '/')
+                            {
+                                
+                            }
+                        }
+                        else if (element == 4 && text[i - 1] == '-' && text[i - 2] == '-')
+                        {
+                            element = 0;
+                        }
+
+                        break;
+
+                    case '=':
+                        if (element != 1 && element != 2) continue;
+
+                        element = 3;
+
+                        c = text[++i];
+                        while (!char.IsWhiteSpace(c) && i < count)
+                        {
+                            c = text[++i];
+                        }
+
+                        while (text[++i] != c && i < count)
+                        {
+                        }
+                        i++;
+                        element = 1;
+
+                        break;
+
+                    case '\r':
+                        if (normalLineEnd)
+                        {
+                            lineNo++;
+                        }
+
+                        if (i < count - 1 && text[i + 1] == '\n') i++;
+
+                        break;
+
+                    case '\n':
+                        if (normalLineEnd)
+                        {
+                            lineNo++;
+                        }
+                        break;
+
+                    default:
+                        followsAnonBlock = element == 0 && tags.Count == 0 && (!char.IsWhiteSpace(c) || followsAnonBlock);
+
+                        break;
+                }
+            }
+
+            StringBuilder result = new StringBuilder(text.Substring(0, i).TrimEnd());
+
+            for (int j = tags.Count - 1; j >= 0; j--)
+            {
+                result.Append("</").Append(tags[j]).Append('>');
+            }
+
+            if (i < text.Length || alwaysAddShortcutDocs) result.Append(" \u2026").Append(GetShortcutDocs());
+            return result.ToString();
         }
         
         /// <summary>
@@ -500,13 +700,15 @@ namespace ASCompletion.Completion
         /// <returns>Formated comments</returns>
         static public string GetTipFullDetails(CommentBlock cb, string highlightParam)
         {
-            string details = "";
-            if (cb.Description.Length > 0) 
+            var details = new StringBuilder();
+            if (cb.Description.Length > 0)
             {
-                string[] lines = cb.Description.Split('\n');
-                int n = Math.Min(lines.Length, ASContext.CommonSettings.DescriptionLinesLimit);
-                for(int i=0; i<n; i++) details += lines[i]+"\n";
-                if (lines.Length > ASContext.CommonSettings.DescriptionLinesLimit) details = details.TrimEnd() + " \u2026\n";
+                if (ASContext.CommonSettings.DescriptionLinesLimit > 0)
+                {
+                    details.Append(GetNLinesOf(cb.Description, ASContext.CommonSettings.DescriptionLinesLimit, false));
+                    if (details.Length != cb.Description.Length) details.Append(" \u2026<br/>");
+                }
+                else details.Append(cb.Description);
             }
             
             // @usage
@@ -514,38 +716,47 @@ namespace ASCompletion.Completion
             {
                 bool hasUsage = false;
                 for(int i=0; i<cb.TagName.Count; i++)
-                if ((string)cb.TagName[i] == "usage") 
-                {
-                    hasUsage = true;
-                    details += "\n    "+(string)cb.TagDesc[i];
-                }
-                if (hasUsage) details += "\n";
+                    if (cb.TagName[i] == "usage") 
+                    {
+                        hasUsage = true;
+                        details.Append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").Append(cb.TagDesc[i]);
+                    }
+                if (hasUsage) details.Append("<br/>");
             }
             
             // @param
             if (cb.ParamName != null && cb.ParamName.Count > 0)
             {
-                details += "\nParam:";
+                details.Append("<p style=\"margin-bottom: 0\">Param:");
                 for(int i=0; i<cb.ParamName.Count; i++)
                 {
-                    details += "\n    ";
-                    if (highlightParam == (string)cb.ParamName[i])
+                    details.Append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;");
+                    if (highlightParam == cb.ParamName[i])
                     {
-                        details += MethodCallTip.HLBgStyleBeg 
-                                + MethodCallTip.HLTextStyleBeg + highlightParam + ":" + MethodCallTip.HLTextStyleEnd + " "
-                                + (string)cb.ParamDesc[i] 
-                                + MethodCallTip.HLBgStyleEnd;
+                        details.Append(MethodCallTip.HLBgStyleBeg)
+                            .Append(MethodCallTip.HLTextStyleBeg).Append(highlightParam).Append(":").Append(MethodCallTip.HLTextStyleEnd).Append(" ")
+                            .Append(cb.ParamDesc[i]) 
+                            .Append(MethodCallTip.HLBgStyleEnd);
                     }
-                    else details += cb.ParamName[i] + ": " + (string)cb.ParamDesc[i];
+                    else details.Append(cb.ParamName[i]).Append(": ").Append(cb.ParamDesc[i]);
                 }
+                details.Append("</p>");
             }
             
             // @return
             if (cb.Return != null)
             {
-                details += "\n\nReturn:\n    "+cb.Return;
+                details.Append("<p style=\"margin-bottom: 0\">Return:");
+
+                if (!string.IsNullOrEmpty(cb.Return))
+                {
+                    details.Append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").Append(cb.Return);
+                }
+
+                details.Append("</p>");
             }
-            return "\n\n"+details.Trim();
+            
+            return "<br/><br/><div>" + details + "</div>";
         }
         #endregion
     }

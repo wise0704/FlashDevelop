@@ -121,6 +121,48 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommonMark\CommonMarkAdditionalFeatures.cs" />
+    <Compile Include="CommonMark\CommonMarkConverter.cs" />
+    <Compile Include="CommonMark\CommonMarkException.cs" />
+    <Compile Include="CommonMark\CommonMarkSettings.cs" />
+    <Compile Include="CommonMark\Formatters\HtmlFormatter.cs" />
+    <Compile Include="CommonMark\Formatters\HtmlFormatterSlim.cs" />
+    <Compile Include="CommonMark\Formatters\HtmlTextWriter.cs" />
+    <Compile Include="CommonMark\Formatters\Printer.cs" />
+    <Compile Include="CommonMark\Func.cs" />
+    <Compile Include="CommonMark\Lazy.cs" />
+    <Compile Include="CommonMark\OutputFormat.cs" />
+    <Compile Include="CommonMark\Parser\BlockMethods.cs" />
+    <Compile Include="CommonMark\Parser\EntityDecoder.cs" />
+    <Compile Include="CommonMark\Parser\InlineMethods.cs" />
+    <Compile Include="CommonMark\Parser\InlineStack.cs" />
+    <Compile Include="CommonMark\Parser\LineInfo.cs" />
+    <Compile Include="CommonMark\Parser\PositionOffset.cs" />
+    <Compile Include="CommonMark\Parser\PositionTracker.cs" />
+    <Compile Include="CommonMark\Parser\Scanner.cs" />
+    <Compile Include="CommonMark\Parser\ScannerCharacterMatcher.cs" />
+    <Compile Include="CommonMark\Parser\ScannerHtmlTag.cs" />
+    <Compile Include="CommonMark\Parser\Subject.cs" />
+    <Compile Include="CommonMark\Parser\TabTextReader.cs" />
+    <Compile Include="CommonMark\Syntax\Block.cs" />
+    <Compile Include="CommonMark\Syntax\BlockTag.cs" />
+    <Compile Include="CommonMark\Syntax\DocumentData.cs" />
+    <Compile Include="CommonMark\Syntax\EmphasisData.cs" />
+    <Compile Include="CommonMark\Syntax\Enumerable.cs" />
+    <Compile Include="CommonMark\Syntax\EnumeratorEntry.cs" />
+    <Compile Include="CommonMark\Syntax\FencedCodeData.cs" />
+    <Compile Include="CommonMark\Syntax\HeadingData.cs" />
+    <Compile Include="CommonMark\Syntax\HtmlBlockType.cs" />
+    <Compile Include="CommonMark\Syntax\Inline.cs" />
+    <Compile Include="CommonMark\Syntax\InlineContentLinkable.cs" />
+    <Compile Include="CommonMark\Syntax\InlineTag.cs" />
+    <Compile Include="CommonMark\Syntax\ListData.cs" />
+    <Compile Include="CommonMark\Syntax\ListDelimiter.cs" />
+    <Compile Include="CommonMark\Syntax\ListType.cs" />
+    <Compile Include="CommonMark\Syntax\Reference.cs" />
+    <Compile Include="CommonMark\Syntax\StringContent.cs" />
+    <Compile Include="CommonMark\Syntax\StringContentPart.cs" />
+    <Compile Include="CommonMark\Utilities.cs" />
     <Compile Include="DockPanelSuite\Customization\DockPanelControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -276,6 +318,99 @@
     <Compile Include="DockPanelSuite\Win32\NativeMethods.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="HtmlRenderer\Adapters\Entities\RColor.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RDashStyle.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RFontStyle.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RKeyEvent.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RMouseEvent.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RPoint.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RRect.cs" />
+    <Compile Include="HtmlRenderer\Adapters\Entities\RSize.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RAdapter.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RBrush.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RContextMenu.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RControl.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RFont.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RFontFamily.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RGraphics.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RGraphicsPath.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RImage.cs" />
+    <Compile Include="HtmlRenderer\Adapters\RPen.cs" />
+    <Compile Include="HtmlRenderer\Core\CssData.cs" />
+    <Compile Include="HtmlRenderer\Core\CssDefaults.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\Border.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssBox.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssBoxFrame.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssBoxHr.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssBoxImage.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssBoxProperties.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssLayoutEngine.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssLayoutEngineTable.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssLength.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssLineBox.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssRect.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssRectImage.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssRectWord.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssSpacingBox.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\CssUnit.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\HoverBoxBlock.cs" />
+    <Compile Include="HtmlRenderer\Core\Dom\HtmlTag.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\CssBlock.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\CssBlockSelectorItem.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlGenerationStyle.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlImageLoadEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlLinkClickedEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlLinkClickedException.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlRefreshEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlRenderErrorEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlRenderErrorType.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlScrollEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\HtmlStylesheetLoadEventArgs.cs" />
+    <Compile Include="HtmlRenderer\Core\Entities\LinkElementData.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\BackgroundImageDrawHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\BordersDrawHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\ContextMenuHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\FontsHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\ImageDownloader.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\ImageLoadHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\SelectionHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\Handlers\StylesheetLoadHandler.cs" />
+    <Compile Include="HtmlRenderer\Core\HtmlContainerInt.cs" />
+    <Compile Include="HtmlRenderer\Core\HtmlRendererUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\CssParser.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\CssValueParser.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\DomParser.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\HtmlParser.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\RegexParserHelper.cs" />
+    <Compile Include="HtmlRenderer\Core\Parse\RegexParserUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\ArgChecker.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\CommonUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\CssConstants.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\CssUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\DomUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\HtmlConstants.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\HtmlUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\RenderUtils.cs" />
+    <Compile Include="HtmlRenderer\Core\Utils\SubString.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\BrushAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\ContextMenuAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\ControlAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\FontAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\FontFamilyAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\GraphicsAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\GraphicsPathAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\ImageAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\PenAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Adapters\WinFormsAdapter.cs" />
+    <Compile Include="HtmlRenderer\WinForms\HtmlContainer.cs" />
+    <Compile Include="HtmlRenderer\WinForms\HtmlPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="HtmlRenderer\WinForms\HtmlRender.cs" />
+    <Compile Include="HtmlRenderer\WinForms\MetafileExtensions.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Utilities\ClipboardHelper.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Utilities\Utils.cs" />
+    <Compile Include="HtmlRenderer\WinForms\Utilities\Win32Utils.cs" />
     <Compile Include="LitJsonLib\IJsonWrapper.cs" />
     <Compile Include="LitJsonLib\JsonData.cs" />
     <Compile Include="LitJsonLib\JsonException.cs" />
@@ -284,16 +419,6 @@
     <Compile Include="LitJsonLib\JsonWriter.cs" />
     <Compile Include="LitJsonLib\Lexer.cs" />
     <Compile Include="LitJsonLib\ParserToken.cs" />
-    <Compile Include="BBCode\BBCodeStyle.cs" />
-    <Compile Include="BBCode\BBCodeTagHandler.cs" />
-    <Compile Include="BBCode\BBCodeTagInfo.cs" />
-    <Compile Include="BBCode\BBCodeTagMatch.cs" />
-    <Compile Include="BBCode\BBCodeTagMatcher.cs" />
-    <Compile Include="BBCode\BBCodeUtils.cs" />
-    <Compile Include="BBCode\BottomUpParser.cs" />
-    <Compile Include="BBCode\IndexTree.cs" />
-    <Compile Include="BBCode\IPairTag.cs" />
-    <Compile Include="BBCode\PairTag.cs" />
     <Compile Include="Ookii.Dialogs\Interop\COMGuids.cs" />
     <Compile Include="Ookii.Dialogs\Interop\ErrorHelper.cs" />
     <Compile Include="Ookii.Dialogs\Interop\ShellComInterfaces.cs" />
@@ -308,6 +433,11 @@
     <Compile Include="PluginCore\Bridge\IBridgeSettings.cs" />
     <Compile Include="PluginCore\Controls\Common.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PluginCore\Controls\CompletionListControl.cs" />
+    <Compile Include="PluginCore\Controls\ICompletionListHost.cs" />
+    <Compile Include="PluginCore\Controls\InactiveForm.cs">
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="PluginCore\Controls\MessageBoxManager.cs" />
     <Compile Include="PluginCore\Controls\ScrollBarEx.cs">
@@ -610,6 +740,8 @@
     <Content Include="DockPanelSuite\Resources\DockPane_Dock.png" />
     <Content Include="DockPanelSuite\Resources\DockPane_Option.png" />
     <Content Include="DockPanelSuite\Resources\DockPane_OptionOverflow.png" />
+    <EmbeddedResource Include="HtmlRenderer\Core\Utils\ImageError.png" />
+    <EmbeddedResource Include="HtmlRenderer\Core\Utils\ImageLoad.png" />
     <Content Include="Ookii.Dialogs\license.txt" />
     <Content Include="Ookii.Dialogs\VistaFolderBrowserDialog.bmp" />
   </ItemGroup>
@@ -635,7 +767,6 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

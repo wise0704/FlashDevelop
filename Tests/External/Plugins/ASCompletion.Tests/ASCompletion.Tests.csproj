@@ -97,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Completion\ASCompleteTests.cs" />
+    <Compile Include="Completion\ASDocumentationTests.cs" />
     <Compile Include="Completion\ASGeneratorTests.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
