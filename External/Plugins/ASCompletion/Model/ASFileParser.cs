@@ -961,7 +961,7 @@ namespace ASCompletion.Model
                 {
                     bool stopParser = false;
                     bool valueError = false;
-                    if (inType && !inAnonType && !inGeneric && !Char.IsLetterOrDigit(c1) && ".{}-><".IndexOf(c1) < 0)
+                    if (inType && !inAnonType && !inGeneric && !char.IsLetterOrDigit(c1) && ".{}-><".IndexOf(c1) < 0)
                     {
                         inType = false;
                         inValue = false;
@@ -1015,7 +1015,7 @@ namespace ASCompletion.Model
                         else if (paramTempCount > 0)
                         {
                             paramTempCount--;
-                            stopParser = true;
+                            stopParser = paramTempCount == 0 && paramBraceCount == 0;
                         }
                         else valueError = true;
                     }
@@ -1059,7 +1059,7 @@ namespace ASCompletion.Model
                     }
 
                     // detect keywords
-                    if (!Char.IsLetterOrDigit(c1))
+                    if (!char.IsLetterOrDigit(c1))
                     {
                         // escape next char
                         if (c1 == '\\' && i < len)
@@ -1111,7 +1111,7 @@ namespace ASCompletion.Model
                             {
                                 param = ASFileParserRegexes.Spaces.Replace(param, "");
                                 param = param.Replace(",", ", ");
-                                param = param.Replace("->", " -> ");
+                                //param = param.Replace("->", " -> ");
                             }
                         }
                         curMember.Type = param;
@@ -1169,7 +1169,7 @@ namespace ASCompletion.Model
                         buffer[length++] = '-';
                         buffer[length++] = '>';
                         i++;
-                        hadDot = true;
+                        inType = true;
                         continue;
                     }
 
@@ -1212,8 +1212,8 @@ namespace ASCompletion.Model
                             else if (c1 == '<' && features.hasGenerics)
                             {
                                 if (!inValue && i > 2 && length > 1 && i < len - 3
-                                    && Char.IsLetterOrDigit(ba[i - 3]) && (Char.IsLetter(ba[i]) || (haXe && ba[i] == '{'))
-                                    && (Char.IsLetter(buffer[0]) || buffer[0] == '_'))
+                                    && char.IsLetterOrDigit(ba[i - 3]) && (char.IsLetter(ba[i]) || (haXe && ba[i] == '{'))
+                                    && (char.IsLetter(buffer[0]) || buffer[0] == '_'))
                                 {
                                     if (curMember == null)
                                     {
@@ -1239,10 +1239,11 @@ namespace ASCompletion.Model
                                             valueBuffer[valueLength++] = buffer[j];
                                         valueBuffer[valueLength++] = c1;
                                         length = 0;
+                                        /*
                                         paramBraceCount = 0;
                                         paramParCount = 0;
-                                        paramSqCount = 0;
-                                        paramTempCount = 1;
+                                        paramSqCount = 0;*/
+                                        paramTempCount++;
                                         continue;
                                     }
                                 }
@@ -1589,7 +1590,7 @@ namespace ASCompletion.Model
                             }
                         }
 
-                        // metadata
+                        // metadata, contexts should define a meta keyword and a way to parse metadata
                         else if (!inValue && c1 == '[')
                         {
                             if (version == 3)
@@ -1606,8 +1607,18 @@ namespace ASCompletion.Model
                                 if (ba[i] == ']') curMember.Type = features.CArrayTemplate + "@" + curMember.Type;
                             }
                         }
+                        else if (!inValue && c1 == '@' && haXe)
+                        {
+                            var meta = LookupHaxeMeta(ref ba, ref i);
+                            if (meta != null)
+                            {
+                                carriedMetaData = carriedMetaData ?? new List<ASMetaData>();
+                                carriedMetaData.Add(meta);
+                            }
+                        }
 
-                        // Haxe signatures: T -> T -> T
+                        // Unreachable code???? plus it seems a bit crazy we have so many places for function types
+                        // Haxe signatures: T -> T -> T 
                         else if (haXe && c1 == '-' && curMember != null)
                         {
                             if (ba[i] == '>' && curMember.Type != null)
@@ -1751,6 +1762,63 @@ namespace ASCompletion.Model
                     lastComment = null;
                 }
                 else lastComment = null;
+            }
+            return md;
+        }
+
+        private ASMetaData LookupHaxeMeta(ref string ba, ref int i)
+        {
+            int len = ba.Length;
+            int i0 = i;
+            int line0 = line;
+            int inString = 0;
+            int parCount = 0;
+            bool isComplex = false;
+            while (i < len)
+            {
+                char c = ba[i];
+                if (inString == 0)
+                {
+                    if (c == '"') inString = 1;
+                    else if (c == '\'') inString = 2;
+                    else if ("{;[".IndexOf(c) >= 0)
+                    {
+                        i = i0;
+                        line = line0;
+                        return null;
+                    }
+                    else if (c == '(') parCount++;
+                    else if (c == ')')
+                    {
+                        parCount--;
+                        isComplex = true;
+                        if (parCount <= 0) break;
+                    }
+                    else if (c <= 32)
+                    {
+                        break;
+                    }
+                }
+                else if (c == 10 || c == 13)
+                {
+                    line++;
+                    if (c == 13 && i < len && ba[i + 1] == 10) i++;
+                }
+                else if (inString == 1 && c == '"') inString = 0;
+                else if (inString == 2 && c == '\'') inString = 0;
+                else if (inString > 0 && (c == 10 || c == 13)) inString = 0;
+                i++;
+            }
+
+            string meta = ba.Substring(i0, i - i0);
+            ASMetaData md = new ASMetaData(isComplex ? meta.Substring(0, meta.IndexOf('(')) : meta);
+            md.LineFrom = line0;
+            md.LineTo = line;
+            if (isComplex)
+            {
+                meta = meta.Substring(meta.IndexOf('(') + 1);
+                md.Params = new Dictionary<string, string>();
+                md.Params["Default"] = meta;
             }
             return md;
         }
