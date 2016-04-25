@@ -33,7 +33,7 @@ namespace WeifenLuo.WinFormsUI.Docking
 
         public bool IsFloat
         {
-            get {   return DockState == DockState.Float;    }
+            get {   return DockState == DockState.Float || DockState == DockState.FloatDocument;    }
         }
 
         internal void Add(DockPane pane)
@@ -51,7 +51,7 @@ namespace WeifenLuo.WinFormsUI.Docking
 
         private void CheckFloatWindowDispose()
         {
-            if (Count != 0 || Container.DockState != DockState.Float) return;
+            if (Count != 0 || (Container.DockState != DockState.Float && Container.DockState != DockState.FloatDocument)) return;
 
             FloatWindow floatWindow = (FloatWindow)Container;
             if (floatWindow.Disposing || floatWindow.IsDisposed) return;

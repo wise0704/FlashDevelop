@@ -71,14 +71,14 @@ namespace WeifenLuo.WinFormsUI.Docking
         }
 
         private bool m_allowEndUserDocking = true;
-        public bool AllowEndUserDocking
+        public virtual bool AllowEndUserDocking
         {
             get {   return m_allowEndUserDocking;   }
             set {   m_allowEndUserDocking = value;  }
         }
 
         private bool m_doubleClickTitleBarToDock = true;
-        public bool DoubleClickTitleBarToDock
+        public virtual bool DoubleClickTitleBarToDock
         {
             get { return m_doubleClickTitleBarToDock; }
             set { m_doubleClickTitleBarToDock = value; }
@@ -100,14 +100,14 @@ namespace WeifenLuo.WinFormsUI.Docking
             get {   return m_dockPanel; }
         }
 
-        public DockState DockState
+        public virtual DockState DockState
         {
             get {   return DockState.Float; }
         }
     
         public bool IsFloat
         {
-            get {   return DockState == DockState.Float;    }
+            get {   return DockState == DockState.Float || DockState == DockState.FloatDocument;    }
         }
 
         internal bool IsDockStateValid(DockState dockState)
@@ -212,7 +212,7 @@ namespace WeifenLuo.WinFormsUI.Docking
                     for (int j = contents.Count - 1; j >= 0; j--)
                     {
                         IDockContent content = contents[j];
-                        if (content.DockHandler.DockState != DockState.Float)
+                        if (!content.DockHandler.IsFloat)
                             continue;
 
                         if (!content.DockHandler.CloseButton)
@@ -241,7 +241,7 @@ namespace WeifenLuo.WinFormsUI.Docking
                 // Restore to panel
                 foreach (DockPane pane in NestedPanes)
                 {
-                    if (pane.DockState != DockState.Float)
+                    if (!pane.IsFloat)
                         continue;
                     pane.RestoreToPanel();
                 }
@@ -276,7 +276,8 @@ namespace WeifenLuo.WinFormsUI.Docking
                 for (int j=contents.Count - 1; j>=0; j--)
                 {
                     IDockContent content = contents[j];
-                    if (content.DockHandler.DockState != DockState.Float)
+                    
+                    if (!content.DockHandler.IsFloat)
                         continue;
 
                     if (content.DockHandler.CloseButton)

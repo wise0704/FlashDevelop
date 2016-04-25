@@ -608,7 +608,7 @@ namespace WeifenLuo.WinFormsUI.Docking
                         IDockContent content = dockPanel.Contents[panes[i].IndexContents[j]];
                         if (j == 0)
                             pane = dockPanel.DockPaneFactory.CreateDockPane(content, panes[i].DockState, false);
-                        else if (panes[i].DockState == DockState.Float)
+                        else if (panes[i].DockState == DockState.Float || panes[i].DockState == DockState.FloatDocument)
                             content.DockHandler.FloatPane = pane;
                         else
                             content.DockHandler.PanelPane = pane;

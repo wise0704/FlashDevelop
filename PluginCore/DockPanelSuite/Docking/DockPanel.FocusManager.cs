@@ -438,7 +438,7 @@ namespace WeifenLuo.WinFormsUI.Docking
             {
                 DockPane value = null;
 
-                if (ActivePane != null && ActivePane.DockState == DockState.Document)
+                if (ActivePane != null && (ActivePane.DockState == DockState.Document || ActivePane.DockState == DockState.FloatDocument))
                     value = ActivePane;
 
                 if (value == null && DockPanel.DockWindows != null)

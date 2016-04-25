@@ -25,6 +25,13 @@ namespace WeifenLuo.WinFormsUI.Docking
         }
 
         [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")]
+        public interface IFloatDocumentWindowFactory
+        {
+            FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane);
+            FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds);
+        }
+
+        [SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")]
         public interface IDockPaneCaptionFactory
         {
             DockPaneCaptionBase CreateDockPaneCaption(DockPane pane);
@@ -76,6 +83,21 @@ namespace WeifenLuo.WinFormsUI.Docking
             }
 
             public FloatWindow CreateFloatWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
+            {
+                return new FloatWindow(dockPanel, pane, bounds);
+            }
+        }
+        #endregion
+
+        #region DefaultFloatDocumentWindowFactory
+        private class DefaultFloatDocumentWindowFactory : IFloatDocumentWindowFactory
+        {
+            public FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane)
+            {
+                return new FloatWindow(dockPanel, pane);
+            }
+
+            public FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
             {
                 return new FloatWindow(dockPanel, pane, bounds);
             }
@@ -158,6 +180,25 @@ namespace WeifenLuo.WinFormsUI.Docking
                     throw new InvalidOperationException();
 
                 m_floatWindowFactory = value;
+            }
+        }
+
+        private IFloatDocumentWindowFactory m_floatDocumentWindowFactory = null;
+        public IFloatDocumentWindowFactory FloatDocumentWindowFactory
+        {
+            get
+            {
+                if (m_floatDocumentWindowFactory == null)
+                    m_floatDocumentWindowFactory = new DefaultFloatDocumentWindowFactory();
+
+                return m_floatDocumentWindowFactory;
+            }
+            set
+            {
+                if (DockPanel.FloatWindows.Count > 0)
+                    throw new InvalidOperationException();
+
+                m_floatDocumentWindowFactory = value;
             }
         }
 
