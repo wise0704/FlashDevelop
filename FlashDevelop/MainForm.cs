@@ -95,6 +95,9 @@ namespace FlashDevelop
         /* AppMan */
         private FileSystemWatcher amWatcher;
 
+        /* Basic editor behavior */
+        private IEditorController editorController;
+
         /* Components */
         private QuickFind quickFind;
         private DockPanel dockPanel;
@@ -532,6 +535,7 @@ namespace FlashDevelop
                 TabbedDocument tabbedDocument = new TabbedDocument();
                 tabbedDocument.Closing += new System.ComponentModel.CancelEventHandler(this.OnDocumentClosing);
                 tabbedDocument.Closed += new System.EventHandler(this.OnDocumentClosed);
+                //tabbedDocument.DockStateChanged += new System.EventHandler(this.OnDocumentDockStateChanged);
                 tabbedDocument.TabPageContextMenuStrip = this.tabMenu;
                 tabbedDocument.ContextMenuStrip = this.editorMenu;
                 tabbedDocument.Text = Path.GetFileName(file);
@@ -930,6 +934,7 @@ namespace FlashDevelop
         /// </summary>
         private void InitializeComponents()
         {
+            this.editorController = new WinFormsEditorController(this);
             this.quickFind = new QuickFind();
             this.dockPanel = new DockPanel();
             this.statusStrip = new StatusStrip();
@@ -1003,6 +1008,7 @@ namespace FlashDevelop
             this.dockPanel.DocumentStyle = DocumentStyle.DockingWindow;
             this.dockPanel.DockWindows[DockState.Document].Controls.Add(this.quickFind);
             this.dockPanel.Dock = DockStyle.Fill;
+            this.dockPanel.Extender.FloatDocumentWindowFactory = new CustomFloatDocumentWindowFactory();
             this.dockPanel.Name = "dockPanel";
             //
             // toolStripStatusLabel
@@ -1582,60 +1588,11 @@ namespace FlashDevelop
         /// </summary>
         protected override Boolean ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            /**
-            * Notify plugins. Don't notify ControlKey or ShiftKey as it polls a lot
-            */
-            KeyEvent ke = new KeyEvent(EventType.Keys, keyData);
-            Keys keyCode = keyData & Keys.KeyCode;
-            if ((keyCode != Keys.ControlKey) && (keyCode != Keys.ShiftKey))
-            {
-                EventManager.DispatchEvent(this, ke);
-            }
-            if (!ke.Handled)
-            {
-                /**
-                * Ignore basic control keys if sci doesn't have focus.
-                */ 
-                if (Globals.SciControl == null || !Globals.SciControl.IsFocus)
-                {
-                    if (keyData == (Keys.Control | Keys.C)) return false;
-                    else if (keyData == (Keys.Control | Keys.V)) return false;
-                    else if (keyData == (Keys.Control | Keys.X)) return false;
-                    else if (keyData == (Keys.Control | Keys.A)) return false;
-                    else if (keyData == (Keys.Control | Keys.Z)) return false;
-                    else if (keyData == (Keys.Control | Keys.Y)) return false;
-                }
-                /**
-                * Process special key combinations and allow "chaining" of 
-                * Ctrl-Tab commands if you keep holding control down.
-                */
-                if ((keyData & Keys.Control) != 0)
-                {
-                    Boolean sequentialTabbing = this.appSettings.SequentialTabbing;
-                    if ((keyData == (Keys.Control | Keys.Next)) || (keyData == (Keys.Control | Keys.Tab)))
-                    {
-                        TabbingManager.TabTimer.Enabled = true;
-                        if (keyData == (Keys.Control | Keys.Next) || sequentialTabbing)
-                        {
-                            TabbingManager.NavigateTabsSequentially(1);
-                        }
-                        else TabbingManager.NavigateTabHistory(1);
-                        return true;
-                    }
-                    if ((keyData == (Keys.Control | Keys.Prior)) || (keyData == (Keys.Control | Keys.Shift | Keys.Tab)))
-                    {
-                        TabbingManager.TabTimer.Enabled = true;
-                        if (keyData == (Keys.Control | Keys.Prior) || sequentialTabbing)
-                        {
-                            TabbingManager.NavigateTabsSequentially(-1);
-                        }
-                        else TabbingManager.NavigateTabHistory(-1);
-                        return true;
-                    }
-                }
-                return base.ProcessCmdKey(ref msg, keyData);
-            }
-            return true;
+            bool? processKeys = this.editorController.ProcessCmdKey(keyData);
+
+            if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
+            
+            return processKeys.Value;
         }
 
         /// <summary>

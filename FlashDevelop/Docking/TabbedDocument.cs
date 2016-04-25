@@ -19,6 +19,67 @@ using PluginCore;
 
 namespace FlashDevelop.Docking
 {
+    public class CustomFloatWindow : FloatWindow
+    {
+        private IEditorController editorController;
+
+        public CustomFloatWindow(DockPanel dockPanel, DockPane pane)
+            : base(dockPanel, pane)
+        {
+            FormBorderStyle = FormBorderStyle.Sizable;
+            Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
+            ShowInTaskbar = true;
+            editorController = new WinFormsEditorController(this);
+        }
+
+        public CustomFloatWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
+            : base(dockPanel, pane, bounds)
+        {
+            FormBorderStyle = FormBorderStyle.Sizable;
+            Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
+            ShowInTaskbar = true;
+            editorController = new WinFormsEditorController(this);
+        }
+
+        public override DockState DockState
+        {
+            get { return DockState.FloatDocument; }
+        }
+
+        public override bool AllowEndUserDocking
+        {
+            get
+            {
+                return false;
+            }
+            set
+            {
+                base.AllowEndUserDocking = value;
+            }
+        }
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            bool? processKeys = this.editorController.ProcessCmdKey(keyData);
+
+            if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
+
+            return processKeys.Value;
+        }
+    }
+
+    public class CustomFloatDocumentWindowFactory : DockPanelExtender.IFloatDocumentWindowFactory
+    {
+        public FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
+        {
+            return new CustomFloatWindow(dockPanel, pane, bounds);
+        }
+
+        public FloatWindow CreateFloatDocumentWindow(DockPanel dockPanel, DockPane pane)
+        {
+            return new CustomFloatWindow(dockPanel, pane);
+        }
+    }
+
     public class TabbedDocument : DockContent, ITabbedDocument
     {
         private Timer focusTimer;
@@ -43,7 +104,7 @@ namespace FlashDevelop.Docking
             UITools.Manager.OnMarkerChanged += new UITools.LineEventHandler(this.OnMarkerChanged);
             this.DockPanel = Globals.MainForm.DockPanel;
             this.Font = Globals.Settings.DefaultFont;
-            this.DockAreas = DockAreas.Document;
+            this.DockAreas = DockAreas.Document | DockAreas.FloatDocument;
             this.BackColor = Color.White;
             this.useCustomIcon = false;
             this.StartBackupTiming();
