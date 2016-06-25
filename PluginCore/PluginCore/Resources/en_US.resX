@@ -4967,6 +4967,10 @@ Custom locales must be an extension of a default locale, e.g. en-US.</value>
     <value>Path to the custom project templates directory.</value>
     <comment>Added after 3.3.4</comment>
   </data>
+  <data name="FlashDevelop.Description.CustomCommandPrompt" xml:space="preserve">
+    <value>Path to the custom command prompt executable.</value>
+    <comment>Added after 5.1.1</comment>
+  </data>
   <data name="ASCompletion.Description.HandlerNamingConvention" xml:space="preserve">
     <value>Generator can automatically generate an event handler method name using the following naming conventions</value>
     <comment>Added after 3.3.4</comment>
@@ -6016,6 +6020,22 @@ Custom locales must be an extension of a default locale, e.g. en-US.</value>
   </data>
   <data name="FlashDevelop.Description.KeepCaretCentered" xml:space="preserve">
     <value>Keeps the caret centered when caret is navigated to.</value>
+    <comment>Added after 5.1.1</comment>
+  </data>
+  <data name="CodeRefactor.Description.ReplaceAllOccurrences" xml:space="preserve">
+    <value>Replace all highlighted occurrences of the expression with a new variable.</value>
+    <comment>Added after 5.1.1</comment>
+  </data>
+  <data name="CodeRefactor.Description.ReplaceInitialOccurrence" xml:space="preserve">
+    <value>Replace only the expression with a new variable.</value>
+    <comment>Added after 5.1.1</comment>
+  </data>
+  <data name="CodeRefactor.Info.ReplacedOccurrences" xml:space="preserve">
+    <value>Replace {0} occurrence(s)</value>
+    <comment>Added after 5.1.1</comment>
+  </data>
+  <data name="FlashDevelop.Description.MaxRecentFiles" xml:space="preserve">
+    <value>The number of recent files to remember in the recent files drop-down.</value>
     <comment>Added after 5.1.1</comment>
   </data>
 </root>

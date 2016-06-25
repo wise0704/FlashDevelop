@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Windows.Forms;
+using System.Windows.Forms.Design;
 using System.Xml.Serialization;
 using Ookii.Dialogs;
 using PluginCore;
@@ -560,6 +561,20 @@ namespace FlashDevelop.Settings
             set { this.moveCursorAfterComment = value; }
         }
 
+        [DefaultValue(15)]
+        [DisplayName("Max Recent Files")]
+        [LocalizedCategory("FlashDevelop.Category.Features")]
+        [LocalizedDescription("FlashDevelop.Description.MaxRecentFiles")]
+        public Int32 MaxRecentFiles
+        {
+            get { return this.maxRecentFiles; }
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                this.maxRecentFiles = value;
+            }
+        }
+
         [DefaultValue(true)]
         [DisplayName("Restore File States")]
         [LocalizedCategory("FlashDevelop.Category.Features")]
@@ -899,6 +914,17 @@ namespace FlashDevelop.Settings
         {
             get { return this.customProjectsDir; }
             set { this.customProjectsDir = value; }
+        }
+
+        [DefaultValue("")]
+        [DisplayName("Custom Command Prompt")]
+        [LocalizedCategory("FlashDevelop.Category.Paths")]
+        [LocalizedDescription("FlashDevelop.Description.CustomCommandPrompt")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public String CustomCommandPrompt
+        {
+            get { return this.customCommandPrompt; }
+            set { this.customCommandPrompt = value; }
         }
 
         #endregion
