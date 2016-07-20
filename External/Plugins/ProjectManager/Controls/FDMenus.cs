@@ -57,13 +57,13 @@ namespace ProjectManager.Controls
 
             BuildProject = new ToolStripButton(Icons.Gear.Img);
             BuildProject.Name = "BuildProject";
-            BuildProject.ToolTipText = TextHelper.GetString("Label.BuildProject").Replace("&", "");
+            BuildProject.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.BuildProject");
             PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.BuildProject", BuildProject);
             toolBar.Items.Add(BuildProject);
 
             TestMovie = new ToolStripButton(Icons.GreenCheck.Img);
             TestMovie.Name = "TestMovie";
-            TestMovie.ToolTipText = TextHelper.GetString("Label.TestMovie").Replace("&", "");
+            TestMovie.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.TestMovie");
             PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.TestMovie", TestMovie);
             toolBar.Items.Add(TestMovie);
 
@@ -74,7 +74,7 @@ namespace ProjectManager.Controls
             ConfigurationSelector.DropDownStyle = ComboBoxStyle.DropDownList;
             ConfigurationSelector.AutoSize = false;
             ConfigurationSelector.Enabled = false;
-            ConfigurationSelector.Width = ScaleHelper.Scale(85);
+            ConfigurationSelector.Width = ScaleHelper.Scale(GetThemeWidth("ProjectManager.TargetBuildSelectorWidth", 85));
             ConfigurationSelector.Margin = new Padding(1, 0, 0, 0);
             ConfigurationSelector.FlatStyle = PluginBase.MainForm.Settings.ComboBoxFlatStyle;
             ConfigurationSelector.Font = PluginBase.Settings.DefaultFont;
@@ -86,14 +86,22 @@ namespace ProjectManager.Controls
             TargetBuildSelector.Name = "TargetBuildSelector";
             TargetBuildSelector.ToolTipText = TextHelper.GetString("ToolTip.TargetBuild");
             TargetBuildSelector.AutoSize = false;
-            TargetBuildSelector.Width = ScaleHelper.Scale(85);
+            TargetBuildSelector.Width = ScaleHelper.Scale(GetThemeWidth("ProjectManager.ConfigurationSelectorWidth", 120));
             TargetBuildSelector.Margin = new Padding(1, 0, 0, 0);
             TargetBuildSelector.FlatStyle = PluginBase.MainForm.Settings.ComboBoxFlatStyle;
             TargetBuildSelector.Font = PluginBase.Settings.DefaultFont;
             toolBar.Items.Add(TargetBuildSelector);
-            PluginBase.MainForm.RegisterShortcutItem("ProjectMenu.TargetBuildSelector", Keys.Control | Keys.F6);
+            PluginBase.MainForm.RegisterShortcutItem("ProjectMenu.TargetBuildSelector", Keys.Control | Keys.F7);
             PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.TargetBuildSelector", TargetBuildSelector);
             EnableTargetBuildSelector(false);
+        }
+
+        private int GetThemeWidth(string themeId, int defaultValue)
+        {
+            string strValue = PluginBase.MainForm.GetThemeValue(themeId);
+            int intValue;
+            if (int.TryParse(strValue, out intValue)) return intValue;
+            else return defaultValue;
         }
 
         public void EnableTargetBuildSelector(bool enabled)

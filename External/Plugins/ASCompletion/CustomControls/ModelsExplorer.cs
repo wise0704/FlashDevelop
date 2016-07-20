@@ -14,6 +14,7 @@ using PluginCore.Managers;
 using ASCompletion.Completion;
 using System.Collections;
 using PluginCore.Helpers;
+using PluginCore.Controls;
 
 namespace ASCompletion
 {
@@ -123,6 +124,7 @@ namespace ASCompletion
             refreshButton.Image = PluginBase.MainForm.FindImage("24");
             rebuildButton.Image = PluginBase.MainForm.FindImage("153");
             toolStrip.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
+            ScrollBarEx.Attach(outlineTreeView);
         }
 
         private void outlineContextMenuStrip_Opening(object sender, CancelEventArgs e)
@@ -153,7 +155,7 @@ namespace ASCompletion
             this.filterLabel.Text = TextHelper.GetString("Info.FindType");
             this.searchButton.ToolTipText = TextHelper.GetString("ToolTip.Search");
             this.refreshButton.ToolTipText = TextHelper.GetString("ToolTip.Refresh");
-            this.rebuildButton.ToolTipText = TextHelper.GetString("Label.RebuildClasspathCache").Replace("&", "");
+            this.rebuildButton.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.RebuildClasspathCache");
             this.editToolStripMenuItem.Text = TextHelper.GetString("Label.ModelEdit");
             this.exploreToolStripMenuItem.Text = TextHelper.GetString("Label.ModelExplore");
             this.convertToolStripMenuItem.Text = TextHelper.GetString("Label.ModelConvert");
@@ -622,9 +624,9 @@ namespace ASCompletion
 
                         thePath.ForeachFile((aModel) =>
                         {
-                            if (aModel.Package == package || aModel.Package.StartsWith(packagep))
+                            if (aModel.Package == package || aModel.Package.StartsWithOrdinal(packagep))
                             {
-                                if (aModel.FileName.StartsWith(sourcePath))
+                                if (aModel.FileName.StartsWithOrdinal(sourcePath))
                                     WriteIntrinsic(aModel, aModel.FileName.Replace(sourcePath, targetPath));
                             }
                             return true;
@@ -663,7 +665,7 @@ namespace ASCompletion
 
         private void WriteIntrinsic(FileModel theModel, string filename)
         {
-            if (filename.EndsWith("$.as")) filename = filename.Replace("$.as", ".as"); // SWC virtual models
+            if (filename.EndsWithOrdinal("$.as")) filename = filename.Replace("$.as", ".as"); // SWC virtual models
             Directory.CreateDirectory(Path.GetDirectoryName(filename));
             File.WriteAllText(filename, theModel.GenerateIntrinsic(false), Encoding.UTF8);
         }

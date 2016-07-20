@@ -2,7 +2,6 @@
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
-using System.Runtime.InteropServices;
 using System.ComponentModel;
 using PluginCore.Helpers;
 using PluginCore.Managers;
@@ -18,15 +17,47 @@ namespace PluginCore.Controls
     [DefaultProperty("Value")]
     public class ScrollBarEx : Control
     {
-        #region drawing
+        #region Static
+
+        /// <summary>
+        /// Attaches the custom scrollbars to the specified controls, requires restart.
+        /// </summary>
+        public static IDisposable Attach(ListView listView)
+        {
+            if (!Win32.ShouldUseWin32() && !PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false)) return null;
+            else return new ListViewScroller(listView);
+        }
+        public static IDisposable Attach(TreeView treeView)
+        {
+            if (!Win32.ShouldUseWin32() && !PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false)) return null;
+            else return new TreeViewScroller(treeView);
+        }
+        public static IDisposable Attach(RichTextBox richTextBox)
+        {
+            if (!Win32.ShouldUseWin32() && !PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false)) return null;
+            else return new RichTextBoxScroller(richTextBox);
+        }
+        public static IDisposable Attach(DataGridView dataGridView)
+        {
+            if (!Win32.ShouldUseWin32() && !PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false)) return null;
+            else return new DataGridViewScroller(dataGridView);
+        }
+
+        #endregion
+
+        #region Drawing
 
         private Color curPosColor = Color.DarkBlue;
-        private Color borderColor = SystemColors.ActiveBorder;
-        private Color borderColorDisabled = SystemColors.Control;
         private Color foreColor = SystemColors.ControlDarkDark;
-        private Color foreColorActive = SystemColors.Highlight;
+        private Color foreColorHot = SystemColors.Highlight;
+        private Color foreColorPressed = SystemColors.HotTrack;
+        private Color arrowColor = SystemColors.ControlDarkDark;
+        private Color arrowColorHot = SystemColors.Highlight;
+        private Color arrowColorPressed = SystemColors.HotTrack;
         private Color backColor = SystemColors.ActiveBorder;
         private Color backColorDisabled = SystemColors.ControlLight;
+        private Color borderColor = SystemColors.ActiveBorder;
+        private Color borderColorDisabled = SystemColors.Control;
 
         /// <summary>
         /// Draws the background.
@@ -36,21 +67,18 @@ namespace PluginCore.Controls
         /// <param name="orientation">The <see cref="ScrollBarOrientation"/>.</param>
         private void DrawBackground(Graphics g, Rectangle rect, ScrollBarOrientation orientation)
         {
-            if (g == null)
-            {
-                throw new ArgumentNullException("g");
-            }
+            if (g == null) throw new ArgumentNullException("g");
+
             if (rect.IsEmpty || g.IsVisibleClipEmpty || !g.VisibleClipBounds.IntersectsWith(rect))
-            {
                 return;
-            }
-            if (orientation == ScrollBarOrientation.Vertical)
-            {
-                DrawBackgroundVertical(g, rect);
-            }
-            else
-            {
-                DrawBackgroundHorizontal(g, rect);
+
+            switch (orientation) {
+                case ScrollBarOrientation.Vertical:
+                    DrawBackgroundVertical(g, rect);
+                    break;
+                default:
+                    DrawBackgroundHorizontal(g, rect);
+                    break;
             }
         }
 
@@ -63,21 +91,32 @@ namespace PluginCore.Controls
         /// <param name="orientation">The <see cref="ScrollBarOrientation"/>.</param>
         private void DrawThumb(Graphics g, Rectangle rect, ScrollBarState state, ScrollBarOrientation orientation)
         {
-            if (g == null)
-            {
-                throw new ArgumentNullException("g");
-            }
+            if (g == null) throw new ArgumentNullException("g");
+
             if (rect.IsEmpty || g.IsVisibleClipEmpty || !g.VisibleClipBounds.IntersectsWith(rect) || state == ScrollBarState.Disabled)
-            {
                 return;
-            }
-            if (orientation == ScrollBarOrientation.Vertical)
+
+            Color color;
+            switch (state)
             {
-                DrawThumbVertical(g, rect, state);
+                case ScrollBarState.Hot:
+                    color = foreColorHot;
+                    break;
+                case ScrollBarState.Pressed:
+                    color = foreColorPressed;
+                    break;
+                default:
+                    color = foreColor;
+                    break;
             }
-            else
-            {
-                DrawThumbHorizontal(g, rect, state);
+
+            switch (orientation) {
+                case ScrollBarOrientation.Vertical:
+                    DrawThumbVertical(g, rect, color);
+                    break;
+                default:
+                    DrawThumbHorizontal(g, rect, color);
+                    break;
             }
         }
 
@@ -91,21 +130,35 @@ namespace PluginCore.Controls
         /// <param name="orientation">The <see cref="ScrollBarOrientation"/>.</param>
         private void DrawArrowButton(Graphics g, Rectangle rect, ScrollBarArrowButtonState state, bool arrowUp, ScrollBarOrientation orientation)
         {
-            if (g == null)
-            {
-                throw new ArgumentNullException("g");
-            }
+            if (g == null) throw new ArgumentNullException("g");
+
             if (rect.IsEmpty || g.IsVisibleClipEmpty || !g.VisibleClipBounds.IntersectsWith(rect))
-            {
                 return;
-            }
-            if (orientation == ScrollBarOrientation.Vertical)
+
+            Color color;
+
+            switch (state)
             {
-                DrawArrowButtonVertical(g, rect, state, arrowUp);
+                case ScrollBarArrowButtonState.UpHot:
+                case ScrollBarArrowButtonState.DownHot:
+                    color = arrowColorHot;
+                    break;
+                case ScrollBarArrowButtonState.UpPressed:
+                case ScrollBarArrowButtonState.DownPressed:
+                    color = arrowColorPressed;
+                    break;
+                default:
+                    color = arrowColor;
+                    break;
             }
-            else
-            {
-                DrawArrowButtonHorizontal(g, rect, state, arrowUp);
+
+            switch (orientation) {
+                case ScrollBarOrientation.Vertical:
+                    DrawArrowButtonVertical(g, rect, color, arrowUp);
+                    break;
+                default:
+                    DrawArrowButtonHorizontal(g, rect, color, arrowUp);
+                    break;
             }
         }
 
@@ -116,7 +169,7 @@ namespace PluginCore.Controls
         /// <param name="rect">The rectangle in which to paint.</param>
         private void DrawBackgroundVertical(Graphics g, Rectangle rect)
         {
-            using (SolidBrush brush = new SolidBrush(this.Enabled ? backColor : backColorDisabled))
+            using (Brush brush = new SolidBrush(this.Enabled ? backColor : backColorDisabled))
             {
                 g.FillRectangle(brush, rect);
             }
@@ -129,82 +182,64 @@ namespace PluginCore.Controls
         /// <param name="rect">The rectangle in which to paint.</param>
         private void DrawBackgroundHorizontal(Graphics g, Rectangle rect)
         {
-            using (SolidBrush brush = new SolidBrush(this.Enabled ? backColor : backColorDisabled))
+            using (Brush brush = new SolidBrush(this.Enabled ? backColor : backColorDisabled))
             {
                 g.FillRectangle(brush, rect);
             }
         }
 
         /// <summary>
-        /// Draws the thumb.
+        /// Draws the vertical thumb.
         /// </summary>
         /// <param name="g">The <see cref="Graphics"/> used to paint.</param>
         /// <param name="rect">The rectangle in which to paint.</param>
-        /// <param name="state">The <see cref="ScrollBarState"/> of the thumb.</param>
-        private void DrawThumbVertical(Graphics g, Rectangle rect, ScrollBarState state)
+        /// <param name="color">The color to draw the thumb with.</param>
+        private static void DrawThumbVertical(Graphics g, Rectangle rect, Color color)
         {
-            Color color = foreColor;
-            switch (state)
-            {
-                case ScrollBarState.Pressed:
-                {
-                    color = foreColorActive;
-                    break;
-                }
-            }
-            var innerRect = new Rectangle(rect.Left + ScaleHelper.Scale(2), rect.Top, rect.Width - ScaleHelper.Scale(4), rect.Height);
+            rect.X += ScaleHelper.Scale(2);
+            rect.Width -= ScaleHelper.Scale(4);
             using (Brush brush = new SolidBrush(color))
             {
-                g.FillRectangle(brush, innerRect);
-            }
-
-        }
-
-        /// <summary>
-        /// Draws the thumb.
-        /// </summary>
-        /// <param name="g">The <see cref="Graphics"/> used to paint.</param>
-        /// <param name="rect">The rectangle in which to paint.</param>
-        /// <param name="state">The <see cref="ScrollBarState"/> of the thumb.</param>
-        private void DrawThumbHorizontal(Graphics g, Rectangle rect, ScrollBarState state)
-        {
-            Color color = foreColor;
-            switch (state)
-            {
-                case ScrollBarState.Pressed:
-                {
-                    color = foreColorActive;
-                    break;
-                }
-            }
-            var innerRect = new Rectangle(rect.Left, rect.Top + ScaleHelper.Scale(2), rect.Width, rect.Height - ScaleHelper.Scale(4));
-            using (Brush brush = new SolidBrush(color))
-            {
-                g.FillRectangle(brush, innerRect);
+                g.FillRectangle(brush, rect);
             }
         }
 
         /// <summary>
-        /// Draws an arrow button.
+        /// Draws the horizontal thumb.
         /// </summary>
         /// <param name="g">The <see cref="Graphics"/> used to paint.</param>
         /// <param name="rect">The rectangle in which to paint.</param>
-        /// <param name="state">The <see cref="ScrollBarArrowButtonState"/> of the arrow button.</param>
+        /// <param name="color">The color to draw the thumb with.</param>
+        private static void DrawThumbHorizontal(Graphics g, Rectangle rect, Color color)
+        {
+            rect.Y += ScaleHelper.Scale(2);
+            rect.Height -= ScaleHelper.Scale(4);
+            using (Brush brush = new SolidBrush(color))
+            {
+                g.FillRectangle(brush, rect);
+            }
+        }
+
+        /// <summary>
+        /// Draws arrow buttons for vertical scroll bar.
+        /// </summary>
+        /// <param name="g">The <see cref="Graphics"/> used to paint.</param>
+        /// <param name="rect">The rectangle in which to paint.</param>
+        /// <param name="color">The color to draw the arrow buttons with.</param>
         /// <param name="arrowUp">true for an up arrow, false otherwise.</param>
-        private void DrawArrowButtonVertical(Graphics g, Rectangle rect, ScrollBarArrowButtonState state, bool arrowUp)
+        private static void DrawArrowButtonVertical(Graphics g, Rectangle rect, Color color, bool arrowUp)
         {
-            var pressed = state == ScrollBarArrowButtonState.DownPressed || state == ScrollBarArrowButtonState.UpPressed;
-            using (Brush brush = new SolidBrush(pressed ? foreColorActive : foreColor))
+            using (Brush brush = new SolidBrush(color))
             {
                 Point[] arrow;
-                Int32 pad = 0;
+                Int32 pad;
                 Point middle = new Point(rect.Left + rect.Width / 2, (rect.Top + rect.Height / 2));
                 switch (arrowUp)
                 {
                     case true:
                         pad = ScaleHelper.Scale(4);
                         middle.Y += ScaleHelper.Scale(2);
-                        arrow = new Point[] 
+                        arrow = new Point[]
                         {
                             new Point(middle.X - pad , middle.Y + 1),
                             new Point(middle.X + pad  + 1, middle.Y + 1),
@@ -214,11 +249,11 @@ namespace PluginCore.Controls
                     default:
                         pad = ScaleHelper.Scale(3);
                         middle.Y -= ScaleHelper.Scale(1);
-                        arrow = new Point[] 
+                        arrow = new Point[]
                         {
                             new Point(middle.X - pad, middle.Y - 1),
                             new Point(middle.X + pad + 1, middle.Y - 1),
-                            new Point(middle.X, middle.Y + pad) 
+                            new Point(middle.X, middle.Y + pad)
                         };
                         break;
                 }
@@ -228,25 +263,24 @@ namespace PluginCore.Controls
         }
 
         /// <summary>
-        /// Draws an arrow button.
+        /// Draws arrow buttons for horizontal scroll bar.
         /// </summary>
         /// <param name="g">The <see cref="Graphics"/> used to paint.</param>
         /// <param name="rect">The rectangle in which to paint.</param>
-        /// <param name="state">The <see cref="ScrollBarArrowButtonState"/> of the arrow button.</param>
+        /// <param name="color">The color to draw the arrow buttons with.</param>
         /// <param name="arrowUp">true for an up arrow, false otherwise.</param>
-        private void DrawArrowButtonHorizontal(Graphics g, Rectangle rect, ScrollBarArrowButtonState state, bool arrowUp)
+        private static void DrawArrowButtonHorizontal(Graphics g, Rectangle rect, Color color, bool arrowUp)
         {
-            var pressed = state == ScrollBarArrowButtonState.DownPressed || state == ScrollBarArrowButtonState.UpPressed;
-            using (Brush brush = new SolidBrush(pressed ? foreColorActive : foreColor))
+            using (Brush brush = new SolidBrush(color))
             {
                 Point[] arrow;
-                Int32 pad = 0;
+                Int32 pad;
                 Point middle = new Point(rect.Left + rect.Width / 2, rect.Top + rect.Height / 2);
                 switch (arrowUp)
                 {
                     case true:
                         pad = ScaleHelper.Scale(2);
-                        arrow = new Point[] 
+                        arrow = new Point[]
                         {
                             new Point(middle.X + pad, middle.Y - 2 * pad),
                             new Point(middle.X + pad, middle.Y + 2 * pad),
@@ -255,7 +289,7 @@ namespace PluginCore.Controls
                         break;
                     default:
                         pad = ScaleHelper.Scale(2);
-                        arrow = new Point[] 
+                        arrow = new Point[]
                         {
                             new Point(middle.X - pad, middle.Y - 2 * pad),
                             new Point(middle.X - pad, middle.Y + 2 * pad),
@@ -269,7 +303,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region fields
+        #region Fields
 
         /// <summary>
         /// Indicates many changes to the scrollbar are happening, so stop painting till finished.
@@ -498,7 +532,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region constructor
+        #region Constructor
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScrollBarEx"/> class.
@@ -526,7 +560,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region events
+        #region Events
 
         /// <summary>
         /// Occurs when the scrollbar scrolled.
@@ -537,7 +571,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region properties
+        #region Properties
 
         /// <summary>
         /// Gets or sets the current position.
@@ -814,7 +848,7 @@ namespace PluginCore.Controls
         /// </summary>
         [Category("Appearance")]
         [Description("Gets or sets the border color in disabled state.")]
-        [DefaultValue(typeof(SystemColors), "Control")]
+        [DefaultValue(typeof(SystemColors), "InactiveBorder")]
         public Color DisabledBorderColor
         {
             get
@@ -833,7 +867,7 @@ namespace PluginCore.Controls
         /// </summary>
         [Category("Appearance")]
         [Description("Gets or sets the border color.")]
-        [DefaultValue(typeof(SystemColors), "ActiveBorder")]
+        [DefaultValue(typeof(SystemColors), "Control")]
         public override Color BackColor
         {
             get
@@ -871,7 +905,7 @@ namespace PluginCore.Controls
         /// </summary>
         [Category("Appearance")]
         [Description("Gets or sets the foreground color on idle.")]
-        [DefaultValue(typeof(SystemColors), "ControlDarkDark")]
+        [DefaultValue(typeof(SystemColors), "ScrollBar")]
         public override Color ForeColor
         {
             get
@@ -886,20 +920,17 @@ namespace PluginCore.Controls
         }
 
         /// <summary>
-        /// Gets or sets the pressed fore color.
+        /// Gets or sets the hot fore color.
         /// </summary>
         [Category("Appearance")]
-        [Description("Gets or sets the foreground color when active.")]
-        [DefaultValue(typeof(SystemColors), "Highlight")]
-        public Color ActiveForeColor
+        [Description("Gets or sets the foreground color on hover.")]
+        [DefaultValue(typeof(SystemColors), "ControlDark")]
+        public Color HotForeColor
         {
-            get
-            {
-                return this.foreColorActive;
-            }
+            get { return this.foreColorHot; }
             set
             {
-                this.foreColorActive = value;
+                this.foreColorHot = value;
                 this.Invalidate();
             }
         }
@@ -908,7 +939,74 @@ namespace PluginCore.Controls
         /// Gets or sets the pressed fore color.
         /// </summary>
         [Category("Appearance")]
-        [Description("Gets or sets the current position indic color.")]
+        [Description("Gets or sets the foreground color when active.")]
+        [DefaultValue(typeof(SystemColors), "ControlDarkDark")]
+        public Color ActiveForeColor
+        {
+            get
+            {
+                return this.foreColorPressed;
+            }
+            set
+            {
+                this.foreColorPressed = value;
+                this.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the arrow color.
+        /// </summary>
+        [Category("Appearance")]
+        [Description("Gets or sets the arrow color on idle.")]
+        [DefaultValue(typeof(SystemColors), "ControlDark")]
+        public Color ArrowColor
+        {
+            get { return this.arrowColor; }
+            set
+            {
+                this.arrowColor = value;
+                this.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the hot arrow color.
+        /// </summary>
+        [Category("Appearance")]
+        [Description("Gets or sets the arrow color on hover.")]
+        [DefaultValue(typeof(SystemColors), "Highlight")]
+        public Color HotArrowColor
+        {
+            get { return this.arrowColorHot; }
+            set
+            {
+                this.arrowColorHot = value;
+                this.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the pressed arrow color.
+        /// </summary>
+        [Category("Appearance")]
+        [Description("Gets or sets the arrow color when active.")]
+        [DefaultValue(typeof(SystemColors), "HotTrack")]
+        public Color ActiveArrowColor
+        {
+            get { return this.arrowColorPressed; }
+            set
+            {
+                this.arrowColorPressed = value;
+                this.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the current position indicator color.
+        /// </summary>
+        [Category("Appearance")]
+        [Description("Gets or sets the current position indicator color.")]
         [DefaultValue(typeof(Color), "DarkBlue")]
         public Color CurrentPositionColor
         {
@@ -949,7 +1047,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region methods
+        #region Methods
 
         /// <summary>
         /// Prevents the drawing of the control until <see cref="EndUpdate"/> is called.
@@ -1228,14 +1326,14 @@ namespace PluginCore.Controls
                     int oldScrollValue = this.value;
                     this.topButtonState = ScrollBarArrowButtonState.UpActive;
                     this.bottomButtonState = ScrollBarArrowButtonState.DownActive;
-                    int pos = this.orientation == ScrollBarOrientation.Vertical ? e.Location.Y : e.Location.X;
+                    int pos = (this.orientation == ScrollBarOrientation.Vertical ? e.Location.Y : e.Location.X) - thumbPosition;
                     // The thumb is all the way to the top
-                    if (pos <= (this.thumbTopLimit + this.thumbPosition))
+                    if (pos <= this.thumbTopLimit)
                     {
                         this.ChangeThumbPosition(this.thumbTopLimit);
                         this.value = this.minimum;
                     }
-                    else if (pos >= (this.thumbBottomLimitTop + this.thumbPosition))
+                    else if (pos >= this.thumbBottomLimitTop)
                     {
                         // The thumb is all the way to the bottom
                         this.ChangeThumbPosition(this.thumbBottomLimitTop);
@@ -1244,7 +1342,7 @@ namespace PluginCore.Controls
                     else
                     {
                         // The thumb is between the ends of the track.
-                        this.ChangeThumbPosition(pos - this.thumbPosition);
+                        this.ChangeThumbPosition(pos);
                         int pixelRange, thumbPos, arrowSize;
                         // calculate the value - first some helper variables
                         // dependent on the current orientation
@@ -1437,7 +1535,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region misc methods
+        #region Misc Methods
 
         /// <summary>
         /// Sets up the scrollbar.
@@ -1488,7 +1586,7 @@ namespace PluginCore.Controls
                    this.arrowHeight
                 );
                 // Set the default starting thumb position.
-                this.thumbPosition = this.thumbRectangle.Height / 2;
+                //this.thumbPosition = this.thumbRectangle.Height / 2;
                 // Set the bottom limit of the thumb's bottom border.
                 this.thumbBottomLimitBottom = rect.Bottom - this.arrowHeight - ScaleHelper.Scale(4);
                 // Set the bottom limit of the thumb's top border.
@@ -1526,7 +1624,7 @@ namespace PluginCore.Controls
                    this.arrowHeight
                 );
                 // Set the default starting thumb position.
-                this.thumbPosition = this.thumbRectangle.Width / 2;
+                //this.thumbPosition = this.thumbRectangle.Width / 2;
                 // Set the bottom limit of the thumb's bottom border.
                 this.thumbBottomLimitBottom = rect.Right - this.arrowWidth - ScaleHelper.Scale(3);
                 // Set the bottom limit of the thumb's top border.
@@ -1782,7 +1880,7 @@ namespace PluginCore.Controls
 
         #endregion
 
-        #region context menu methods
+        #region Context Menu Methods
 
         /// <summary>
         /// Initializes the context menu.
@@ -1994,7 +2092,746 @@ namespace PluginCore.Controls
 
     }
 
-    #region designer
+    #region Scrollers
+
+    public class ListViewScroller : IEventHandler, IDisposable
+    {
+        private ListView listView;
+        private ScrollBarEx vScrollBar;
+        private ScrollBarEx hScrollBar;
+
+        /// <summary>
+        /// Initialize ListViewScroller
+        /// </summary>
+        public ListViewScroller(ListView view)
+        {
+            listView = view;
+            InitScrollBars();
+        }
+
+        /// <summary>
+        /// Init the custom scrollbars
+        /// </summary>
+        public void InitScrollBars()
+        {
+            vScrollBar = new ScrollBarEx();
+            vScrollBar.OverScroll = true;
+            vScrollBar.Width = ScaleHelper.Scale(SystemInformation.VerticalScrollBarWidth);
+            vScrollBar.Orientation = ScrollBarOrientation.Vertical;
+            vScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+            hScrollBar = new ScrollBarEx();
+            hScrollBar.OverScroll = true;
+            hScrollBar.Height = ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight);
+            hScrollBar.Orientation = ScrollBarOrientation.Horizontal;
+            hScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            if (PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false))
+            {
+                AddScrollBars();
+                UpdateScrollBarTheme();
+            }
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
+        }
+
+        /// <summary>
+        /// Add controls to container
+        /// </summary>
+        public void AddScrollBars()
+        {
+            listView.Parent.Controls.Add(hScrollBar);
+            listView.Parent.Controls.Add(vScrollBar);
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll += OnScrollBarScroll;
+            vScrollBar.VisibleChanged += delegate { OnListViewResize(null, null); };
+            hScrollBar.VisibleChanged += delegate { OnListViewResize(null, null); };
+            listView.Paint += delegate { UpdateScrollState(); };
+            listView.Resize += OnListViewResize;
+        }
+
+        /// <summary>
+        /// Remove controls from container
+        /// </summary>
+        private void RemoveScrollBars()
+        {
+            listView.Parent.Controls.Remove(hScrollBar);
+            listView.Parent.Controls.Remove(vScrollBar);
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.VisibleChanged -= delegate { OnListViewResize(null, null); };
+            hScrollBar.VisibleChanged -= delegate { OnListViewResize(null, null); };
+            listView.Paint -= delegate { UpdateScrollState(); };
+            listView.Resize -= OnListViewResize;
+        }
+
+        /// <summary>
+        /// Handle the incoming theme events
+        /// </summary>
+        public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            if (e.Type == EventType.ApplyTheme)
+            {
+                Boolean enabled = PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false);
+                if (enabled && !listView.Parent.Controls.Contains(vScrollBar))
+                {
+                    AddScrollBars();
+                    UpdateScrollBarTheme();
+                }
+                else if (!enabled && listView.Parent.Controls.Contains(vScrollBar))
+                {
+                    RemoveScrollBars();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the scrollbar theme and applies old defaults
+        /// </summary>
+        private void UpdateScrollBarTheme()
+        {
+            PluginBase.MainForm.ThemeControls(vScrollBar);
+            PluginBase.MainForm.ThemeControls(hScrollBar);
+            // Apply settings so that old defaults work...
+            vScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", vScrollBar.ForeColor);
+            vScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", vScrollBar.ForeColor);
+            vScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", vScrollBar.ActiveForeColor);
+            vScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", vScrollBar.ForeColor);
+            hScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", hScrollBar.ForeColor);
+            hScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", hScrollBar.ForeColor);
+            hScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", hScrollBar.ActiveForeColor);
+            hScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", hScrollBar.ForeColor);
+        }
+
+        /// <summary>
+        /// Updates the scrollbar scroll states
+        /// </summary>
+        private void UpdateScrollState()
+        {
+            Win32.SCROLLINFO vScroll = Win32.GetFullScrollInfo(listView, false);
+            Win32.SCROLLINFO hScroll = Win32.GetFullScrollInfo(listView, true);
+            vScrollBar.Visible = vScroll.nMax > (vScroll.nPage - 1) && vScroll.nPage > 0;
+            hScrollBar.Visible = hScroll.nMax > (hScroll.nPage - 1) && hScroll.nPage > 0;
+            UpdateScrollBarMargins();
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.Minimum = vScroll.nMin;
+            vScrollBar.Maximum = vScroll.nMax - (vScroll.nPage - 1);
+            vScrollBar.LargeChange = vScroll.nPage - 1;
+            vScrollBar.Value = vScroll.nPos;
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Minimum = hScroll.nMin;
+            hScrollBar.Maximum = hScroll.nMax - (hScroll.nPage - 1);
+            hScrollBar.LargeChange = (hScroll.nPage - 1);
+            hScrollBar.Value = hScroll.nPos;
+            hScrollBar.Scroll += OnScrollBarScroll;
+        }
+
+        /// <summary>
+        /// Update the scrollbar margins
+        /// </summary>
+        private void UpdateScrollBarMargins()
+        {
+            if (!hScrollBar.Visible) vScrollBar.Margin = new Padding(0, 0, 0, 0);
+            else vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+        }
+
+        /// <summary>
+        /// Updates the scrollbars on listview resize
+        /// </summary>
+        private void OnListViewResize(Object sender, EventArgs e)
+        {
+            vScrollBar.BringToFront();
+            vScrollBar.Location = new Point(listView.Location.X + listView.Width - vScrollBar.Width, listView.Location.Y);
+            vScrollBar.Height = listView.Height;
+            hScrollBar.BringToFront();
+            hScrollBar.Location = new Point(listView.Location.X, listView.Location.Y + listView.Height - hScrollBar.Height);
+            hScrollBar.Width = listView.Width - (vScrollBar.Visible ? vScrollBar.Width : 0);
+            listView.Invalidate();
+        }
+
+        /// <summary>
+        /// Updates the listView on scrollbar scroll
+        /// </summary>
+        private void OnScrollBarScroll(Object sender, ScrollEventArgs e)
+        {
+            if (e.OldValue == -1 || listView.Items.Count == 0) return;
+            Int32 height = listView.GetItemRect(0).Height; // Item height in pixels
+            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll)
+            {
+                Int32 vScroll = -(e.OldValue - e.NewValue) * height;
+                Win32.SendMessage(listView.Handle, (Int32)Win32.LVM_SCROLL, IntPtr.Zero, (IntPtr)vScroll);
+            }
+            else
+            {
+                Int32 hScroll = -(e.OldValue - e.NewValue);
+                Win32.SendMessage(listView.Handle, (Int32)Win32.LVM_SCROLL, (IntPtr)hScroll, IntPtr.Zero);
+            }
+        }
+
+        /// <summary>
+        /// Dispose the controls
+        /// </summary>
+        void IDisposable.Dispose()
+        {
+            listView = null;
+            vScrollBar.Dispose();
+            hScrollBar.Dispose();
+        }
+
+    }
+
+    public class TreeViewScroller : IEventHandler, IDisposable
+    {
+        private TreeView treeView;
+        private ScrollBarEx vScrollBar;
+        private ScrollBarEx hScrollBar;
+
+        /// <summary>
+        /// Initialize TreeViewScroller
+        /// </summary>
+        public TreeViewScroller(TreeView view)
+        {
+            treeView = view;
+            InitScrollBars();
+        }
+
+        /// <summary>
+        /// Init the custom scrollbars
+        /// </summary>
+        public void InitScrollBars()
+        {
+            vScrollBar = new ScrollBarEx();
+            vScrollBar.OverScroll = true;
+            vScrollBar.Width = ScaleHelper.Scale(SystemInformation.VerticalScrollBarWidth);
+            vScrollBar.Orientation = ScrollBarOrientation.Vertical;
+            vScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+            hScrollBar = new ScrollBarEx();
+            hScrollBar.OverScroll = true;
+            hScrollBar.Height = ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight);
+            hScrollBar.Orientation = ScrollBarOrientation.Horizontal;
+            hScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            if (PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false))
+            {
+                AddScrollBars();
+                UpdateScrollBarTheme();
+            }
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
+        }
+
+        /// <summary>
+        /// Add controls to container
+        /// </summary>
+        public void AddScrollBars()
+        {
+            treeView.Parent.Controls.Add(hScrollBar);
+            treeView.Parent.Controls.Add(vScrollBar);
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll += OnScrollBarScroll;
+            vScrollBar.VisibleChanged += delegate { OnTreeViewResize(null, null); };
+            hScrollBar.VisibleChanged += delegate { OnTreeViewResize(null, null); };
+            treeView.Paint += delegate { UpdateScrollState(); };
+            treeView.Resize += OnTreeViewResize;
+        }
+
+        /// <summary>
+        /// Remove controls from container
+        /// </summary>
+        private void RemoveScrollBars()
+        {
+            treeView.Parent.Controls.Remove(hScrollBar);
+            treeView.Parent.Controls.Remove(vScrollBar);
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.VisibleChanged -= delegate { OnTreeViewResize(null, null); };
+            hScrollBar.VisibleChanged -= delegate { OnTreeViewResize(null, null); };
+            treeView.Paint -= delegate { UpdateScrollState(); };
+            treeView.Resize -= OnTreeViewResize;
+        }
+
+        /// <summary>
+        /// Handle the incoming theme events
+        /// </summary>
+        public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            if (e.Type == EventType.ApplyTheme)
+            {
+                Boolean enabled = PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false);
+                if (enabled && !treeView.Parent.Controls.Contains(vScrollBar))
+                {
+                    AddScrollBars();
+                    UpdateScrollBarTheme();
+                }
+                else if (!enabled && treeView.Parent.Controls.Contains(vScrollBar))
+                {
+                    RemoveScrollBars();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the scrollbar theme and applies old defaults
+        /// </summary>
+        private void UpdateScrollBarTheme()
+        {
+            PluginBase.MainForm.ThemeControls(vScrollBar);
+            PluginBase.MainForm.ThemeControls(hScrollBar);
+            // Apply settings so that old defaults work...
+            vScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", vScrollBar.ForeColor);
+            vScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", vScrollBar.ForeColor);
+            vScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", vScrollBar.ActiveForeColor);
+            vScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", vScrollBar.ForeColor);
+            hScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", hScrollBar.ForeColor);
+            hScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", hScrollBar.ForeColor);
+            hScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", hScrollBar.ActiveForeColor);
+            hScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", hScrollBar.ForeColor);
+        }
+
+        /// <summary>
+        /// Updates the scrollbar scroll states
+        /// </summary>
+        private void UpdateScrollState()
+        {
+            Win32.SCROLLINFO vScroll = Win32.GetFullScrollInfo(treeView, false);
+            Win32.SCROLLINFO hScroll = Win32.GetFullScrollInfo(treeView, true);
+            vScrollBar.Visible = vScroll.nMax > (vScroll.nPage - 1) && vScroll.nPage > 0;
+            hScrollBar.Visible = hScroll.nMax > (hScroll.nPage - 1) && hScroll.nPage > 0;
+            UpdateScrollBarMargins();
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.Minimum = vScroll.nMin;
+            vScrollBar.Maximum = vScroll.nMax - (vScroll.nPage - 1);
+            vScrollBar.LargeChange = vScroll.nPage - 1;
+            vScrollBar.Value = vScroll.nPos;
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Minimum = hScroll.nMin;
+            hScrollBar.Maximum = hScroll.nMax - (hScroll.nPage - 1);
+            hScrollBar.LargeChange = (hScroll.nPage - 1);
+            hScrollBar.Value = hScroll.nPos;
+            hScrollBar.Scroll += OnScrollBarScroll;
+        }
+
+        /// <summary>
+        /// Update the scrollbar margins
+        /// </summary>
+        private void UpdateScrollBarMargins()
+        {
+            if (!hScrollBar.Visible) vScrollBar.Margin = new Padding(0, 0, 0, 0);
+            else vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+        }
+
+        /// <summary>
+        /// Updates the scrollbars on treeView resize
+        /// </summary>
+        private void OnTreeViewResize(Object sender, EventArgs e)
+        {
+            vScrollBar.BringToFront();
+            vScrollBar.Location = new Point(treeView.Location.X + treeView.Width - vScrollBar.Width, treeView.Location.Y);
+            vScrollBar.Height = treeView.Height;
+            hScrollBar.BringToFront();
+            hScrollBar.Location = new Point(treeView.Location.X, treeView.Location.Y + treeView.Height - hScrollBar.Height);
+            hScrollBar.Width = treeView.Width - (vScrollBar.Visible ? vScrollBar.Width : 0);
+            treeView.Invalidate();
+        }
+
+        /// <summary>
+        /// Updates the treeView on scrollbar scroll
+        /// </summary>
+        private void OnScrollBarScroll(Object sender, ScrollEventArgs e)
+        {
+            if (e.OldValue == -1 || treeView.Nodes.Count == 0) return;
+            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll)
+            {
+                treeView.BeginUpdate();
+                Win32.SetScrollPos(treeView.Handle, Win32.SB_VERT, e.NewValue, true);
+                treeView.EndUpdate();
+            }
+            else
+            {
+                treeView.BeginUpdate();
+                Win32.SetScrollPos(treeView.Handle, Win32.SB_HORZ, e.NewValue, true);
+                treeView.EndUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Dispose the controls
+        /// </summary>
+        void IDisposable.Dispose()
+        {
+            treeView = null;
+            vScrollBar.Dispose();
+            hScrollBar.Dispose();
+        }
+
+    }
+
+    public class RichTextBoxScroller : IEventHandler, IDisposable
+    {
+        private RichTextBox richTextBox;
+        private ScrollBarEx vScrollBar;
+        private ScrollBarEx hScrollBar;
+
+        /// <summary>
+        /// Initialize TreeViewScroller
+        /// </summary>
+        public RichTextBoxScroller(RichTextBox view)
+        {
+            richTextBox = view;
+            InitScrollBars();
+        }
+
+        /// <summary>
+        /// Init the custom scrollbars
+        /// </summary>
+        public void InitScrollBars()
+        {
+            vScrollBar = new ScrollBarEx();
+            vScrollBar.OverScroll = true;
+            vScrollBar.Width = ScaleHelper.Scale(SystemInformation.VerticalScrollBarWidth);
+            vScrollBar.Orientation = ScrollBarOrientation.Vertical;
+            vScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+            hScrollBar = new ScrollBarEx();
+            hScrollBar.OverScroll = true;
+            hScrollBar.Height = ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight);
+            hScrollBar.Orientation = ScrollBarOrientation.Horizontal;
+            hScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            if (PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false))
+            {
+                AddScrollBars();
+                UpdateScrollBarTheme();
+            }
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
+        }
+
+        /// <summary>
+        /// Add controls to container
+        /// </summary>
+        public void AddScrollBars()
+        {
+            richTextBox.Parent.Controls.Add(hScrollBar);
+            richTextBox.Parent.Controls.Add(vScrollBar);
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll += OnScrollBarScroll;
+            vScrollBar.VisibleChanged += delegate { OnRichTextBoxResize(null, null); };
+            hScrollBar.VisibleChanged += delegate { OnRichTextBoxResize(null, null); };
+            richTextBox.Paint += delegate { UpdateScrollState(); };
+            richTextBox.Resize += OnRichTextBoxResize;
+        }
+
+        /// <summary>
+        /// Remove controls from container
+        /// </summary>
+        private void RemoveScrollBars()
+        {
+            richTextBox.Parent.Controls.Remove(hScrollBar);
+            richTextBox.Parent.Controls.Remove(vScrollBar);
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.VisibleChanged -= delegate { OnRichTextBoxResize(null, null); };
+            hScrollBar.VisibleChanged -= delegate { OnRichTextBoxResize(null, null); };
+            richTextBox.Paint -= delegate { UpdateScrollState(); };
+            richTextBox.Resize -= OnRichTextBoxResize;
+        }
+
+        /// <summary>
+        /// Handle the incoming theme events
+        /// </summary>
+        public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            if (e.Type == EventType.ApplyTheme)
+            {
+                Boolean enabled = PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false);
+                if (enabled && !richTextBox.Parent.Controls.Contains(vScrollBar))
+                {
+                    AddScrollBars();
+                    UpdateScrollBarTheme();
+                }
+                else if (!enabled && richTextBox.Parent.Controls.Contains(vScrollBar))
+                {
+                    RemoveScrollBars();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the scrollbar theme and applies old defaults
+        /// </summary>
+        private void UpdateScrollBarTheme()
+        {
+            PluginBase.MainForm.ThemeControls(vScrollBar);
+            PluginBase.MainForm.ThemeControls(hScrollBar);
+            // Apply settings so that old defaults work...
+            vScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", vScrollBar.ForeColor);
+            vScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", vScrollBar.ForeColor);
+            vScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", vScrollBar.ActiveForeColor);
+            vScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", vScrollBar.ForeColor);
+            hScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", hScrollBar.ForeColor);
+            hScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", hScrollBar.ForeColor);
+            hScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", hScrollBar.ActiveForeColor);
+            hScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", hScrollBar.ForeColor);
+        }
+
+        /// <summary>
+        /// Updates the scrollbar scroll states
+        /// </summary>
+        private void UpdateScrollState()
+        {
+            Win32.SCROLLINFO vScroll = Win32.GetFullScrollInfo(richTextBox, false);
+            Win32.SCROLLINFO hScroll = Win32.GetFullScrollInfo(richTextBox, true);
+            vScrollBar.Visible = vScroll.nMax > (vScroll.nPage - 1) && vScroll.nPage > 0;
+            hScrollBar.Visible = hScroll.nMax > (hScroll.nPage - 1) && hScroll.nPage > 0;
+            UpdateScrollBarMargins();
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.Minimum = vScroll.nMin;
+            vScrollBar.Maximum = vScroll.nMax - (vScroll.nPage - 1);
+            vScrollBar.LargeChange = vScroll.nPage - 1;
+            vScrollBar.Value = vScroll.nPos;
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Minimum = hScroll.nMin;
+            hScrollBar.Maximum = hScroll.nMax - (hScroll.nPage - 1);
+            hScrollBar.LargeChange = (hScroll.nPage - 1);
+            hScrollBar.Value = hScroll.nPos;
+            hScrollBar.Scroll += OnScrollBarScroll;
+        }
+
+        /// <summary>
+        /// Update the scrollbar margins
+        /// </summary>
+        private void UpdateScrollBarMargins()
+        {
+            if (!hScrollBar.Visible) vScrollBar.Margin = new Padding(0, 0, 0, 0);
+            else vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+        }
+
+        /// <summary>
+        /// Updates the scrollbars on richTextBox resize
+        /// </summary>
+        private void OnRichTextBoxResize(Object sender, EventArgs e)
+        {
+            vScrollBar.BringToFront();
+            vScrollBar.Location = new Point(richTextBox.Location.X + richTextBox.Width - vScrollBar.Width, richTextBox.Location.Y);
+            vScrollBar.Height = richTextBox.Height;
+            hScrollBar.BringToFront();
+            hScrollBar.Location = new Point(richTextBox.Location.X, richTextBox.Location.Y + richTextBox.Height - hScrollBar.Height);
+            hScrollBar.Width = richTextBox.Width - (vScrollBar.Visible ? vScrollBar.Width : 0);
+            richTextBox.Invalidate();
+        }
+
+        /// <summary>
+        /// Updates the richTextBox on scrollbar scroll
+        /// </summary>
+        private void OnScrollBarScroll(Object sender, ScrollEventArgs e)
+        {
+            if (e.OldValue == -1 || richTextBox.Lines.Length == 0) return;
+            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll)
+            {
+                int wParam = Win32.SB_THUMBPOSITION | e.NewValue << 16;
+                Win32.SendMessage(richTextBox.Handle, Win32.WM_VSCROLL, (IntPtr)wParam, IntPtr.Zero);
+            }
+            else
+            {
+                int wParam = Win32.SB_THUMBPOSITION | e.NewValue << 16;
+                Win32.SendMessage(richTextBox.Handle, Win32.WM_HSCROLL, (IntPtr)wParam, IntPtr.Zero);
+            }
+        }
+
+        /// <summary>
+        /// Dispose the controls
+        /// </summary>
+        void IDisposable.Dispose()
+        {
+            richTextBox = null;
+            vScrollBar.Dispose();
+            hScrollBar.Dispose();
+        }
+
+    }
+
+    public class DataGridViewScroller : IEventHandler, IDisposable
+    {
+        private DataGridView dataGridView;
+        private ScrollBarEx vScrollBar;
+        private ScrollBarEx hScrollBar;
+
+        /// <summary>
+        /// Initialize DataGridViewScroller
+        /// </summary>
+        public DataGridViewScroller(DataGridView view)
+        {
+            dataGridView = view;
+            InitScrollBars();
+        }
+
+        /// <summary>
+        /// Init the custom scrollbars
+        /// </summary>
+        public void InitScrollBars()
+        {
+            vScrollBar = new ScrollBarEx();
+            vScrollBar.OverScroll = true;
+            vScrollBar.Width = ScaleHelper.Scale(SystemInformation.VerticalScrollBarWidth);
+            vScrollBar.Orientation = ScrollBarOrientation.Vertical;
+            vScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+            hScrollBar = new ScrollBarEx();
+            hScrollBar.OverScroll = true;
+            hScrollBar.Height = ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight);
+            hScrollBar.Orientation = ScrollBarOrientation.Horizontal;
+            hScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
+            if (PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false))
+            {
+                AddScrollBars();
+                UpdateScrollBarTheme();
+            }
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
+        }
+
+        /// <summary>
+        /// Add controls to container
+        /// </summary>
+        public void AddScrollBars()
+        {
+            dataGridView.Parent.Controls.Add(hScrollBar);
+            dataGridView.Parent.Controls.Add(vScrollBar);
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll += OnScrollBarScroll;
+            vScrollBar.VisibleChanged += delegate { OnDataGridViewResize(null, null); };
+            hScrollBar.VisibleChanged += delegate { OnDataGridViewResize(null, null); };
+            dataGridView.Paint += delegate { UpdateScrollState(); };
+            dataGridView.Resize += OnDataGridViewResize;
+        }
+
+        /// <summary>
+        /// Remove controls from container
+        /// </summary>
+        private void RemoveScrollBars()
+        {
+            dataGridView.Parent.Controls.Remove(hScrollBar);
+            dataGridView.Parent.Controls.Remove(vScrollBar);
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.VisibleChanged -= delegate { OnDataGridViewResize(null, null); };
+            hScrollBar.VisibleChanged -= delegate { OnDataGridViewResize(null, null); };
+            dataGridView.Paint -= delegate { UpdateScrollState(); };
+            dataGridView.Resize -= OnDataGridViewResize;
+        }
+
+        /// <summary>
+        /// Handle the incoming theme events
+        /// </summary>
+        public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            if (e.Type == EventType.ApplyTheme)
+            {
+                Boolean enabled = PluginBase.MainForm.GetThemeFlag("ScrollBar.UseGlobally", false);
+                if (enabled && !dataGridView.Parent.Controls.Contains(vScrollBar))
+                {
+                    AddScrollBars();
+                    UpdateScrollBarTheme();
+                }
+                else if (!enabled && dataGridView.Parent.Controls.Contains(vScrollBar))
+                {
+                    RemoveScrollBars();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the scrollbar theme and applies old defaults
+        /// </summary>
+        private void UpdateScrollBarTheme()
+        {
+            PluginBase.MainForm.ThemeControls(vScrollBar);
+            PluginBase.MainForm.ThemeControls(hScrollBar);
+            // Apply settings so that old defaults work...
+            vScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", vScrollBar.ForeColor);
+            vScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", vScrollBar.ForeColor);
+            vScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", vScrollBar.ActiveForeColor);
+            vScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", vScrollBar.ForeColor);
+            hScrollBar.ArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ArrowColor", hScrollBar.ForeColor);
+            hScrollBar.HotArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotArrowColor", hScrollBar.ForeColor);
+            hScrollBar.ActiveArrowColor = PluginBase.MainForm.GetThemeColor("ScrollBar.ActiveArrowColor", hScrollBar.ActiveForeColor);
+            hScrollBar.HotForeColor = PluginBase.MainForm.GetThemeColor("ScrollBar.HotForeColor", hScrollBar.ForeColor);
+        }
+
+        /// <summary>
+        /// Updates the scrollbar scroll states
+        /// </summary>
+        private void UpdateScrollState()
+        {
+            Int32 vScrollMax = dataGridView.RowCount;
+            Int32 vScrollPos = dataGridView.FirstDisplayedScrollingRowIndex;
+            Int32 vScrollPage = dataGridView.DisplayedRowCount(false);
+            Int32 hScrollMax = dataGridView.ColumnCount;
+            Int32 hScrollPos = dataGridView.FirstDisplayedScrollingColumnIndex;
+            Int32 hScrollPage = dataGridView.DisplayedColumnCount(false);
+            vScrollBar.Visible = vScrollMax > (vScrollPage - 1) && vScrollMax != vScrollPage;
+            hScrollBar.Visible = hScrollMax > (hScrollPage - 1) && hScrollMax != hScrollPage;
+            UpdateScrollBarMargins();
+            vScrollBar.Scroll -= OnScrollBarScroll;
+            vScrollBar.Minimum = 0;
+            vScrollBar.Maximum = vScrollMax - (vScrollPage);
+            vScrollBar.LargeChange = vScrollPage - 1;
+            vScrollBar.Value = vScrollPos;
+            vScrollBar.Scroll += OnScrollBarScroll;
+            hScrollBar.Scroll -= OnScrollBarScroll;
+            hScrollBar.Minimum = 0;
+            hScrollBar.Maximum = hScrollMax - (hScrollPage - 1);
+            hScrollBar.LargeChange = (hScrollPage - 1);
+            hScrollBar.Value = hScrollPos;
+            hScrollBar.Scroll += OnScrollBarScroll;
+        }
+
+        /// <summary>
+        /// Update the scrollbar margins
+        /// </summary>
+        private void UpdateScrollBarMargins()
+        {
+            if (!hScrollBar.Visible) vScrollBar.Margin = new Padding(0, 0, 0, 0);
+            else vScrollBar.Margin = new Padding(0, 0, 0, ScaleHelper.Scale(SystemInformation.HorizontalScrollBarHeight));
+        }
+
+        /// <summary>
+        /// Updates the scrollbars on dataGridView resize
+        /// </summary>
+        private void OnDataGridViewResize(Object sender, EventArgs e)
+        {
+            vScrollBar.BringToFront();
+            vScrollBar.Location = new Point(dataGridView.Location.X + dataGridView.Width - vScrollBar.Width, dataGridView.Location.Y);
+            vScrollBar.Height = dataGridView.Height;
+            hScrollBar.BringToFront();
+            hScrollBar.Location = new Point(dataGridView.Location.X, dataGridView.Location.Y + dataGridView.Height - hScrollBar.Height);
+            hScrollBar.Width = dataGridView.Width - (vScrollBar.Visible ? vScrollBar.Width : 0);
+            dataGridView.Invalidate();
+        }
+
+        /// <summary>
+        /// Updates the dataGridView on scrollbar scroll
+        /// </summary>
+        private void OnScrollBarScroll(Object sender, ScrollEventArgs e)
+        {
+            if (e.OldValue == -1 || dataGridView.RowCount == 0) return;
+            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll) dataGridView.FirstDisplayedScrollingRowIndex = e.NewValue;
+            else dataGridView.FirstDisplayedScrollingColumnIndex = e.NewValue;
+        }
+
+        /// <summary>
+        /// Dispose the controls
+        /// </summary>
+        void IDisposable.Dispose()
+        {
+            dataGridView = null;
+            vScrollBar.Dispose();
+            hScrollBar.Dispose();
+        }
+
+    }
+
+    #endregion
+
+    #region Designer
 
     /// <summary>
     /// The designer for the <see cref="ScrollBarEx"/> control.
@@ -2047,7 +2884,7 @@ namespace PluginCore.Controls
 
     #endregion
 
-    #region enums
+    #region Enums
 
     /// <summary>
     /// Enum for the scrollbar orientation.
@@ -2064,7 +2901,7 @@ namespace PluginCore.Controls
         /// </summary>
         Vertical
     }
-
+    
     /// <summary>
     /// The scrollbar states.
     /// </summary>

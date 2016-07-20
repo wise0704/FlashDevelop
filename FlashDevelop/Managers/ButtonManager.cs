@@ -20,7 +20,7 @@ namespace FlashDevelop.Managers
             if (Globals.CurrentDocument == null) return;
             for (Int32 i = 0; i < count; i++)
             {
-                ToolStripItem item = (ToolStripItem)StripBarManager.Items[i];
+                ToolStripItem item = StripBarManager.Items[i];
                 String[] actions = ((ItemData)item.Tag).Flags.Split('+');
                 for (Int32 j = 0; j < actions.Length; j++)
                 {
@@ -35,7 +35,8 @@ namespace FlashDevelop.Managers
         /// </summary>
         public static Boolean ValidateFlagAction(ToolStripItem item, String action)
         {
-            ITabbedDocument document = Globals.CurrentDocument;
+            IMainForm mainForm = PluginBase.MainForm;
+            ITabbedDocument document = mainForm.CurrentDocument;
             ScintillaControl sci = document.SciControl;
             if (action.Contains("!IsEditable"))
             {
@@ -87,11 +88,11 @@ namespace FlashDevelop.Managers
             }
             if (action.Contains("!HasModified"))
             {
-                if (Globals.MainForm.HasModifiedDocuments) return false;
+                if (mainForm.HasModifiedDocuments) return false;
             }
             else if (action.Contains("HasModified"))
             {
-                if (!Globals.MainForm.HasModifiedDocuments) return false;
+                if (!mainForm.HasModifiedDocuments) return false;
             }
             if (action.Contains("!HasClosedDocs"))
             {
@@ -103,35 +104,43 @@ namespace FlashDevelop.Managers
             }
             if (action.Contains("!ProcessIsRunning"))
             {
-                if (Globals.MainForm.ProcessIsRunning) return false;
+                if (mainForm.ProcessIsRunning) return false;
             }
             else if (action.Contains("ProcessIsRunning"))
             {
-                if (!Globals.MainForm.ProcessIsRunning) return false;
+                if (!mainForm.ProcessIsRunning) return false;
             }
             if (action.Contains("!StandaloneMode"))
             {
-                if (Globals.MainForm.StandaloneMode) return false;
+                if (mainForm.StandaloneMode) return false;
             }
             else if (action.Contains("StandaloneMode"))
             {
-                if (!Globals.MainForm.StandaloneMode) return false;
+                if (!mainForm.StandaloneMode) return false;
             }
             if (action.Contains("!MultiInstanceMode"))
             {
-                if (Globals.MainForm.MultiInstanceMode) return false;
+                if (mainForm.MultiInstanceMode) return false;
             }
             else if (action.Contains("MultiInstanceMode"))
             {
-                if (!Globals.MainForm.MultiInstanceMode) return false;
+                if (!mainForm.MultiInstanceMode) return false;
             }
             if (action.Contains("!IsFullScreen"))
             {
-                if (MainForm.Instance.IsFullScreen) return false;
+                if (mainForm.IsFullScreen) return false;
             }
             else if (action.Contains("IsFullScreen"))
             {
-                if (!MainForm.Instance.IsFullScreen) return false;
+                if (!mainForm.IsFullScreen) return false;
+            }
+            if (action.Contains("!IsOnlyInstance"))
+            {
+                if (mainForm.GetInstanceCount() == 1) return false;
+            }
+            else if (action.Contains("IsOnlyInstance"))
+            {
+                if (mainForm.GetInstanceCount() > 1) return false;
             }
             if (action.Contains("TracksBoolean"))
             {
@@ -197,6 +206,15 @@ namespace FlashDevelop.Managers
                         if (chunks[chunks.Length - 1] != language.ToUpper()) return false;
                     }
                 }
+                if (action.Contains("DistroIs?"))
+                {
+                    String[] chunks = action.Split('?');
+                    if (chunks.Length == 2)
+                    {
+                        String distro = DistroConfig.DISTRIBUTION_NAME;
+                        if (chunks[chunks.Length - 1] != distro) return false;
+                    }
+                }
                 if (action.Contains("IsActiveSyntax"))
                 {
                     String language = document.SciControl.ConfigurationLanguage;
@@ -227,27 +245,35 @@ namespace FlashDevelop.Managers
         /// </summary>
         public static void ExecuteFlagAction(ToolStripItem item, String action, Boolean value)
         {
-            if (action.StartsWith("Check:"))
+            if (action.StartsWithOrdinal("Check:"))
             {
                 if (item is ToolStripMenuItem)
                 {
                     ((ToolStripMenuItem)item).Checked = value;
                 }
             }
-            else if (action.StartsWith("Uncheck:"))
+            else if (action.StartsWithOrdinal("Uncheck:"))
             {
                 if (item is ToolStripMenuItem)
                 {
                     ((ToolStripMenuItem)item).Checked = !value;
                 }
             }
-            else if (action.StartsWith("Enable:"))
+            else if (action.StartsWithOrdinal("Enable:"))
             {
                 item.Enabled = value;
             }
-            else if (action.StartsWith("Disable:"))
+            else if (action.StartsWithOrdinal("Disable:"))
             {
                 item.Enabled = !value;
+            }
+            else if (action.StartsWithOrdinal("Visible:"))
+            {
+                item.Visible = value;
+            }
+            else if (action.StartsWithOrdinal("Invisible:"))
+            {
+                item.Visible = !value;
             }
         }
 
@@ -266,7 +292,7 @@ namespace FlashDevelop.Managers
                     ToolStripMenuItem item = new ToolStripMenuItem();
                     item.Click += new EventHandler(Globals.MainForm.Reopen);
                     item.Tag = file; item.Text = PathHelper.GetCompactPath(file);
-                    if (i < 15) reopenMenu.DropDownItems.Add(item);
+                    if (i < Globals.Settings.MaxRecentFiles) reopenMenu.DropDownItems.Add(item);
                     else Globals.PreviousDocuments.Remove(file);
                 }
                 if (Globals.PreviousDocuments.Count > 0)
@@ -325,7 +351,7 @@ namespace FlashDevelop.Managers
                     }
                     else
                     {
-                        String name = TextHelper.GetString("Label.8Bits").Replace("&", "");
+                        String name = TextHelper.GetStringWithoutMnemonics("Label.8Bits");
                         return name + " (" + info.Charset + ")";
                     }
                 }
@@ -359,7 +385,7 @@ namespace FlashDevelop.Managers
         /// </summary>
         public static String GetLabelAsPlainText(String name, Boolean unicode, Boolean hasBOM)
         {
-            String label = TextHelper.GetString(name).Replace("&", "");
+            String label = TextHelper.GetStringWithoutMnemonics(name);
             if (unicode) label = "Unicode (" + label.ToLower() + ")";
             return hasBOM ? label + " (BOM)" : label;
         }

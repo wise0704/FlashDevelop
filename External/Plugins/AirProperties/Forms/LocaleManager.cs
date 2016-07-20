@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Text;
-using System.Drawing;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows.Forms;
+using PluginCore;
 using PluginCore.Localization;
 
 namespace AirProperties
@@ -176,7 +175,7 @@ namespace AirProperties
                 foreach (ListItem locale in _defaultLocales)
                 {
                     baseLocale = locale.Value + "-";
-                    if (newLocale.StartsWith(baseLocale) && newLocale.Length > baseLocale.Length)
+                    if (newLocale.StartsWithOrdinal(baseLocale) && newLocale.Length > baseLocale.Length)
                     {
                         isValid = true;
                         break;

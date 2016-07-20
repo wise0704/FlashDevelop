@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Windows.Forms;
+using System.Windows.Forms.Design;
 using System.Xml.Serialization;
 using Ookii.Dialogs;
 using PluginCore;
@@ -180,46 +181,6 @@ namespace FlashDevelop.Settings
             set { this.viewModifiedLines = value; }
         }
 
-        [DisplayName("ComboBox Flat Style")]
-        [LocalizedCategory("FlashDevelop.Category.Display")]
-        [LocalizedDescription("FlashDevelop.Description.ComboBoxFlatStyle")]
-        [DefaultValue(FlatStyle.Popup)]
-        public FlatStyle ComboBoxFlatStyle
-        {
-            get { return this.comboBoxFlatStyle; }
-            set { this.comboBoxFlatStyle = value; }
-        }
-
-        [DefaultValue(true)]
-        [DisplayName("Use List View Grouping")]
-        [LocalizedCategory("FlashDevelop.Category.Display")]
-        [LocalizedDescription("FlashDevelop.Description.UseListViewGrouping")]
-        public Boolean UseListViewGrouping
-        {
-            get { return this.useListViewGrouping; }
-            set { this.useListViewGrouping = value; }
-        }
-
-        [DefaultValue(false)]
-        [DisplayName("Use System UI Colors")]
-        [LocalizedCategory("FlashDevelop.Category.Display")]
-        [LocalizedDescription("FlashDevelop.Description.UseSystemColors")]
-        public Boolean UseSystemColors
-        {
-            get { return this.useSystemColors; }
-            set { this.useSystemColors = value; }
-        }
-
-        [DisplayName("UI Render Mode")]
-        [LocalizedCategory("FlashDevelop.Category.Display")]
-        [LocalizedDescription("FlashDevelop.Description.RenderMode")]
-        [DefaultValue(UiRenderMode.Professional)]
-        public UiRenderMode RenderMode
-        {
-            get { return this.uiRenderMode; }
-            set { this.uiRenderMode = value; }
-        }
-
         [XmlIgnore]
         [DisplayName("UI Console Font")]
         [LocalizedCategory("FlashDevelop.Category.Display")]
@@ -254,6 +215,16 @@ namespace FlashDevelop.Settings
         {
             get { return this.caretLineVisible; }
             set { this.caretLineVisible = value; }
+        }
+
+        [DefaultValue(false)]
+        [DisplayName("Keep Caret Centered")]
+        [LocalizedCategory("FlashDevelop.Category.Editor")]
+        [LocalizedDescription("FlashDevelop.Description.KeepCaretCentered")]
+        public Boolean KeepCaretCentered
+        {
+            get { return this.keepCaretCentered; }
+            set { this.keepCaretCentered = value; }
         }
 
         [DefaultValue(true)]
@@ -323,10 +294,14 @@ namespace FlashDevelop.Settings
         public Int32 ScrollWidth
         {
             get { return this.scrollWidth; }
-            set { this.scrollWidth = value; }
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                this.scrollWidth = value;
+            }
         }
 
-        [DefaultValue("as")]
+        [DefaultValue(DistroConfig.DISTRIBUTION_EXT)]
         [DisplayName("Default File Extension")]
         [LocalizedCategory("FlashDevelop.Category.Editor")]
         [LocalizedDescription("FlashDevelop.Description.DefaultFileExtension")]
@@ -372,7 +347,7 @@ namespace FlashDevelop.Settings
         [LocalizedDescription("FlashDevelop.Description.HighlightMatchingWordsDelay")]
         public Int32 HighlightMatchingWordsDelay
         {
-            get 
+            get
             {
                 // Make sure this is not an invalid value
                 if (this.highlightMatchingWordsDelay <= 0) this.highlightMatchingWordsDelay = 1200;
@@ -445,10 +420,10 @@ namespace FlashDevelop.Settings
         [LocalizedDescription("FlashDevelop.Description.IndentView")]
         public IndentView IndentView
         {
-            get 
+            get
             {
                 if ((Int32)this.indentView == 0) this.indentView = IndentView.Real;
-                return this.indentView; 
+                return this.indentView;
             }
             set
             {
@@ -531,7 +506,7 @@ namespace FlashDevelop.Settings
         }
 
         [DefaultValue(false)]
-        [DisplayName("Automaticly Reload Modified Files")]
+        [DisplayName("Automatically Reload Modified Files")]
         [LocalizedCategory("FlashDevelop.Category.Features")]
         [LocalizedDescription("FlashDevelop.Description.AutoReloadModifiedFiles")]
         public Boolean AutoReloadModifiedFiles
@@ -588,6 +563,20 @@ namespace FlashDevelop.Settings
         {
             get { return this.moveCursorAfterComment; }
             set { this.moveCursorAfterComment = value; }
+        }
+
+        [DefaultValue(15)]
+        [DisplayName("Max Recent Files")]
+        [LocalizedCategory("FlashDevelop.Category.Features")]
+        [LocalizedDescription("FlashDevelop.Description.MaxRecentFiles")]
+        public Int32 MaxRecentFiles
+        {
+            get { return this.maxRecentFiles; }
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                this.maxRecentFiles = value;
+            }
         }
 
         [DefaultValue(true)]
@@ -931,6 +920,17 @@ namespace FlashDevelop.Settings
             set { this.customProjectsDir = value; }
         }
 
+        [DefaultValue("")]
+        [DisplayName("Custom Command Prompt")]
+        [LocalizedCategory("FlashDevelop.Category.Paths")]
+        [LocalizedDescription("FlashDevelop.Description.CustomCommandPrompt")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public String CustomCommandPrompt
+        {
+            get { return this.customCommandPrompt; }
+            set { this.customCommandPrompt = value; }
+        }
+
         #endregion
 
         #region Hidden
@@ -943,6 +943,54 @@ namespace FlashDevelop.Settings
         }
 
         #endregion
+
+        #region Legacy
+
+        [Browsable(false)]
+        public Boolean UseListViewGrouping
+        {
+            get { return Globals.MainForm.GetThemeFlag("ListView.UseGrouping", true); }
+            set {}
+        }
+
+        [Browsable(false)]
+        public UiRenderMode RenderMode
+        {
+            get
+            {
+                String value = Globals.MainForm.GetThemeValue("Global.UiRenderMode", "Professional");
+                if (value == "System") return UiRenderMode.System;
+                else return UiRenderMode.Professional; 
+            }
+            set {}
+        }
+
+        [Browsable(false)]
+        public FlatStyle ComboBoxFlatStyle
+        {
+            get
+            {
+                String value = Globals.MainForm.GetThemeValue("ComboBox.FlatStyle", "Popup");
+                switch (value)
+                {
+                    case "Flat": return FlatStyle.Flat;
+                    case "Standard": return FlatStyle.Standard;
+                    case "System": return FlatStyle.System;
+                    default: return FlatStyle.Popup;
+                }
+            }
+            set {}
+        }
+
+        [Browsable(false)]
+        public Boolean UseSystemColors
+        {
+            get { return false; }
+            set {}
+        }
+
+        #endregion
+
     }
 
 }
