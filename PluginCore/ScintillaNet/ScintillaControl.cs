@@ -88,7 +88,9 @@ namespace ScintillaNet
         {
             if (e.Type == EventType.ApplyTheme)
             {
-                Boolean enabled = PluginBase.MainForm.GetThemeFlag("ScrollBar.UseCustom", false);
+                Color color = PluginBase.MainForm.GetThemeColor("ScrollBar.ForeColor");
+                String value = PluginBase.MainForm.GetThemeValue("ScrollBar.UseCustom");
+                Boolean enabled = value == "True" || (value == null && color != Color.Empty);
                 if (enabled && !this.Controls.Contains(this.vScrollBar))
                 {
                     this.AddScrollBars(this);
@@ -136,7 +138,9 @@ namespace ScintillaNet
             sender.hScrollBar.Orientation = ScrollBarOrientation.Horizontal;
             sender.hScrollBar.ContextMenuStrip.Renderer = new DockPanelStripRenderer();
             sender.hScrollBar.Dock = DockStyle.Bottom;
-            if (PluginBase.MainForm.GetThemeFlag("ScrollBar.UseCustom", false))
+            Color color = PluginBase.MainForm.GetThemeColor("ScrollBar.ForeColor");
+            String value = PluginBase.MainForm.GetThemeValue("ScrollBar.UseCustom");
+            if (value == "True" || (value == null && color != Color.Empty))
             {
                 sender.AddScrollBars(sender);
                 sender.UpdateScrollBarTheme(sender);
@@ -225,8 +229,7 @@ namespace ScintillaNet
 
         #region Scintilla Main
 
-        public ScintillaControl()
-            : this(IntPtr.Size == 4 ? "SciLexer.dll" : "SciLexer64.dll")
+        public ScintillaControl() : this(IntPtr.Size == 4 ? "SciLexer.dll" : "SciLexer64.dll")
         {
             if (Win32.ShouldUseWin32()) DragAcceptFiles(this.Handle, 1);
         }
@@ -249,20 +252,14 @@ namespace ScintillaNet
                 {
                     IntPtr lib = LoadLibrary(fullpath);
                     IntPtr sciFunctionPointer = GetProcAddress(new HandleRef(null, lib), "Scintilla_DirectFunction");
-                    if (sciFunctionPointer == IntPtr.Zero)
-                        sciFunctionPointer = GetProcAddress(new HandleRef(null, lib), "_Scintilla_DirectFunction@16");
-
+                    if (sciFunctionPointer == IntPtr.Zero) sciFunctionPointer = GetProcAddress(new HandleRef(null, lib), "_Scintilla_DirectFunction@16");
                     if (sciFunctionPointer == IntPtr.Zero)
                     {
                         string msg = "The Scintilla module has no export for the 'Scintilla_DirectFunction' procedure.";
                         throw new Win32Exception(msg, new Win32Exception(Marshal.GetLastWin32Error()));
                     }
-
-                    _sciFunction = (Perform)Marshal.GetDelegateForFunctionPointer(
-                        sciFunctionPointer,
-                        typeof(Perform));
+                    _sciFunction = (Perform)Marshal.GetDelegateForFunctionPointer(sciFunctionPointer, typeof(Perform));
                 }
-
                 // Most Windows Forms controls delay-load everything until a handle is created.
                 // That's a major pain so we just explicity create a handle right away.
                 CreateControl();
@@ -2502,8 +2499,7 @@ namespace ScintillaNet
             bool wholeLine = SelectionStart == SelectionEnd;
             int selectionLength = SelectionEnd - SelectionStart;
             SelectionDuplicate();
-            if (wholeLine)
-                LineDown();
+            if (wholeLine) LineDown();
             else
             {
                 SelectionStart += selectionLength;
@@ -5369,11 +5365,7 @@ namespace ScintillaNet
         [DllImport("shell32.dll")]
         public static extern void DragAcceptFiles(IntPtr hwnd, int accept);
 
-        public delegate IntPtr Perform(
-            IntPtr sci,
-            int iMessage,
-            IntPtr wParam,
-            IntPtr lParam);
+        public delegate IntPtr Perform(IntPtr sci, int iMessage, IntPtr wParam, IntPtr lParam);
 
 
         public int SPerform(int message, int wParam, UInt32 lParam)

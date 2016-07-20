@@ -81,7 +81,8 @@ namespace PluginCore.Helpers
         {
             Boolean useSkipBomWriter = (encoding == Encoding.UTF8 && !saveBOM);
             if (encoding == Encoding.UTF7) encoding = new UTF7EncodingFixed();
-            using (StreamWriter sw = useSkipBomWriter ? new StreamWriter(file, false) : new StreamWriter(file, false, encoding))
+            using (FileStream fs = new FileStream(file, File.Exists(file) ? FileMode.Truncate : FileMode.CreateNew))
+            using (StreamWriter sw = useSkipBomWriter ? new StreamWriter(fs) : new StreamWriter(fs, encoding))
             {
                 sw.Write(text);
                 sw.Close();
@@ -241,14 +242,14 @@ namespace PluginCore.Helpers
             if (Directory.Exists(path))
             {
                 String title = " " + TextHelper.GetString("FlashDevelop.Title.ConfirmDialog");
-                String message = TextHelper.GetString("Info.FolderAlreadyContainsFolder");
+                String message = TextHelper.GetString("PluginCore.Info.FolderAlreadyContainsFolder");
                 DialogResult result = MessageBox.Show(PluginBase.MainForm, String.Format(message, name, "\n"), title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 return result == DialogResult.Yes;
             }
             else if (File.Exists(path))
             {
                 String title = " " + TextHelper.GetString("FlashDevelop.Title.ConfirmDialog");
-                String message = TextHelper.GetString("Info.FolderAlreadyContainsFile");
+                String message = TextHelper.GetString("PluginCore.Info.FolderAlreadyContainsFile");
                 DialogResult result = MessageBox.Show(PluginBase.MainForm, String.Format(message, name, "\n"), title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 return result == DialogResult.Yes;
             }

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
 using PluginCore.Managers;
+using PluginCore.Helpers;
 using TheArtOfDev.HtmlRenderer.Adapters.Entities;
 using TheArtOfDev.HtmlRenderer.Core;
 using TheArtOfDev.HtmlRenderer.WinForms;
@@ -173,10 +174,15 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
         {
             bool tooSmall = false;
 
+            int smallOffsetH = ScaleHelper.Scale(1);
+            int smallOffsetW = ScaleHelper.Scale(2);
+            int minWidth = ScaleHelper.Scale(200);
+            maxWidth = ScaleHelper.Scale(maxWidth);
+
             // tooltip larger than the window: wrap
             var screenArea = Screen.FromControl(owner.Owner).WorkingArea;
-            int limitLeft = screenArea.Left + 1;
-            int limitRight = screenArea.Right - 1;
+            int limitLeft = screenArea.Left + smallOffsetH;
+            int limitRight = screenArea.Right - smallOffsetH;
             int limitBottom = screenArea.Bottom - ClientLimitBottom;
             //
             int maxW = availableWidth > 0 ? availableWidth : limitRight - limitLeft;
@@ -190,13 +196,13 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             if (w > maxW)
             {
                 w = maxW;
-                if (w < 200)
+                if (w < minWidth)
                 {
-                    w = 200;
+                    w = minWidth;
                     tooSmall = true;
                 }
 
-                txtSize = toolTipRTB.GetPreferredSize(new Size(w - 2, 0));
+                txtSize = toolTipRTB.GetPreferredSize(new Size(w - smallOffsetW, 0));
                 w = txtSize.Width;
                 h = txtSize.Height;
             }
@@ -204,7 +210,7 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             if (h > limitBottom - host.Top)
             {
                 w += SystemInformation.VerticalScrollBarWidth;
-                h = limitBottom - host.Top - 2;
+                h = limitBottom - host.Top - smallOffsetW;
             }
             toolTipRTB.Size = new Size(w, h);
             host.Size = new Size(toolTipRTB.Size.Width + 2, toolTipRTB.Size.Height + 2);
@@ -230,6 +236,10 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
 
         public void ShowAtMouseLocation()
         {
+            int topPadding = ScaleHelper.Scale(5);
+            int mediumPadding = ScaleHelper.Scale(10);
+            int smallOffset = ScaleHelper.Scale(2);
+
             mousePos = Control.MousePosition;
             host.Left = mousePos.X;
             var screenArea = Screen.FromPoint(mousePos).WorkingArea;
@@ -237,43 +247,43 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             {
                 host.Left -= (host.Right - screenArea.Right);
             }
-            host.Top = mousePos.Y - host.Height - 10;
+            host.Top = mousePos.Y - host.Height - ScaleHelper.Scale(mediumPadding);
 
-            if (host.Top < 5)
+            if (host.Top < topPadding)
             {
                 // Let's be sure we don't go offscreen
-                int downSpace = screenArea.Bottom - ClientLimitBottom - mousePos.Y - 10;
-                int topSpace = mousePos.Y - 15;
+                int downSpace = screenArea.Bottom - ClientLimitBottom - mousePos.Y - mediumPadding;
+                int topSpace = mousePos.Y - ScaleHelper.Scale(15);
 
                 Size tipSize = toolTipRTB.Size;
                 if (downSpace > topSpace)
                 {
-                    host.Top = mousePos.Y + 10;
+                    host.Top = mousePos.Y + mediumPadding;
 
                     if (host.Height > downSpace)
                     {
-                        tipSize.Height = downSpace - 2;
+                        tipSize.Height = downSpace - smallOffset;
                         if (toolTipRTB.Height >= toolTipRTB.ActualSize.Height &&
                             tipSize.Height < toolTipRTB.ActualSize.Height)
                         {
                             tipSize.Width += SystemInformation.VerticalScrollBarWidth;
                         }
                         toolTipRTB.Size = tipSize;
-                        host.Size = new Size(toolTipRTB.Width + 2, toolTipRTB.Height + 2);
+                        host.Size = new Size(toolTipRTB.Width + smallOffset, toolTipRTB.Height + smallOffset);
                     }
                 }
                 else
                 {
-                    host.Top = 5;
+                    host.Top = topPadding;
 
-                    tipSize.Height = topSpace - 2;
+                    tipSize.Height = topSpace - smallOffset;
                     if (toolTipRTB.Height >= toolTipRTB.ActualSize.Height &&
                         tipSize.Height < toolTipRTB.ActualSize.Height)
                     {
                         tipSize.Width += SystemInformation.VerticalScrollBarWidth;
                     }
                     toolTipRTB.Size = tipSize;
-                    host.Size = new Size(toolTipRTB.Width + 2, toolTipRTB.Height + 2);
+                    host.Size = new Size(toolTipRTB.Width + smallOffset, toolTipRTB.Height + smallOffset);
                 }
             }
             Show();
