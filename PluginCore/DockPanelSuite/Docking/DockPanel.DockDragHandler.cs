@@ -773,7 +773,7 @@ namespace WeifenLuo.WinFormsUI.Docking
                             pane.TestDrop(DragSource, Outline);
                     }
 
-                    if (!Outline.FlagTestDrop && DragSource.IsDockStateValid(DockState.Float))
+                    if (!Outline.FlagTestDrop && (DragSource.IsDockStateValid(DockState.Float) || DragSource.IsDockStateValid(DockState.FloatDocument)))
                     {
                         FloatWindow floatWindow = DockHelper.FloatWindowAtPoint(Control.MousePosition, DockPanel);
                         if (floatWindow != null)
@@ -785,7 +785,7 @@ namespace WeifenLuo.WinFormsUI.Docking
 
                 if (!Outline.FlagTestDrop)
                 {
-                    if (DragSource.IsDockStateValid(DockState.Float))
+                    if (DragSource.IsDockStateValid(DockState.Float) || DragSource.IsDockStateValid(DockState.FloatDocument))
                     {
                         Rectangle rect = FloatOutlineBounds;
                         rect.Offset(Control.MousePosition.X - StartMousePosition.X, Control.MousePosition.Y - StartMousePosition.Y);

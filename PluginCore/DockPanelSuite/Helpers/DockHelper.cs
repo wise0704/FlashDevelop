@@ -24,6 +24,9 @@ namespace WeifenLuo.WinFormsUI.Docking
             else if (((dockableAreas & DockAreas.Document) == 0) &&
                 (dockState == DockState.Document))
                 return false;
+            else if (((dockableAreas & DockAreas.FloatDocument) == 0) &&
+                (dockState == DockState.FloatDocument))
+                return false;
             else if (((dockableAreas & DockAreas.DockLeft) == 0) &&
                 (dockState == DockState.DockLeft || dockState == DockState.DockLeftAutoHide))
                 return false;

@@ -258,17 +258,8 @@ namespace ScintillaNet
                         string msg = "The Scintilla module has no export for the 'Scintilla_DirectFunction' procedure.";
                         throw new Win32Exception(msg, new Win32Exception(Marshal.GetLastWin32Error()));
                     }
-<<<<<<< HEAD
-
-                    _sciFunction = (Perform)Marshal.GetDelegateForFunctionPointer(
-                        sciFunctionPointer,
-                        typeof(Perform));
-=======
                     _sciFunction = (Perform)Marshal.GetDelegateForFunctionPointer(sciFunctionPointer, typeof(Perform));
-                    directPointer = DirectPointer;
->>>>>>> extract_interface
                 }
-
                 // Most Windows Forms controls delay-load everything until a handle is created.
                 // That's a major pain so we just explicity create a handle right away.
                 CreateControl();

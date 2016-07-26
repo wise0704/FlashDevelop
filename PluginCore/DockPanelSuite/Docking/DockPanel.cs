@@ -264,6 +264,11 @@ namespace WeifenLuo.WinFormsUI.Docking
             get {   return Extender.FloatWindowFactory; }
         }
 
+        public DockPanelExtender.IFloatDocumentWindowFactory FloatDocumentWindowFactory
+        {
+            get { return Extender.FloatDocumentWindowFactory; }
+        }
+
         internal DockPanelExtender.IDockPaneCaptionFactory DockPaneCaptionFactory
         {
             get {   return Extender.DockPaneCaptionFactory; }
