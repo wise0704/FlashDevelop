@@ -1,11 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
-using PluginCore.BBCode;
 using PluginCore.Managers;
 using PluginCore.Helpers;
+using TheArtOfDev.HtmlRenderer.Adapters.Entities;
+using TheArtOfDev.HtmlRenderer.Core;
+using TheArtOfDev.HtmlRenderer.WinForms;
+using TheArtOfDev.HtmlRenderer.WinForms.Adapters;
+using TheArtOfDev.HtmlRenderer.WinForms.Utilities;
 
 namespace PluginCore.Controls
 {
@@ -21,13 +25,18 @@ namespace PluginCore.Controls
         public event CancelEventHandler OnShowing;
         public event EventHandler OnHidden;
 
+        // constants
+        protected const int ClientLimitBottom = 26;
+        protected const string BaseStyle = @"body {{margin: 0; padding: 0px; font: {0}pt {1}; margin: 0; background-color: {2}}}
+pre {{ border: solid 1px gray; background-color:#eee; padding: 1em; white-space: pre-wrap; }}
+table {{ border-collapse:collapse; }}
+th {{ text-align: left; border: 1px solid #000; background-color: #DDD; padding: 2px 3px 2px 3px; }}
+td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
+
         // controls
         protected InactiveForm host;
-        protected Panel toolTip;
-        protected SelectableRichTextBox toolTipRTB;
+        protected HtmlPanelEx toolTipRTB;
         protected string rawText;
-        protected Dictionary<String, String> rtfCache;
-        protected List<String> rtfCacheList;
         protected Point mousePos;
 
         protected ICompletionListHost owner;    // We could just use Control here, or pass a reference on each related call, as Control may be a problem with default implementation
@@ -67,10 +76,10 @@ namespace PluginCore.Controls
 
         public bool Selectable
         {
-            get { return toolTipRTB.Selectable; }
+            get { return toolTipRTB.IsSelectionEnabled; }
             set
             {
-                toolTipRTB.Selectable = value;
+                toolTipRTB.IsSelectionEnabled = value;
             }
         }
 
@@ -97,49 +106,39 @@ namespace PluginCore.Controls
             host.ShowInTaskbar = false;
             host.TopMost = true;
             host.StartPosition = FormStartPosition.Manual;
+            // Use the form backcolor so we can use any color as the border
+            host.BackColor = Color.Black;
             host.KeyPreview = true;
             host.KeyDown += Host_KeyDown;
 
             this.owner = owner;
 
-            // panel
-            toolTip = new Panel();
-            toolTip.Location = new Point(0, 0);
-            toolTip.BackColor = SystemColors.Info;
-            toolTip.ForeColor = SystemColors.InfoText;
-            toolTip.BorderStyle = BorderStyle.FixedSingle;
-            toolTip.Dock = DockStyle.Fill;
-            host.Controls.Add(toolTip);
-            // text
-            toolTipRTB = new SelectableRichTextBox();
-            toolTipRTB.Font = PluginBase.Settings.DefaultFont;
+            // html panel
+            toolTipRTB = new HtmlPanelEx();
             toolTipRTB.BackColor = SystemColors.Info;
             toolTipRTB.ForeColor = SystemColors.InfoText;
-            toolTipRTB.BorderStyle = BorderStyle.None;
-            toolTipRTB.ScrollBars = RichTextBoxScrollBars.None;
-            toolTipRTB.DetectUrls = false;
-            toolTipRTB.ReadOnly = true;
-            toolTipRTB.WordWrap = false;
-            toolTipRTB.Visible = true;
+            toolTipRTB.Location = new Point(1, 1);
+            toolTipRTB.Padding = new Padding(2);
+            toolTipRTB.Size = new Size(host.Width - 2, host.Height - 2);
+            toolTipRTB.BaseStylesheet = string.Format(BaseStyle, 
+    PluginBase.MainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
+    PluginBase.MainForm.Settings.DefaultFont.Name, GetColorString(SystemColors.Info));
             toolTipRTB.Text = "";
             toolTipRTB.LostFocus += Host_LostFocus;
-            toolTip.Controls.Add(toolTipRTB);
-
-            // rtf cache
-            rtfCache = new Dictionary<String, String>();
-            rtfCacheList = new List<String>();
+            host.Controls.Add(toolTipRTB);
         }
         
         public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
         {
             if (e.Type == EventType.ApplyTheme)
             {
-                Color fore = PluginBase.MainForm.GetThemeColor("RichToolTip.ForeColor");
-                Color back = PluginBase.MainForm.GetThemeColor("RichToolTip.BackColor");
-                toolTip.BackColor = back == Color.Empty ? SystemColors.Info : back;
-                toolTip.ForeColor = fore == Color.Empty ? SystemColors.InfoText : fore;
+                IMainForm mainForm = PluginBase.MainForm;
+                Color fore = mainForm.GetThemeColor("RichToolTip.ForeColor");
+                Color back = mainForm.GetThemeColor("RichToolTip.BackColor");
                 toolTipRTB.ForeColor = fore == Color.Empty ? SystemColors.InfoText : fore;
-                toolTipRTB.BackColor = back == Color.Empty ? SystemColors.Info : back;
+                toolTipRTB.BaseStylesheet = string.Format(BaseStyle,
+                    mainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
+                    mainForm.Settings.DefaultFont.Name, GetColorString(back == Color.Empty ? SystemColors.Info : back));
             }
         }
 
@@ -174,13 +173,9 @@ namespace PluginCore.Controls
         public bool AutoSize(int availableWidth, int maxWidth)
         {
             bool tooSmall = false;
-            bool wordWrap = false;
-            Size txtSize = WinFormUtils.MeasureRichTextBox(toolTipRTB, false, toolTipRTB.Width, toolTipRTB.Height, false);
 
             int smallOffsetH = ScaleHelper.Scale(1);
             int smallOffsetW = ScaleHelper.Scale(2);
-            int smallPadding = ScaleHelper.Scale(4);
-            int mediumPadding = ScaleHelper.Scale(10);
             int minWidth = ScaleHelper.Scale(200);
             maxWidth = ScaleHelper.Scale(maxWidth);
 
@@ -188,16 +183,18 @@ namespace PluginCore.Controls
             var screenArea = Screen.FromControl(owner.Owner).WorkingArea;
             int limitLeft = screenArea.Left + smallOffsetH;
             int limitRight = screenArea.Right - smallOffsetH;
-            int limitBottom = screenArea.Bottom - ScaleHelper.Scale(26);
+            int limitBottom = screenArea.Bottom - ClientLimitBottom;
             //
             int maxW = availableWidth > 0 ? availableWidth : limitRight - limitLeft;
             if (maxW > maxWidth && maxWidth > 0)
                 maxW = maxWidth;
 
-            int w = txtSize.Width + smallPadding;
+            Size txtSize = toolTipRTB.GetPreferredSize(Size.Empty);
+            // For some reason we have to take into account the padding set in body, it shouldn't be that way
+            int w = txtSize.Width;
+            int h = txtSize.Height;
             if (w > maxW)
             {
-                wordWrap = true;
                 w = maxW;
                 if (w < minWidth)
                 {
@@ -205,42 +202,31 @@ namespace PluginCore.Controls
                     tooSmall = true;
                 }
 
-                txtSize = WinFormUtils.MeasureRichTextBox(toolTipRTB, false, w, maxWidth, true);
-                w = txtSize.Width + smallPadding;
+                txtSize = toolTipRTB.GetPreferredSize(new Size(w - smallOffsetW, 0));
+                w = txtSize.Width;
+                h = txtSize.Height;
             }
 
-            int h = txtSize.Height + smallOffsetH * 2;
-            int dh = smallOffsetH;
-            int dw = smallOffsetW;
-            if (h > (limitBottom - host.Top))
+            if (h > limitBottom - host.Top)
             {
-                w += ScaleHelper.Scale(15);
-                h = limitBottom - host.Top;
-                dh = smallPadding;
-                dw = smallPadding + smallOffsetW / 2;
-
-                toolTipRTB.ScrollBars = RichTextBoxScrollBars.Vertical;
+                w += SystemInformation.VerticalScrollBarWidth;
+                h = limitBottom - host.Top - smallOffsetW;
             }
-
-            toolTipRTB.Location = new Point(smallOffsetW, smallOffsetH);
             toolTipRTB.Size = new Size(w, h);
-            host.Size = new Size(w + dw, h + dh);
+            host.Size = new Size(toolTipRTB.Size.Width + 2, toolTipRTB.Size.Height + 2);
 
             if (host.Left < limitLeft)
                 host.Left = limitLeft;
-
+            
             if (host.Left + host.Width > limitRight)
                 host.Left = limitRight - host.Width;
-
-            if (toolTipRTB.WordWrap != wordWrap)
-                toolTipRTB.WordWrap = wordWrap;
 
             return !tooSmall;
         }
 
         public void ShowAtMouseLocation(string text)
         {
-            if (text != Text)
+            if (string.CompareOrdinal("<body><div style=\"margin:0\">" + text + "</div></body>", Text) != 0)
             {
                 host.Visible = false;
                 Text = text;
@@ -250,16 +236,56 @@ namespace PluginCore.Controls
 
         public void ShowAtMouseLocation()
         {
+            int topPadding = ScaleHelper.Scale(5);
+            int mediumPadding = ScaleHelper.Scale(10);
+            int smallOffset = ScaleHelper.Scale(2);
+
             mousePos = Control.MousePosition;
-            host.Left = mousePos.X;// +sci.Left;
-            var screen = Screen.FromPoint(mousePos);
-            if (host.Right > screen.WorkingArea.Right)
+            host.Left = mousePos.X;
+            var screenArea = Screen.FromPoint(mousePos).WorkingArea;
+            if (host.Right > screenArea.Right)
             {
-                host.Left -= (host.Right - screen.WorkingArea.Right);
+                host.Left -= (host.Right - screenArea.Right);
             }
-            host.Top = mousePos.Y - host.Height - ScaleHelper.Scale(10);// +sci.Top;
-            if (host.Top < 5)
-                host.Top = mousePos.Y + 10;
+            host.Top = mousePos.Y - host.Height - ScaleHelper.Scale(mediumPadding);
+
+            if (host.Top < topPadding)
+            {
+                // Let's be sure we don't go offscreen
+                int downSpace = screenArea.Bottom - ClientLimitBottom - mousePos.Y - mediumPadding;
+                int topSpace = mousePos.Y - ScaleHelper.Scale(15);
+
+                Size tipSize = toolTipRTB.Size;
+                if (downSpace > topSpace)
+                {
+                    host.Top = mousePos.Y + mediumPadding;
+
+                    if (host.Height > downSpace)
+                    {
+                        tipSize.Height = downSpace - smallOffset;
+                        if (toolTipRTB.Height >= toolTipRTB.ActualSize.Height &&
+                            tipSize.Height < toolTipRTB.ActualSize.Height)
+                        {
+                            tipSize.Width += SystemInformation.VerticalScrollBarWidth;
+                        }
+                        toolTipRTB.Size = tipSize;
+                        host.Size = new Size(toolTipRTB.Width + smallOffset, toolTipRTB.Height + smallOffset);
+                    }
+                }
+                else
+                {
+                    host.Top = topPadding;
+
+                    tipSize.Height = topSpace - smallOffset;
+                    if (toolTipRTB.Height >= toolTipRTB.ActualSize.Height &&
+                        tipSize.Height < toolTipRTB.ActualSize.Height)
+                    {
+                        tipSize.Width += SystemInformation.VerticalScrollBarWidth;
+                    }
+                    toolTipRTB.Size = tipSize;
+                    host.Size = new Size(toolTipRTB.Width + smallOffset, toolTipRTB.Height + smallOffset);
+                }
+            }
             Show();
         }
 
@@ -299,7 +325,7 @@ namespace PluginCore.Controls
             }
         }
 
-        public void SetText(String rawText, bool redraw)
+        public void SetText(string rawText, bool redraw)
         {
             this.rawText = rawText ?? "";
             if (redraw)
@@ -312,41 +338,20 @@ namespace PluginCore.Controls
         }
         public void Redraw(bool autoSize)
         {
-            toolTipRTB.Rtf = getRtfFor(rawText);
+            toolTipRTB.Text = "<body><div style=\"margin:0\">" + rawText + "</div></body>";
 
-            Color fore = PluginBase.MainForm.GetThemeColor("RichToolTip.ForeColor");
-            Color back = PluginBase.MainForm.GetThemeColor("RichToolTip.BackColor");
+            /*IMainForm mainForm = PluginBase.MainForm;
+            Color fore = mainForm.GetThemeColor("RichToolTip.ForeColor");
+            Color back = mainForm.GetThemeColor("RichToolTip.BackColor");
             toolTip.BackColor = back == Color.Empty ? SystemColors.Info : back;
             toolTip.ForeColor = fore == Color.Empty ? SystemColors.InfoText : fore;
             toolTipRTB.ForeColor = fore == Color.Empty ? SystemColors.InfoText : fore;
-            toolTipRTB.BackColor = back == Color.Empty ? SystemColors.Info : back;
+            toolTipRTB.BaseStylesheet = string.Format(BaseStyle,
+                mainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
+                mainForm.Settings.DefaultFont.Name, GetColorString(back == Color.Empty ? SystemColors.Info : back));*/
 
             if (autoSize)
                 AutoSize();
-        }
-
-        protected String getRtfFor(String bbcodeText)
-        {
-            String rtfText;
-
-            if (rtfCache.TryGetValue(bbcodeText, out rtfText))
-                return rtfText;
-
-            if (rtfCacheList.Count >= 512)
-            {
-                String key = rtfCacheList[0];
-                rtfCache.Remove(key);
-                rtfCacheList.RemoveAt(0);
-            }
-
-            toolTipRTB.Text = "";
-            toolTipRTB.ScrollBars = RichTextBoxScrollBars.None;
-            toolTipRTB.WordWrap = false;
-
-            rtfCacheList.Add(bbcodeText);
-            rtfText = BBCodeUtils.bbCodeToRtf(bbcodeText, toolTipRTB);
-            rtfCache[bbcodeText] = rtfText;
-            return rtfText;
         }
 
         public bool IsMouseInside()
@@ -354,72 +359,42 @@ namespace PluginCore.Controls
             return host.Bounds.Contains(Control.MousePosition);
         }
 
-        #endregion
-
-        #region Selectable RichTextBox
-
-        // If for some reason this is not compatible with CrossOver or we want some crossplatform alternative we could place a disabled Form with Opacity to 0.009 or something like that over the control's ClientRectangle
-        // The downside is that on standard Windows configuration it will play an annoying "Bong" sound when clicking. Another option would be to hide the control and draw it on the form, the problem is the scrollbar,
-        // but we could use the ones from Form or some Panel and draw the whole text instead of just the original visible area.
-        protected class SelectableRichTextBox : RichTextBox
+        private static string GetColorString(Color color)
         {
-
-            private bool _selectable = true;
-            public bool Selectable
-            {
-                get { return _selectable; }
-                set
-                {
-                    if (_selectable == value) return;
-                    _selectable = value;
-                    if (_lastCursor == null || _lastCursor == DefaultCursor)
-                        base.Cursor = !_selectable ? Cursors.Default : DefaultCursor;
-                }
-            }
-
-            private Cursor _lastCursor;
-            public override Cursor Cursor
-            {
-                get
-                {
-                    return base.Cursor;
-                }
-                set
-                {
-                    _lastCursor = value;
-                    base.Cursor = value;
-                }
-            }
-
-            protected override void DefWndProc(ref Message m)
-            {
-                const int WM_MOUSEACTIVATE = 0x21;
-                const int WM_CONTEXTMENU = 0x7b;
-                const int WM_LBUTTONDOWN = 0x201;
-                const int WM_LBUTTONDBLCLK = 0x203;
-                const int MA_NOACTIVATE = 0x0003;
-
-                if (!_selectable)
-                {
-                    switch (m.Msg)
-                    {
-                        case WM_MOUSEACTIVATE:
-                            m.Result = (IntPtr)MA_NOACTIVATE;
-                            return;
-                        case WM_LBUTTONDOWN:
-                        case WM_LBUTTONDBLCLK:
-                        case WM_CONTEXTMENU:
-                            m.Result = IntPtr.Zero;
-                            return;
-                    }
-                }
-                base.DefWndProc(ref m);
-            }
-
+            return string.Format("rgba({0},{1},{2},{3})", color.R, color.G, color.B, color.A);
         }
 
         #endregion
 
+        protected class HtmlPanelEx : HtmlPanel
+        {
+            public SizeF ActualSize
+            {
+                get { return base._htmlContainer.ActualSize; }
+            }
+
+            public override Size GetPreferredSize(Size proposedSize)
+            {
+                Graphics g = Utils.CreateGraphics(this);
+                if (g != null)
+                {
+                    using (g)
+                    using (var ig = new GraphicsAdapter(g, UseGdiPlusTextRendering))
+                    {
+                        var newSize = HtmlRendererUtils.Layout(ig, _htmlContainer.HtmlContainerInt,
+                            new RSize(proposedSize.Width - Padding.Horizontal, proposedSize.Height - Padding.Vertical),
+                            new RSize(MinimumSize.Width - Padding.Horizontal, MinimumSize.Height - Padding.Vertical),
+                            new RSize(MaximumSize.Width - Padding.Horizontal, MaximumSize.Height - Padding.Vertical),
+                            proposedSize.Width < 1, proposedSize.Height < 1);
+
+                        return new Size((int)Math.Ceiling(newSize.Width + Padding.Horizontal),
+                                (int)Math.Ceiling(newSize.Height + Padding.Vertical));
+                    }
+                }
+
+                return Size.Empty;
+            }
+        }
     }
 
 }
