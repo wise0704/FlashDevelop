@@ -1,14 +1,9 @@
 using System;
-using System.Text;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
-using System.ComponentModel;
-using System.Collections.Generic;
 using PluginCore.Localization;
 using FlashDevelop.Utilities;
-using FlashDevelop.Dialogs;
-using FlashDevelop.Helpers;
 using PluginCore.Managers;
 using PluginCore.Controls;
 using PluginCore.Helpers;
@@ -103,6 +98,7 @@ namespace FlashDevelop.Dialogs
             this.itemPropertyGrid.Size = new System.Drawing.Size(502, 386);
             this.itemPropertyGrid.TabIndex = 3;
             this.itemPropertyGrid.ToolbarVisible = false;
+            this.itemPropertyGrid.PropertySort = System.Windows.Forms.PropertySort.Categorized;
             this.itemPropertyGrid.PropertyValueChanged += new PropertyValueChangedEventHandler(this.PropertyValueChanged);
             // 
             // closeButton
@@ -547,7 +543,7 @@ namespace FlashDevelop.Dialogs
         }
 
         /// <summary>
-        /// Restore the selected index - only if a item id hasn't been provided
+        /// Restore the selected index - only if an item id hasn't been provided
         /// </summary>
         private void DialogShown(Object sender, EventArgs e)
         {
@@ -556,6 +552,7 @@ namespace FlashDevelop.Dialogs
                 this.itemListView.SelectedIndices.Add(lastItemIndex);
                 this.itemListView.EnsureVisible(lastItemIndex);
             }
+            this.filterText.Focus();
         }
 
         /// <summary>
@@ -573,6 +570,7 @@ namespace FlashDevelop.Dialogs
         {
             if (sdkContext != null) sdkContext.Dispose();
             Globals.MainForm.ApplyAllSettings();
+            Globals.MainForm.SaveSettings();
         }
 
         /// <summary>

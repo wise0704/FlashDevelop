@@ -122,7 +122,7 @@ namespace ASClassWizard
                         if (templatePath == null || !IsWizardTemplate(templatePath)) return;
                         string type = Path.GetFileNameWithoutExtension(templatePath);
                         type = type.Substring(0, type.IndexOf('.')).ToUpperInvariant();
-                        if (type == "CLASS" && (project.Language.StartsWith("as") || project.Language == "haxe"))
+                        if (type == "CLASS" && (project.Language.StartsWithOrdinal("as") || project.Language == "haxe"))
                         {
                             evt.Handled = true;
                             String className = table.ContainsKey("className") ? table["className"] as String : TextHelper.GetString("Wizard.Label.NewClass");

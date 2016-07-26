@@ -112,6 +112,10 @@ namespace PluginCore
         /// </summary>
         void RefreshSciConfig();
         /// <summary>
+        /// Shows a message to restart FD.
+        /// </summary>
+        void RestartRequired();
+        /// <summary>
         /// Themes the controls from the parent.
         /// </summary>
         void ThemeControls(Object control);
@@ -268,6 +272,10 @@ namespace PluginCore
         /// Equivalent to calling <code>ImageSetAdjust(FindImage(data, false))</code>.
         /// </summary>
         Image FindImageAndSetAdjust(String data);
+        /// <summary>
+        /// Gets the amount of FD instances running
+        /// </summary>
+        Int32 GetInstanceCount();
 
         #endregion
 
@@ -413,6 +421,10 @@ namespace PluginCore
         /// Gets the full human readable version string.
         /// </summary>
         String ProductName { get; }
+        /// <summary>
+        /// Gets the command prompt executable (custom or cmd.exe by default).
+        /// </summary>
+        String CommandPromptExecutable { get; }
 
         #endregion
     }
@@ -468,6 +480,7 @@ namespace PluginCore
         String CustomSnippetDir { get; set; }
         String CustomTemplateDir { get; set; }
         String CustomProjectsDir { get; set; }
+        String CustomCommandPrompt { get; set; }
         Boolean DisableFindOptionSync { get; set; }
         Boolean DisableSimpleQuickFind { get; set; }
         Boolean DisableReplaceFilesConfirm { get; set; }
@@ -532,6 +545,7 @@ namespace PluginCore
         Boolean WrapList { get; set; }
         Boolean DisableSmartMatch { get; set; }
         Boolean SaveUnicodeWithBOM { get; set; }
+        Boolean KeepCaretCentered { get; set; }
         String InsertionTriggers { get; set; }
 
         #endregion

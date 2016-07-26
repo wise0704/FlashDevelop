@@ -722,10 +722,18 @@ namespace ASCompletion.Model
                                 if (token == "include")
                                 {
                                     string inc = ba.Substring(tokPos, i - tokPos);
-                                    if (model.MetaDatas == null) model.MetaDatas = new List<ASMetaData>();
                                     ASMetaData meta = new ASMetaData("Include");
                                     meta.ParseParams(inc);
-                                    model.MetaDatas.Add(meta);
+                                    if (curClass == null)
+                                    {
+                                        if (carriedMetaData == null) carriedMetaData = new List<ASMetaData>();
+                                        carriedMetaData.Add(meta);
+                                    }
+                                    else
+                                    {
+                                        if (curClass.MetaDatas == null) curClass.MetaDatas = new List<ASMetaData>();
+                                        curClass.MetaDatas.Add(meta);
+                                    }
                                 }
                             }
                         }
@@ -944,6 +952,7 @@ namespace ASCompletion.Model
                         braceCount--;
                         if (braceCount == 0 && curMethod != null)
                         {
+                            if (curMethod.Equals(curMember)) curMember = null;
                             curMethod.LineTo = line;
                             curMethod = null;
                         }
@@ -1015,7 +1024,7 @@ namespace ASCompletion.Model
                         else if (paramTempCount > 0)
                         {
                             paramTempCount--;
-                            stopParser = paramTempCount == 0 && paramBraceCount == 0;
+                            stopParser = true; //paramTempCount == 0 && paramBraceCount == 0; this would make more sense but just restore the original for now
                         }
                         else valueError = true;
                     }
@@ -1072,7 +1081,7 @@ namespace ASCompletion.Model
                         else if (valueError && c1 == ')') inValue = false;
                         else if (inType && inGeneric && (c1 == '<' || c1 == '.')) continue;
                         else if (inAnonType) continue;
-                        hadWS = true;
+                        else if (c1 != '_') hadWS = true;
                     }
                 }
 
@@ -1116,6 +1125,7 @@ namespace ASCompletion.Model
                         }
                         curMember.Type = param;
                         length = 0;
+                        inType = false;
                     }
                     // AS3 const or method parameter's default value 
                     else if (version > 2 && (curMember.Flags & FlagType.Variable) > 0)
@@ -1213,7 +1223,7 @@ namespace ASCompletion.Model
                             {
                                 if (!inValue && i > 2 && length > 1 && i < len - 3
                                     && char.IsLetterOrDigit(ba[i - 3]) && (char.IsLetter(ba[i]) || (haXe && ba[i] == '{'))
-                                    && (char.IsLetter(buffer[0]) || buffer[0] == '_'))
+                                    && (char.IsLetter(buffer[0]) || buffer[0] == '_' || inType && buffer[0] == '('))
                                 {
                                     if (curMember == null)
                                     {
@@ -1256,7 +1266,7 @@ namespace ASCompletion.Model
                                 if (!inValue)
                                 {
                                     addChar = true;
-                                    if (c1 == '>' && inGeneric)
+                                    if (c1 == '>')
                                     {
                                         if (paramTempCount > 0) paramTempCount--;
                                         if (paramTempCount == 0 && paramBraceCount == 0
@@ -1270,7 +1280,14 @@ namespace ASCompletion.Model
                                 {
                                     paramParCount--;
                                     addChar = true;
-                                }// else inType = false, error? it may depend on the context
+                                }
+                                else if (paramParCount == 0 && paramTempCount == 0 && paramBraceCount == 0
+                                    && paramSqCount == 0)
+                                {
+                                    inType = false;
+                                    shortcut = false;
+                                    evalToken = 1;
+                                }
                             }
                             else if (c1 == '(' && haXe && inType)
                             {
@@ -1781,7 +1798,7 @@ namespace ASCompletion.Model
                 {
                     if (c == '"') inString = 1;
                     else if (c == '\'') inString = 2;
-                    else if ("{;[".IndexOf(c) >= 0)
+                    else if ("{;[".IndexOf(c) >= 0) // Is this valid in Haxe meta?
                     {
                         i = i0;
                         line = line0;
@@ -1794,7 +1811,7 @@ namespace ASCompletion.Model
                         isComplex = true;
                         if (parCount <= 0) break;
                     }
-                    else if (c <= 32)
+                    else if (c <= 32 && parCount <= 0)
                     {
                         break;
                     }
@@ -1806,7 +1823,6 @@ namespace ASCompletion.Model
                 }
                 else if (inString == 1 && c == '"') inString = 0;
                 else if (inString == 2 && c == '\'') inString = 0;
-                else if (inString > 0 && (c == 10 || c == 13)) inString = 0;
                 i++;
             }
 
@@ -1816,7 +1832,7 @@ namespace ASCompletion.Model
             md.LineTo = line;
             if (isComplex)
             {
-                meta = meta.Substring(meta.IndexOf('(') + 1);
+                meta = meta.Substring(meta.IndexOf('(') + 1).Trim();
                 md.Params = new Dictionary<string, string>();
                 md.Params["Default"] = meta;
             }
@@ -2340,10 +2356,10 @@ namespace ASCompletion.Model
                         }
                         if (carriedMetaData != null)
                         {
-                            if (model.MetaDatas == null)
-                                model.MetaDatas = carriedMetaData;
+                            if (curClass.MetaDatas == null)
+                                curClass.MetaDatas = carriedMetaData;
                             else
-                                foreach (var meta in carriedMetaData) model.MetaDatas.Add(meta);
+                                foreach (var meta in carriedMetaData) curClass.MetaDatas.Add(meta);
 
                             carriedMetaData = null;
                         }

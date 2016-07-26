@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Windows.Forms;
+using System.Windows.Forms.Design;
 using System.Xml.Serialization;
 using Ookii.Dialogs;
 using PluginCore;
@@ -216,6 +217,16 @@ namespace FlashDevelop.Settings
             set { this.caretLineVisible = value; }
         }
 
+        [DefaultValue(false)]
+        [DisplayName("Keep Caret Centered")]
+        [LocalizedCategory("FlashDevelop.Category.Editor")]
+        [LocalizedDescription("FlashDevelop.Description.KeepCaretCentered")]
+        public Boolean KeepCaretCentered
+        {
+            get { return this.keepCaretCentered; }
+            set { this.keepCaretCentered = value; }
+        }
+
         [DefaultValue(true)]
         [DisplayName("Disable Highlight Guide")]
         [LocalizedCategory("FlashDevelop.Category.Editor")]
@@ -283,10 +294,14 @@ namespace FlashDevelop.Settings
         public Int32 ScrollWidth
         {
             get { return this.scrollWidth; }
-            set { this.scrollWidth = value; }
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                this.scrollWidth = value;
+            }
         }
 
-        [DefaultValue("as")]
+        [DefaultValue(DistroConfig.DISTRIBUTION_EXT)]
         [DisplayName("Default File Extension")]
         [LocalizedCategory("FlashDevelop.Category.Editor")]
         [LocalizedDescription("FlashDevelop.Description.DefaultFileExtension")]
@@ -548,6 +563,20 @@ namespace FlashDevelop.Settings
         {
             get { return this.moveCursorAfterComment; }
             set { this.moveCursorAfterComment = value; }
+        }
+
+        [DefaultValue(15)]
+        [DisplayName("Max Recent Files")]
+        [LocalizedCategory("FlashDevelop.Category.Features")]
+        [LocalizedDescription("FlashDevelop.Description.MaxRecentFiles")]
+        public Int32 MaxRecentFiles
+        {
+            get { return this.maxRecentFiles; }
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException();
+                this.maxRecentFiles = value;
+            }
         }
 
         [DefaultValue(true)]
@@ -889,6 +918,17 @@ namespace FlashDevelop.Settings
         {
             get { return this.customProjectsDir; }
             set { this.customProjectsDir = value; }
+        }
+
+        [DefaultValue("")]
+        [DisplayName("Custom Command Prompt")]
+        [LocalizedCategory("FlashDevelop.Category.Paths")]
+        [LocalizedDescription("FlashDevelop.Description.CustomCommandPrompt")]
+        [Editor(typeof(FileNameEditor), typeof(UITypeEditor))]
+        public String CustomCommandPrompt
+        {
+            get { return this.customCommandPrompt; }
+            set { this.customCommandPrompt = value; }
         }
 
         #endregion
