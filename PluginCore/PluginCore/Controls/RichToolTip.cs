@@ -27,7 +27,7 @@ namespace PluginCore.Controls
 
         // constants
         protected const int ClientLimitBottom = 26;
-        protected const string BaseStyle = @"body {{margin: 0; padding: 0px; font: {0}pt {1}; margin: 0; background-color: {2}}}
+        protected const string BaseStyle = @"body {{margin: 0; padding: 0px; font: {0}pt {1}; color: {2}; margin: 0; background-color: {3}}}
 pre {{ border: solid 1px gray; background-color:#eee; padding: 1em; white-space: pre-wrap; }}
 table {{ border-collapse:collapse; }}
 th {{ text-align: left; border: 1px solid #000; background-color: #DDD; padding: 2px 3px 2px 3px; }}
@@ -106,8 +106,7 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             host.ShowInTaskbar = false;
             host.TopMost = true;
             host.StartPosition = FormStartPosition.Manual;
-            // Use the form backcolor so we can use any color as the border
-            host.BackColor = Color.Black;
+            host.BackColor = SystemColors.ControlDark;
             host.KeyPreview = true;
             host.KeyDown += Host_KeyDown;
 
@@ -120,14 +119,15 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             toolTipRTB.Location = new Point(1, 1);
             toolTipRTB.Padding = new Padding(2);
             toolTipRTB.Size = new Size(host.Width - 2, host.Height - 2);
-            toolTipRTB.BaseStylesheet = string.Format(BaseStyle, 
-    PluginBase.MainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
-    PluginBase.MainForm.Settings.DefaultFont.Name, GetColorString(SystemColors.Info));
+            toolTipRTB.BaseStylesheet = string.Format(BaseStyle,
+                PluginBase.MainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
+                PluginBase.MainForm.Settings.DefaultFont.Name, GetColorString(SystemColors.InfoText),
+                GetColorString(SystemColors.Info));
             toolTipRTB.Text = "";
             toolTipRTB.LostFocus += Host_LostFocus;
             host.Controls.Add(toolTipRTB);
         }
-        
+
         public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
         {
             if (e.Type == EventType.ApplyTheme)
@@ -135,10 +135,14 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
                 IMainForm mainForm = PluginBase.MainForm;
                 Color fore = mainForm.GetThemeColor("RichToolTip.ForeColor");
                 Color back = mainForm.GetThemeColor("RichToolTip.BackColor");
-                toolTipRTB.ForeColor = fore == Color.Empty ? SystemColors.InfoText : fore;
+                // The old Tip always used SystemColors.ControlDark, this one seems to blend nicer, another option would be DockWindow.BorderColor...
+                Color border = mainForm.GetThemeColor("DockPanelControl.BorderColor");
+                host.BackColor = border == Color.Empty ? SystemColors.ControlDark : border;
+                toolTipRTB.BackColor = back == Color.Empty ? SystemColors.Info : back;
                 toolTipRTB.BaseStylesheet = string.Format(BaseStyle,
                     mainForm.Settings.DefaultFont.SizeInPoints.ToString(CultureInfo.InvariantCulture),
-                    mainForm.Settings.DefaultFont.Name, GetColorString(back == Color.Empty ? SystemColors.Info : back));
+                    mainForm.Settings.DefaultFont.Name, GetColorString(fore == Color.Empty ? SystemColors.InfoText : fore),
+                    GetColorString(back == Color.Empty ? SystemColors.Info : back));
             }
         }
 
@@ -286,7 +290,9 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
                     host.Size = new Size(toolTipRTB.Width + smallOffset, toolTipRTB.Height + smallOffset);
                 }
             }
+            Size hostSize = host.Size;
             Show();
+            host.Size = hostSize; // Needed for the first Show. Another way would be to listen for the Load event and set the size there.
         }
 
         public virtual void UpdateTip()
