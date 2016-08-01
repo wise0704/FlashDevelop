@@ -449,6 +449,15 @@ namespace FlashDevelop
         }
 
         /// <summary>
+        /// Gets whether the application requires a restart to apply changes.
+        /// </summary>
+        public Boolean RequiresRestart
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
         /// Gets or sets the RefreshConfig
         /// </summary>
         public Boolean RefreshConfig
@@ -1974,6 +1983,7 @@ namespace FlashDevelop
         public void RestartRequired()
         {
             if (this.restartButton != null) this.restartButton.Visible = true;
+            this.RequiresRestart = true;
             String message = TextHelper.GetString("Info.RequiresRestart");
             TraceManager.Add(message);
         }
