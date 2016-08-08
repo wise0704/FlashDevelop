@@ -171,7 +171,7 @@ namespace PluginCore.Controls
             if (OnMarkerChanged != null) OnMarkerChanged(sender, line);
         }
 
-        private void HandleDwellStart(ScintillaControl sci, int position)
+        private void HandleDwellStart(ScintillaControl sci, int position, int x, int y)
         {
             if (OnMouseHover == null || sci == null || DisableEvents) return;
             try
@@ -223,7 +223,7 @@ namespace PluginCore.Controls
             return new Point(pos.X - ctrlPos.X, pos.Y - ctrlPos.Y);
         }
 
-        private void HandleDwellEnd(ScintillaControl sci, int position)
+        private void HandleDwellEnd(ScintillaControl sci, int position, int x, int y)
         {
             // NOTE: simpleTip should only be hidden if a certain movement threshold is exceeded (x <> current word, y <> word + tip pos & height) or HandleDwellStart is fired again
             // This would allow the user to select the tip text

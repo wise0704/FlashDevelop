@@ -2613,7 +2613,7 @@ namespace ScintillaNet
         {
             SPerform(2051, style, fore);
         }
-
+        
         /// <summary>
         /// Set the background colour of a style.
         /// </summary>
@@ -2621,7 +2621,7 @@ namespace ScintillaNet
         {
             SPerform(2052, style, back);
         }
-
+        
         /// <summary>
         /// Set a style to be bold or not.
         /// </summary>
@@ -2968,6 +2968,22 @@ namespace ScintillaNet
         public void MarginSensitiveN(int margin, bool sensitive)
         {
             SPerform(2246, margin, sensitive ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Gets the cursor of a margin.
+        /// </summary>
+        public int GetMarginCursorN(int margin)
+        {
+            return SPerform(2249, margin, 0);
+        }
+
+        /// <summary>
+        /// Set the cursor of a margin.
+        /// </summary>
+        public void SetMarginCursorN(int margin, int cursor)
+        {
+            SPerform(2248, margin, cursor);
         }
 
         /// <summary>
@@ -5564,11 +5580,11 @@ namespace ScintillaNet
                                 break;
 
                             case (uint)Enums.ScintillaEvents.DwellStart:
-                                if (DwellStart != null) DwellStart(this, scn.position);
+                                if (DwellStart != null) DwellStart(this, scn.position, scn.x, scn.y);
                                 break;
 
                             case (uint)Enums.ScintillaEvents.DwellEnd:
-                                if (DwellEnd != null) DwellEnd(this, scn.position);
+                                if (DwellEnd != null) DwellEnd(this, scn.position, scn.x, scn.y);
                                 break;
 
                             case (uint)Enums.ScintillaEvents.Zoom:
