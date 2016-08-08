@@ -1097,7 +1097,7 @@ namespace FlashDevelop
         /// </summary>
         private void OnMainFormActivate(Object sender, System.EventArgs e)
         {
-            if (this.CurrentDocument == null) return;
+            if (this.CurrentDocument == null || this.dockPanel.ActiveDocumentPane.IsFloat) return;
             this.CurrentDocument.Activate(); // Activate the current document
             ButtonManager.UpdateFlaggedButtons();
         }
