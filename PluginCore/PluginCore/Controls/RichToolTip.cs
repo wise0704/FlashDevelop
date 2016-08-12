@@ -187,7 +187,7 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             var screenArea = Screen.FromControl(owner.Owner).WorkingArea;
             int limitLeft = screenArea.Left + smallOffsetH;
             int limitRight = screenArea.Right - smallOffsetH;
-            int limitBottom = screenArea.Bottom - ClientLimitBottom;
+            int limitBottom = screenArea.Bottom - ScaleHelper.Scale(ClientLimitBottom);
             //
             int maxW = availableWidth > 0 ? availableWidth : limitRight - limitLeft;
             if (maxW > maxWidth && maxWidth > 0)
@@ -256,7 +256,7 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             if (host.Top < topPadding)
             {
                 // Let's be sure we don't go offscreen
-                int downSpace = screenArea.Bottom - ClientLimitBottom - mousePos.Y - mediumPadding;
+                int downSpace = screenArea.Bottom - ScaleHelper.Scale(ClientLimitBottom) - mousePos.Y - mediumPadding;
                 int topSpace = mousePos.Y - ScaleHelper.Scale(15);
 
                 Size tipSize = toolTipRTB.Size;
@@ -325,9 +325,9 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
                     }
                 }
 
-                // Not really needed to set an owner, it has some advantages currently unused
-                host.Owner = null;  // To avoid circular references that may happen because of Floating -> Docking panels
-                host.Show(owner.Owner);
+                // We could set the Owner, it has some benefits. If we want them set to null before here and in Hide, and track its Disposed event
+                // to also remove it, otherwise it would dispose our own control.
+                host.Show();
             }
         }
 
