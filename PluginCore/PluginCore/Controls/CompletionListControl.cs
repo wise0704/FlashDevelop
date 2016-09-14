@@ -325,7 +325,7 @@ namespace PluginCore.Controls
                 needResize = false;
                 Graphics g = cl.CreateGraphics();
                 SizeF size = g.MeasureString(widestLabel, cl.Font);
-                listSize.Width = (int)Math.Min(Math.Max(size.Width + 40, 100), 400) + ScaleHelper.Scale(10);
+                listSize.Width = (int)Math.Min(Math.Max(size.Width + 40, 100), ScaleHelper.Scale(400)) + ScaleHelper.Scale(10);
             }
             else listSize.Width = cl.Width;
             int newHeight = Math.Min(cl.Items.Count, 10) * cl.ItemHeight + 4;
