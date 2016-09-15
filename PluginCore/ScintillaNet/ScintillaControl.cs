@@ -5493,9 +5493,6 @@ namespace ScintillaNet
                         {
                             if (this.ExecuteShortcut(keys) || base.PreProcessMessage(ref m)) return true;
                         }
-                        if (keys == 8)
-                            // Hacky... Back key, it's handled by ASCompletion, before it was set as a shortcut so it was present in the ignoredKeys collection, that was in several ways hackier
-                            return base.PreProcessMessage(ref m);
                         if (((Control.ModifierKeys & Keys.Control) != 0) && ((Control.ModifierKeys & Keys.Alt) == 0))
                         {
                             Int32 code = (Int32)m.WParam;
