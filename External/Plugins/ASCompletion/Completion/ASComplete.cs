@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -3841,47 +3842,94 @@ namespace ASCompletion.Completion
         {
             // context
             int line = sci.LineFromPosition(position);
-            if (line != ASContext.Context.CurrentLine) 
+            if (line != ASContext.Context.CurrentLine)
                 ASContext.Context.UpdateContext(line);
             try
             {
+                ASResult res;
                 ASExpr expr = GetExpression(sci, position);
                 expr.LocalVars = ParseLocalVars(expr);
                 if (string.IsNullOrEmpty(expr.Value))
                 {
-                    ASResult res = new ASResult();
+                    res = new ASResult();
                     res.Context = expr;
                     return res;
                 }
                 FileModel aFile = ASContext.Context.CurrentModel;
                 ClassModel aClass = ASContext.Context.CurrentClass;
                 // Expression before cursor
-                return EvalExpression(expr.Value, expr, aFile, aClass, true, false, filterVisibility);
+                res = EvalExpression(expr.Value, expr, aFile, aClass, true, false, filterVisibility);
+
+                // HACK?: Better way to do this? EvalExpression could be a better place, but then we need to pass our sci and want to avoid it
+                if (res.Type != null && !res.Type.IsVoid() && res.Type.Template != null && res.Type.IndexType == null && res.Type.QualifiedName.EndsWith(expr.Value))
+                {
+                    if (ASContext.Context.Features.hasGenerics)
+                    {
+                        int endWord = sci.WordEndPosition(position, true);
+                        char c;
+                        while (char.IsWhiteSpace((c = (char)sci.CharAt(endWord))))
+                        {
+                            endWord++;
+                        }
+                        if (c == '<')
+                        {
+                            var types = ASComplete.GetTypeParameters(AsEnumerable(sci, endWord + 1, sci.TextLength));
+
+                            res.Type = ResolveType(res.Type.Name + "<" + string.Join(",", types.Items.Select(x => x.Name).ToArray()) + ">", res.RelClass != null ? res.RelClass.InFile : res.Type.InFile);
+                        }
+                    }
+                }
+
+                return res;
             }
             finally
             {
                 // restore context
-                if (line != ASContext.Context.CurrentLine) 
+                if (line != ASContext.Context.CurrentLine)
                     ASContext.Context.UpdateContext(ASContext.Context.CurrentLine);
             }
         }
 
-        private static MemberList GetTypeParameters(MemberModel model)
+        public static IEnumerable<char> AsEnumerable(ScintillaControl sci, int startingPos, int endPos)
+        {
+            for (int i = startingPos; i <= endPos; i++)
+            {
+                yield return (char)sci.CharAt(i);
+            }
+        }
+
+        //TODO: Make it a MemberModel extension method
+        public static MemberList GetTypeParameters(MemberModel model)
+        {
+            return GetTypeParameters(model.Template);
+        }
+
+        public static MemberList GetTypeParameters(string template)
         {
             MemberList retVal = null;
-            string template = model.Template;
-            if (template != null && template.StartsWith("<"))
+            if (template != null)
             {
                 var sb = new StringBuilder();
                 int groupCount = 0;
                 bool inConstraint = false;
                 MemberModel genType = null;
-                for (int i = 1, count = template.Length - 1; i < count; i++)
+                int start, count;
+                if (template.StartsWith("<"))
+                {
+                    start = 1;
+                    count = template.Length - 1;
+                }
+                else
+                {
+                    start = 0;
+                    count = template.Length;
+                }
+                for (int i = start; i < count; i++)
                 {
                     char c = template[i];
                     if (!inConstraint)
                     {
-                        if (c == ':' || c == ',')
+                        if ((c == ':' || c == ',') && groupCount == 0)
                         {
                             genType = new MemberModel();
                             genType.Name = sb.ToString();
@@ -3894,7 +3942,15 @@ namespace ASCompletion.Completion
 
                             continue;
                         }
-                        else if (char.IsWhiteSpace(c)) continue;
+                        else if (char.IsWhiteSpace(c))
+                        {
+                            if (sb.Length > 0 && sb[sb.Length - 1] != ' ') sb.Append(' ');
+                            continue;
+                        }
+                        else if ("({[<".IndexOf(c) > -1)
+                            groupCount++;
+                        else if (")}]>".IndexOf(c) > -1)
+                            groupCount--;
                         sb.Append(c);
                     }
                     else
@@ -3916,6 +3972,78 @@ namespace ASCompletion.Completion
                             groupCount--;
                         sb.Append(c);
                     }
+                }
+                if (sb.Length > 0)
+                {
+                    if (retVal == null) retVal = new MemberList();
+                    if (!inConstraint)
+                        retVal.Add(new MemberModel { Name = sb.ToString(), Type = sb.ToString(), Flags = FlagType.TypeDef });
+                    else
+                        genType.Type += ":" + sb.ToString();
+                }
+            }
+
+            return retVal;
+        }
+
+        public static MemberList GetTypeParameters(IEnumerable<char> template)
+        {
+            MemberList retVal = null;
+            if (template != null)
+            {
+                var sb = new StringBuilder();
+                int groupCount = 0;
+                bool inConstraint = false;
+                MemberModel genType = null;
+                foreach (char c in template)
+                {
+                    if (!inConstraint)
+                    {
+                        if ((c == ':' || c == ',') && groupCount == 0)
+                        {
+                            genType = new MemberModel();
+                            genType.Name = sb.ToString();
+                            genType.Type = sb.ToString();
+                            genType.Flags = FlagType.TypeDef;
+                            inConstraint = c == ':';
+                            if (retVal == null) retVal = new MemberList();
+                            retVal.Add(genType);
+                            sb.Length = 0;
+
+                            continue;
+                        }
+                        else if (char.IsWhiteSpace(c))
+                        {
+                            if (sb.Length > 0 && sb[sb.Length - 1] != ' ') sb.Append(' ');
+                            continue;
+                        }
+                        else if ("({[<".IndexOf(c) > -1)
+                            groupCount++;
+                        else if (")}]>".IndexOf(c) > -1)
+                            groupCount--;
+                    }
+                    else
+                    {
+                        if (c == ',')
+                        {
+                            if (groupCount == 0)
+                            {
+                                genType.Type += ":" + sb.ToString();
+                                genType = null;
+                                inConstraint = false;
+                                sb.Length = 0;
+                                continue;
+                            }
+                        }
+                        else if ("({[<".IndexOf(c) > -1)
+                            groupCount++;
+                        else if (")}]>".IndexOf(c) > -1)
+                            groupCount--;
+                    }
+
+                    if (groupCount < 0) break;
+
+                    sb.Append(c);
                 }
                 if (sb.Length > 0)
                 {

@@ -985,58 +985,95 @@ namespace HaXeContext
 
             if (aClass.QualifiedName == "Dynamic")
             {
-                ClassModel indexClass = ResolveType(indexType, inFile);
+                //ClassModel indexClass = ResolveType(indexType, inFile);
                 //if (!indexClass.IsVoid()) return indexClass;
                 return MakeCustomObjectClass(aClass, indexType);
             }
 
             FileModel aFile = aClass.InFile;
-            // is the type already cloned?
-            foreach (ClassModel otherClass in aFile.Classes)
-                if (otherClass.IndexType == indexType && otherClass.BaseType == baseType)
-                    return otherClass;
+
+            // TODO: Come up with a better way to store/get the source filemodel/type that has the needed info to retrieve the index type
+            // Right now we resolve the types (cascading effect!) to be able to correctly resolve them in upper classes, a tricky case for example:
+            //     class SubSubTest extends SubTest<[package1.]Foo, Bar>, class SubTest<T1, T2> extends Test<T1, [package2.]Foo>
 
             // resolve T
-            string Tdef = "<T>";
-            string Tname = "T";
-            Match m = re_Template.Match(aClass.Type);
-            if (m.Success)
+            int count;
+            string iName, tName;
+            MemberList templateNames = ASComplete.GetTypeParameters(aClass);
+            string[] indexTypes = ASComplete.GetTypeParameters(indexType).Items.Select(x => x.Name).ToArray();
+            // In case we have a not completely or wrongly defined type
+            count = Math.Min(indexTypes.Length, templateNames.Count);
+
+            for (int i = 0; i < count; i++)
             {
-                Tname = m.Groups[1].Value;
-                Tdef = "<" + Tname + ">";
+                ClassModel iClass = ResolveType(indexTypes[i], inFile);
+                if (!iClass.IsVoid()) indexTypes[i] = iClass.QualifiedName;
             }
-            Regex reReplaceType = new Regex("\\b" + Tname + "\\b");
+
+            indexType = string.Join(", ", indexTypes);
+
+            // is the type already cloned?
+            foreach (ClassModel otherClass in aFile.Classes)
+                if (otherClass.IndexType == indexType && otherClass.BaseType == aClass.BaseType && otherClass.InFile.Package == aClass.InFile.Package)
+                    return otherClass;
 
             // clone the type
-            aClass = aClass.Clone() as ClassModel;
+            aClass = (ClassModel)aClass.Clone();
+
+            for (int i = 0; i < count; i++)
+            {
+                // TODO: Come up with a better way to store the source filemodel/type that has the needed info to retrieve the index type, this method result in cascading resolutions
+                // We need this, otherwise we won't be able to correctly resolve the types in upper classes, a tricky case for example:
+                //     class SubSubTest extends SubTest<[package1.]Foo, Bar>, class SubTest<T1, T2> extends Test<T1, [package2.]Foo>
+                ClassModel iClass = ResolveType(indexTypes[i], inFile);
+                tName = templateNames[i].Name;
+                if (!iClass.IsVoid()) iName = indexTypes[i] = iClass.QualifiedName;
+                else iName = indexTypes[i];
+                Regex reReplaceType = new Regex($"\\b{tName}\\b");
+
+                if (aClass.ExtendsType?.IndexOfOrdinal(tName) >= 0)
+                {
+                    aClass.ExtendsType = reReplaceType.Replace(aClass.ExtendsType, iName);
+                }
+
+                if (aClass.Implements != null)
+                {
+                    for (int j = 0, iCount = aClass.Implements.Count; j < iCount; j++)
+                    {
+                        string implementation = aClass.Implements[j];
+                        if (implementation.IndexOfOrdinal(tName) >= 0)
+                        {
+                            aClass.Implements[j] = reReplaceType.Replace(implementation, iName);
+                        }
+                    }
+                }
+
+                foreach (MemberModel member in aClass.Members)
+                {
+                    if (member.Type != null && member.Type.IndexOfOrdinal(tName) >= 0)
+                    {
+                        member.Type = reReplaceType.Replace(member.Type, iName);
+                    }
+                    if (member.Parameters != null)
+                    {
+                        foreach (MemberModel param in member.Parameters)
+                        {
+                            if (param.Type != null && param.Type.IndexOfOrdinal(tName) >= 0)
+                            {
+                                param.Type = reReplaceType.Replace(param.Type, iName);
+                            }
+                        }
+                    }
+                }
+            }
+
             aClass.Name = baseType.Substring(baseType.LastIndexOf('.') + 1) + "<" + indexType + ">";
             aClass.IndexType = indexType;
-
-            if (aClass.ExtendsType != null && aClass.ExtendsType.IndexOfOrdinal(Tname) >= 0)
-                aClass.ExtendsType = reReplaceType.Replace(aClass.ExtendsType, indexType);
 
             // special Haxe Proxy support
             if (aClass.Type == "haxe.remoting.Proxy<T>" || aClass.Type == "haxe.remoting.Proxy.Proxy<T>")
             {
                 aClass.ExtendsType = indexType;
-            }
-
-            foreach (MemberModel member in aClass.Members)
-            {
-                if (member.Type != null && member.Type.IndexOfOrdinal(Tname) >= 0)
-                {
-                    member.Type = reReplaceType.Replace(member.Type, indexType);
-                }
-                if (member.Parameters != null)
-                {
-                    foreach (MemberModel param in member.Parameters)
-                    {
-                        if (param.Type != null && param.Type.IndexOfOrdinal(Tname) >= 0)
-                        {
-                            param.Type = reReplaceType.Replace(param.Type, indexType);
-                        }
-                    }
-                }
             }
 
             aFile.Classes.Add(aClass);
