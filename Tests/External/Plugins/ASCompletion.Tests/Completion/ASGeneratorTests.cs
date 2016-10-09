@@ -15,6 +15,7 @@ using ScintillaNet.Enums;
 using System.Text.RegularExpressions;
 using AS3Context;
 using HaXeContext;
+using NSubstitute.Extensions;
 using PluginCore.Helpers;
 
 namespace ASCompletion.Completion
@@ -39,7 +40,7 @@ namespace ASCompletion.Completion
             doc = Substitute.For<ITabbedDocument>();
             mainForm.Settings = settings;
             mainForm.CurrentDocument = doc;
-            mainForm.StandaloneMode = false;
+            mainForm.StandaloneMode = true;
             PluginBase.Initialize(mainForm);
             FlashDevelop.Managers.ScintillaManager.LoadConfiguration();
         }
@@ -1043,6 +1044,59 @@ namespace ASCompletion.Completion
             }
 
             [TestFixture]
+            public class AssignStatementToVar : GenerateJob
+            {
+                public IEnumerable<TestCaseData> HaxeTestCases
+                {
+                    get {
+                        yield return
+                            new TestCaseData(
+                                TestFile.ReadAllText("ASCompletion.Test_Files.generated.haxe.BeforeAssignStatementToVar_useSpaces.hx"), GeneratorJobType.AssignStatementToVar, false)
+                                .Returns(TestFile.ReadAllText("ASCompletion.Test_Files.generated.haxe.AfterAssignStatementToVar_useSpaces.hx"))
+                                .SetName("Assign statement to var. Use spaces instead of tabs.");
+                        yield return
+                            new TestCaseData(
+                                TestFile.ReadAllText("ASCompletion.Test_Files.generated.haxe.BeforeAssignStatementToVar_useTabs.hx"), GeneratorJobType.AssignStatementToVar, true)
+                                .Returns(TestFile.ReadAllText("ASCompletion.Test_Files.generated.haxe.AfterAssignStatementToVar_useTabs.hx"))
+                                .SetName("Assign statement to var. Use tabs instead of spaces.");
+                    }
+                }
+
+                [Test, TestCaseSource("HaxeTestCases")]
+                public string Haxe(string sourceText, GeneratorJobType job, bool isUseTabs)
+                {
+                    sci.ConfigurationLanguage = "haxe";
+                    sci.IsUseTabs = isUseTabs;
+                    ASContext.Context.SetHaxeFeatures();
+                    ASContext.Context.CurrentModel.Returns(new FileModel {haXe = true, Context = ASContext.Context});
+                    return Generate(sourceText, job, new HaXeContext.Context(new HaXeSettings()));
+                }
+
+                string Generate(string sourceText, GeneratorJobType job, IASContext context)
+                {
+                    sci.Text = sourceText;
+                    SnippetHelper.PostProcessSnippets(sci, 0);
+                    var currentModel = ASContext.Context.CurrentModel;
+                    new ASFileParser().ParseSrc(currentModel, sci.Text);
+                    var currentClass = currentModel.Classes[0];
+                    ASContext.Context.CurrentClass.Returns(currentClass);
+                    ASContext.Context.CurrentModel.Returns(currentModel);
+                    var currentMember = currentClass.Members[0];
+                    ASContext.Context.CurrentMember.Returns(currentMember);
+                    ASContext.Context.GetVisibleExternalElements().Returns(x => context.GetVisibleExternalElements());
+                    ASContext.Context.GetCodeModel(null).ReturnsForAnyArgs(x =>
+                    {
+                        var src = x[0] as string;
+                        return string.IsNullOrEmpty(src) ? null : context.GetCodeModel(src);
+                    });
+                    ASContext.Context.ResolveType(null, null).ReturnsForAnyArgs(_ => new ClassModel {Name = "String", Type = "String", InFile = currentModel});
+                    ASGenerator.contextToken = sci.GetWordFromPosition(sci.CurrentPos);
+                    ASGenerator.GenerateJob(job, currentMember, ASContext.Context.CurrentClass, null, null);
+                    return sci.Text;
+                }
+            }
+
+            [TestFixture]
             public class GenerateVariable : GenerateJob
             {
                 [TestFixtureSetUp]
@@ -1688,40 +1742,57 @@ namespace ASCompletion.Completion
             [TestFixture]
             public class GenerateOverride : GenerateJob
             {
+                [TestFixtureSetUp]
+                public void GenerateOverrideSetUp()
+                {
+                    ASContext.Context.Settings.GenerateImports = true;
+                }
+
                 public IEnumerable<TestCaseData> HaxeTestCases
                 {
                     get
                     {
                         yield return
                             new TestCaseData(
-                                TestFile.ReadAllText(
-                                    "ASCompletion.Test_Files.generated.haxe.BeforeOverrideGetNull.hx"),
-                                "Foo",
-                                "foo")
+                                    TestFile.ReadAllText(
+                                        "ASCompletion.Test_Files.generated.haxe.BeforeOverrideGetNull.hx"),
+                                    "Foo",
+                                    "foo")
                                 .Returns(
                                     TestFile.ReadAllText(
                                         "ASCompletion.Test_Files.generated.haxe.AfterOverrideGetNull.hx"))
                                 .SetName("Override var foo(get, null)");
                         yield return
                             new TestCaseData(
-                                TestFile.ReadAllText(
-                                    "ASCompletion.Test_Files.generated.haxe.BeforeOverrideNullSet.hx"),
-                                "Foo",
-                                "foo")
+                                    TestFile.ReadAllText(
+                                        "ASCompletion.Test_Files.generated.haxe.BeforeOverrideNullSet.hx"),
+                                    "Foo",
+                                    "foo")
                                 .Returns(
                                     TestFile.ReadAllText(
                                         "ASCompletion.Test_Files.generated.haxe.AfterOverrideNullSet.hx"))
                                 .SetName("Override var foo(null, set)");
                         yield return
                             new TestCaseData(
-                                TestFile.ReadAllText(
-                                    "ASCompletion.Test_Files.generated.haxe.BeforeOverrideGetSet.hx"),
-                                "Foo",
-                                "foo")
+                                    TestFile.ReadAllText(
+                                        "ASCompletion.Test_Files.generated.haxe.BeforeOverrideGetSet.hx"),
+                                    "Foo",
+                                    "foo")
                                 .Returns(
                                     TestFile.ReadAllText(
                                         "ASCompletion.Test_Files.generated.haxe.AfterOverrideGetSet.hx"))
                                 .SetName("Override var foo(get, set)");
+                        yield return
+                            new TestCaseData(
+                                    TestFile.ReadAllText(
+                                        "ASCompletion.Test_Files.generated.haxe.BeforeOverrideIssue793.hx"),
+                                    "Foo",
+                                    "foo"
+                                    )
+                                .Returns(
+                                    TestFile.ReadAllText(
+                                        "ASCompletion.Test_Files.generated.haxe.AfterOverrideIssue793.hx"))
+                                .SetName("issue #793");
                     }
                 }
 
@@ -1731,6 +1802,8 @@ namespace ASCompletion.Completion
                     sci.ConfigurationLanguage = "haxe";
                     ASContext.Context.SetHaxeFeatures();
                     ASContext.Context.CurrentModel.Returns(new FileModel {haXe = true, Context = ASContext.Context});
+                    var context = new HaXeContext.Context(new HaXeSettings());
+                    ASContext.Context.ResolveType(null, null).ReturnsForAnyArgs(it => context.ResolveType(it.ArgAt<string>(0), it.ArgAt<FileModel>(1)));
                     sci.Text = sourceText;
                     SnippetHelper.PostProcessSnippets(sci, 0);
                     var currentModel = ASContext.Context.CurrentModel;
