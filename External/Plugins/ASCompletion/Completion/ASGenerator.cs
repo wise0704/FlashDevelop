@@ -97,7 +97,20 @@ namespace ASCompletion.Completion
                 if (resolve.Member == null && resolve.Type != null
                     && (resolve.Type.Flags & FlagType.Interface) > 0) // implement interface
                 {
-                    contextParam = resolve.Type.Type;
+                    if (resolve.Type.QualifiedName.EndsWith('>'))
+                    {
+                        contextParam = resolve.Type.QualifiedName;
+                    }
+                    else if (!string.IsNullOrEmpty(resolve.Type.IndexType))
+                    {
+                        // NOTE: Context.ResolveType doesn't care about the number of generic types we have
+                        contextParam = resolve.Type.QualifiedName + "<" + resolve.Type.IndexType + ">";
+                    }
+                    else
+                    {
+                        contextParam = resolve.Type.Type;
+                    }
+
                     ShowImplementInterface(found, options);
                     return;
                 }
