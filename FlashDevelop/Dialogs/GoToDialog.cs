@@ -17,22 +17,32 @@ namespace FlashDevelop.Dialogs
         private System.Windows.Forms.TextBox lineTextBox;
         private System.Windows.Forms.Label valueLabel;
 
-        public GoToDialog()
+        private IEditorController ownerController;
+
+        public GoToDialog(IEditorController ownerController)
         {
-            this.Owner = Globals.MainForm;
+            if (ownerController == null)
+            {
+                throw new ArgumentNullException("ownerController");
+            }
+
+            this.ownerController = ownerController;
+
+            if (this.ownerController.Owner is Form) this.Owner = (Form)this.ownerController.Owner;
+
             this.Font = Globals.Settings.DefaultFont;
             this.InitializeComponent();
             this.ApplyLocalizedTexts();
             ScaleHelper.AdjustForHighDPI(this);
         }
-        
+
         #region Windows Forms Designer Generated Code
 
         /// <summary>
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent() 
+        private void InitializeComponent()
         {
             this.lineTextBox = new System.Windows.Forms.TextBox();
             this.positionButton = new System.Windows.Forms.Button();
@@ -113,7 +123,7 @@ namespace FlashDevelop.Dialogs
 
         }
         #endregion
-        
+
         #region Methods And Event Handlers
 
         /// <summary>
@@ -148,7 +158,7 @@ namespace FlashDevelop.Dialogs
                 this.CenterToParent();
             }
         }
-        
+
         /// <summary>
         /// Hides only the dialog when user closes it
         /// </summary>
@@ -209,7 +219,7 @@ namespace FlashDevelop.Dialogs
         }
 
         #endregion
-        
+
     }
-    
+
 }

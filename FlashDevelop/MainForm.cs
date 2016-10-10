@@ -2836,7 +2836,7 @@ namespace FlashDevelop
         /// </summary>
         public void GoTo(Object sender, System.EventArgs e)
         {
-            this.editorController.GoTo(sender, e);
+            this.editorController.ShowGoTo();
         }
 
         /// <summary>
@@ -2844,7 +2844,7 @@ namespace FlashDevelop
         /// </summary>
         public void FindNext(Object sender, System.EventArgs e)
         {
-            this.editorController.FindNext(sender, e);
+            this.editorController.FindNext();
         }
 
         /// <summary>
@@ -2852,7 +2852,7 @@ namespace FlashDevelop
         /// </summary>
         public void FindPrevious(Object sender, System.EventArgs e)
         {
-            this.editorController.FindPrevious(sender, e);
+            this.editorController.FindPrevious();
         }
 
         /// <summary>
@@ -2860,7 +2860,7 @@ namespace FlashDevelop
         /// </summary>
         public void FindAndReplace(Object sender, System.EventArgs e)
         {
-            this.editorController.FindAndReplace(sender, e);
+            this.editorController.ShowFindAndReplace();
         }
 
         /// <summary>
@@ -2874,7 +2874,7 @@ namespace FlashDevelop
             {
                 OpenEditableDocument(file);
             });
-            this.editorController.FindAndReplace(sender, e);
+            this.editorController.ShowFindAndReplace();
         }
 
         /// <summary>
@@ -2882,7 +2882,7 @@ namespace FlashDevelop
         /// </summary>
         public void FindAndReplaceInFiles(Object sender, System.EventArgs e)
         {
-            this.editorController.FindAndReplaceInFiles(sender, e);
+            this.editorController.ShowFindAndReplaceInFiles();
         }
 
         /// <summary>
@@ -2890,7 +2890,9 @@ namespace FlashDevelop
         /// </summary>
         public void FindAndReplaceInFilesFrom(Object sender, System.EventArgs e)
         {
-            this.editorController.FindAndReplaceInFilesFrom(sender, e);
+            ToolStripItem button = (ToolStripItem)sender;
+            String path = ((ItemData)button.Tag).Tag;
+            this.editorController.ShowFindAndReplaceInFilesFrom(path);
         }
 
         /// <summary>
@@ -2898,7 +2900,7 @@ namespace FlashDevelop
         /// </summary>
         public void QuickFind(Object sender, System.EventArgs e)
         {
-            this.editorController.QuickFind(sender, e);
+            this.editorController.ShowQuickFind();
         }
 
         /// <summary>

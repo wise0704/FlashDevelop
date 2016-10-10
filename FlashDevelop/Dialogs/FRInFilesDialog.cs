@@ -54,9 +54,19 @@ namespace FlashDevelop.Dialogs
         private PluginCore.FRService.FRRunner runner;
         private PluginCore.IProject lastProject;
 
-        public FRInFilesDialog()
+        private IEditorController ownerController;
+
+        public FRInFilesDialog(IEditorController ownerController)
         {
-            this.Owner = Globals.MainForm;
+            if (ownerController == null)
+            {
+                throw new ArgumentNullException("ownerController");
+            }
+
+            this.ownerController = ownerController;
+
+            if (this.ownerController.Owner is Form) this.Owner = (Form)this.ownerController.Owner;
+
             this.Font = Globals.Settings.DefaultFont;
             this.FormGuid = "d2dbaf53-35ea-4632-b038-5428c9784a32";
             this.InitializeComponent();
@@ -463,7 +473,7 @@ namespace FlashDevelop.Dialogs
         public void UpdateSettings()
         {
             FRDialogGenerics.UpdateComboBoxItems(this.folderComboBox);
-            Boolean useGroups = Globals.MainForm.Settings.UseListViewGrouping;
+            Boolean useGroups = Globals.Settings.UseListViewGrouping;
             this.resultsView.ShowGroups = useGroups;
             this.resultsView.GridLines = !useGroups;
         }
@@ -600,7 +610,7 @@ namespace FlashDevelop.Dialogs
             VistaFolderBrowserDialog fbd = new VistaFolderBrowserDialog();
             fbd.Multiselect = true;
             String curDir = this.folderComboBox.Text;
-            if (curDir == "<Project>") 
+            if (curDir == "<Project>")
             {
                 if (PluginBase.CurrentProject != null)
                 {
@@ -700,8 +710,8 @@ namespace FlashDevelop.Dialogs
                     String message = TextHelper.GetString("Info.FoundInFiles");
                     String formatted = String.Format(message, matchCount, fileCount);
                     this.infoLabel.Text = formatted;
-                } 
-                else 
+                }
+                else
                 {
                     Globals.MainForm.CallCommand("PluginCommand", "ResultsPanel.ClearResults");
                     foreach (KeyValuePair<String, List<SearchMatch>> entry in results)
@@ -762,8 +772,8 @@ namespace FlashDevelop.Dialogs
                     String message = TextHelper.GetString("Info.ReplacedInFiles");
                     String formatted = String.Format(message, matchCount, fileCount);
                     this.infoLabel.Text = formatted;
-                } 
-                else 
+                }
+                else
                 {
                     Globals.MainForm.CallCommand("PluginCommand", "ResultsPanel.ClearResults");
                     foreach (KeyValuePair<String, List<SearchMatch>> entry in results)
@@ -837,7 +847,7 @@ namespace FlashDevelop.Dialogs
             Globals.CurrentDocument.Activate();
             this.Hide();
         }
-        
+
         /// <summary>
         /// Setups the dialog on load
         /// </summary>
@@ -936,8 +946,8 @@ namespace FlashDevelop.Dialogs
                 this.cancelButton.Enabled = true;
                 this.replaceButton.Enabled = false;
                 this.findButton.Enabled = false;
-            } 
-            else 
+            }
+            else
             {
                 this.cancelButton.Enabled = false;
                 this.replaceButton.Enabled = true;
@@ -1010,7 +1020,7 @@ namespace FlashDevelop.Dialogs
                 }
                 catch (Exception ex)
                 {
-                    ErrorManager.ShowInfo(ex.Message); 
+                    ErrorManager.ShowInfo(ex.Message);
                     return false;
                 }
             }

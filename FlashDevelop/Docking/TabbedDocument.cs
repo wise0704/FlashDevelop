@@ -4,6 +4,8 @@ using System.Text;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Reflection;
 using WeifenLuo.WinFormsUI;
 using WeifenLuo.WinFormsUI.Docking;
 using PluginCore.Localization;
@@ -29,9 +31,13 @@ namespace FlashDevelop.Docking
             FormBorderStyle = FormBorderStyle.Sizable;
             Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
             ShowInTaskbar = true;
+            Owner = null;
+            DoubleClickTitleBarToDock = false;
             editorController = new WinFormsEditorController(this);
 
             this.Controls.Add((Control)editorController.QuickFindControl);
+
+            CloneMenuStrip();
         }
 
         public CustomFloatWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
@@ -40,9 +46,44 @@ namespace FlashDevelop.Docking
             FormBorderStyle = FormBorderStyle.Sizable;
             Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
             ShowInTaskbar = true;
+            Owner = null;
+            DoubleClickTitleBarToDock = false;
             editorController = new WinFormsEditorController(this);
 
             this.Controls.Add((Control) editorController.QuickFindControl);
+
+            CloneMenuStrip();
+        }
+
+        private void CloneMenuStrip()
+        {
+            // Hack to get context menu, not handling if a shortcut is modified or multiple levels
+            var menuStripCopy = new MenuStrip();
+            menuStripCopy.Visible = false;
+            foreach (ToolStripMenuItem item in Globals.MainForm.MenuStrip.Items)
+            {
+                var itemCopy = new ToolStripMenuItem(item.Text);
+                menuStripCopy.Items.Add(itemCopy);
+
+                foreach (ToolStripItem item2 in item.DropDownItems)
+                {
+                    if (item2 is ToolStripSeparator) continue;
+                    var menuItem = item2 as ToolStripMenuItem;
+                    var menuItemCopy = new ToolStripMenuItem(item2.Text)
+                    {
+                        ShortcutKeys = menuItem.ShortcutKeys, Tag = menuItem.Tag, CheckOnClick = menuItem.CheckOnClick, Checked = menuItem.Checked
+                    };
+
+                    menuItem.EnabledChanged += (s, e) => menuItemCopy.Enabled = ((ToolStripMenuItem) s).Enabled;
+
+                    var eventsField = typeof(Component).GetField("events", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var eventHandlerList = eventsField.GetValue(menuItem);
+                    eventsField.SetValue(menuItemCopy, eventHandlerList);
+                    itemCopy.DropDownItems.Add(menuItemCopy);
+                }
+            }
+
+            this.Controls.Add(menuStripCopy);
         }
 
         public override DockState DockState

@@ -36,36 +36,36 @@ namespace FlashDevelop
         /// <summary>
         /// Opens a goto dialog
         /// </summary>
-        void GoTo(object sender, EventArgs e);
+        void ShowGoTo();
 
         /// <summary>
         /// Displays the next result
         /// </summary>
-        void FindNext(object sender, EventArgs e);
+        void FindNext();
 
         /// <summary>
         /// Displays the previous result
         /// </summary>
-        void FindPrevious(object sender, EventArgs e);
+        void FindPrevious();
 
         /// <summary>
         /// Opens a find and replace dialog
         /// </summary>
-        void FindAndReplace(object sender, EventArgs e);
+        void ShowFindAndReplace();
 
         /// <summary>
         /// Opens a find and replace in files dialog
         /// </summary>
-        void FindAndReplaceInFiles(object sender, EventArgs e);
+        void ShowFindAndReplaceInFiles();
 
         /// <summary>
         /// Opens a find and replace in files dialog with a location
         /// </summary>
-        void FindAndReplaceInFilesFrom(object sender, EventArgs e);
+        void ShowFindAndReplaceInFilesFrom(string path);
 
         /// <summary>
         /// Shows the quick find control
         /// </summary>
-        void QuickFind(Object sender, System.EventArgs e);
+        void ShowQuickFind();
     }
 }
