@@ -29,6 +29,11 @@ namespace PluginCore.Controls
             }
         }
 
+        static public CodeTip CodeTip
+        {
+            get { return manager.codeTip; }
+        }
+
         static public RichToolTip Tip
         {
             get { return manager.simpleTip; }
@@ -82,6 +87,7 @@ namespace PluginCore.Controls
             EventType.Command | 
             EventType.FileSwitch;
 
+        private CodeTip codeTip;
         private RichToolTip simpleTip;
         private MethodCallTip callTip;
 
@@ -97,6 +103,7 @@ namespace PluginCore.Controls
             try
             {
                 Controls.CompletionList.CreateControl(PluginBase.MainForm);
+                codeTip = new CodeTip(PluginBase.MainForm);
                 simpleTip = CompletionList.Tip;
                 callTip = CompletionList.CallTip;
             }
@@ -306,6 +313,7 @@ namespace PluginCore.Controls
                 if (callTip.CallTipActive && callTip.CheckPosition(position)) return;
             }
             CompletionList.Hide();
+            codeTip.Hide();
             callTip.Hide();
             simpleTip.Hide();
         }
@@ -341,6 +349,7 @@ namespace PluginCore.Controls
             //if (lockedSciControl != null && lockedSciControl.IsAlive) sci = (ScintillaControl)lockedSciControl.Target;
             //else
             //{
+            //    codeTip.Hide();
             //    callTip.Hide();
             //    CompletionList.Hide();
             //    SendChar(sci, value);

@@ -432,15 +432,28 @@ namespace FlashDevelop.Dialogs
         /// </summary>
         private void UpdateFindText()
         {
-            ScintillaControl sci = Globals.SciControl;
             if (this.useRegexCheckBox.Checked) return;
+            ScintillaControl sci = Globals.SciControl;
             if (sci != null && sci.SelText.Length > 0 && !this.lookupIsDirty)
             {
                 this.findComboBox.Text = sci.SelText;
                 this.lookupIsDirty = false;
             }
         }
-        
+
+        /// <summary>
+        /// If there is a word selected, insert it to the find box. This will always update the text regardless of any settings.
+        /// </summary>
+        public void InitializeFindText()
+        {
+            ScintillaControl sci = Globals.SciControl;
+            if (sci != null && sci.SelText.Length > 0)
+            {
+                this.findComboBox.Text = sci.SelText;
+                this.lookupIsDirty = false;
+            }
+        }
+
         /// <summary>
         /// Finds the next result based on direction
         /// </summary>
@@ -572,7 +585,7 @@ namespace FlashDevelop.Dialogs
                 sci.BeginUndoAction();
                 try
                 {
-                    for (Int32 i = 0; i < matches.Count; i++)
+                    for (Int32 i = 0, count = matches.Count; i < count; i++)
                     {
                         if (!selectionOnly) FRDialogGenerics.SelectMatch(sci, matches[i]);
                         else FRDialogGenerics.SelectMatchInTarget(sci, matches[i]);
@@ -580,7 +593,7 @@ namespace FlashDevelop.Dialogs
                         FRSearch.PadIndexes(matches, i, matches[i].Value, replaceWith);
                         sci.EnsureVisible(sci.CurrentLine);
                         if (!selectionOnly) sci.ReplaceSel(replaceWith);
-                        else sci.ReplaceTarget(matches[i].Length, replaceWith);
+                        else sci.ReplaceTarget(sci.MBSafeTextLength(replaceWith), replaceWith);
                     }
                 }
                 finally
@@ -777,7 +790,7 @@ namespace FlashDevelop.Dialogs
         {
             base.Show();
             this.lookupIsDirty = false;
-            this.UpdateFindText();
+            this.InitializeFindText();
         }
 
         #endregion

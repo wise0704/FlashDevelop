@@ -898,7 +898,6 @@ namespace FlashDevelop.Dialogs
         private void UpdateDialogArguments()
         {
             IProject project = PluginBase.CurrentProject;
-            ITabbedDocument document = Globals.CurrentDocument;
             Boolean doRefresh = lastProject != null && lastProject != project;
             if (project != null)
             {
@@ -929,10 +928,7 @@ namespace FlashDevelop.Dialogs
                     this.extensionComboBox.Text = "*." + def;
                 }
             }
-            if (document.IsEditable && document.SciControl.SelText.Length > 0)
-            {
-                this.findComboBox.Text = document.SciControl.SelText;
-            }
+            UpdateFindText();
             if (project != null) lastProject = project;
         }
 
@@ -1065,6 +1061,18 @@ namespace FlashDevelop.Dialogs
         {
             this.UpdateDialogArguments();
             base.Show();
+        }
+
+        /// <summary>
+        /// Update the find combo box with the currently selected text.
+        /// </summary>
+        public void UpdateFindText()
+        {
+            ITabbedDocument document = Globals.CurrentDocument;
+            if (document.IsEditable && document.SciControl.SelText.Length > 0)
+            {
+                this.findComboBox.Text = document.SciControl.SelText;
+            }
         }
 
         #endregion

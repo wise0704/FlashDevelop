@@ -202,7 +202,11 @@ namespace FlashDevelop
         public void ShowFindAndReplace()
         {
             if (!this.frInDocDialog.Visible) this.frInDocDialog.Show();
-            else this.frInDocDialog.Activate();
+            else
+            {
+                this.frInDocDialog.InitializeFindText();
+                this.frInDocDialog.Activate();
+            }
         }
 
         /// <summary>
@@ -211,7 +215,11 @@ namespace FlashDevelop
         public void ShowFindAndReplaceInFiles()
         {
             if (!this.frInFilesDialog.Visible) this.frInFilesDialog.Show();
-            else this.frInFilesDialog.Activate();
+            else
+            {
+                this.frInFilesDialog.UpdateFindText();
+                this.frInFilesDialog.Activate();
+            }
         }
 
         /// <summary>
