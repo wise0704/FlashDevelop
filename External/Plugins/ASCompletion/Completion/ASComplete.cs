@@ -2212,7 +2212,6 @@ namespace ASCompletion.Completion
                     }
                     else if (!string.IsNullOrEmpty(aClass.IndexType))
                     {
-                        newItemType = aClass.QualifiedName;
                         newItem = new MemberItem(new MemberModel(newItemType, aClass.Type, aClass.Flags, aClass.Access));
                     }
                     else
