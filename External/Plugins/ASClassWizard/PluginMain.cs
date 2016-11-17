@@ -431,15 +431,23 @@ namespace ASClassWizard
                 bool isHaxe2 = PluginBase.CurrentSDK != null && PluginBase.CurrentSDK.Name.ToLower().Contains("haxe 2");
                 string[] interfaceParts;
                 string implementContinuation;
-                implements = " implements ";
                 index = 0;
 
                 if (lastFileOptions.Language == "haxe")
                 {
-                    implementContinuation = isHaxe2 ? ", implements " : " implements ";
+                    if (isHaxe2)
+                    {
+                        implements = " implements ";
+                        implementContinuation = ", implements ";
+                    }
+                    else  
+                    {
+                        implements = implementContinuation = (model.Flags & FlagType.Interface) != 0 ? " extends " : " implements ";
+                    }
                 }
                 else
                 {
+                    implements = " implements ";
                     implementContinuation = ", ";
                 }
 
