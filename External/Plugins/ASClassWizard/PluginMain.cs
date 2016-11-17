@@ -429,14 +429,25 @@ namespace ASClassWizard
             if (model.Implements != null && model.Implements.Count > 0)
             {
                 bool isHaxe2 = PluginBase.CurrentSDK != null && PluginBase.CurrentSDK.Name.ToLower().Contains("haxe 2");
+                string[] interfaceParts;
+                string implementContinuation;
                 implements = " implements ";
-                string[] _implements;
                 index = 0;
+
+                if (lastFileOptions.Language == "haxe")
+                {
+                    implementContinuation = isHaxe2 ? ", implements " : " implements ";
+                }
+                else
+                {
+                    implementContinuation = ", ";
+                }
+
                 foreach (string item in model.Implements)
                 {
-                    _implements = item.Split('.');
-                    if (_implements.Length > 1) imports.Add(item);
-                    implements += (index > 0 ? (isHaxe2 ? ", implements " : ", ") : "") + _implements[_implements.Length - 1];
+                    interfaceParts = item.Split('.');
+                    if (interfaceParts.Length > 1) imports.Add(item);
+                    implements += (index > 0 ? implementContinuation : "") + interfaceParts[interfaceParts.Length - 1];
                     if (lastFileOptions.CreateInheritedMethods)
                     {
                         processOnSwitch = lastFileFromTemplate; 
