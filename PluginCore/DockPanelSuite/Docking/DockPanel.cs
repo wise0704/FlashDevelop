@@ -475,7 +475,7 @@ namespace WeifenLuo.WinFormsUI.Docking
             {
                 foreach (IDockContent content in Contents)
                 {
-                    if (content.DockHandler.DockState == DockState.Document)
+                    if (content.DockHandler.DockState == DockState.Document || content.DockHandler.DockState == DockState.FloatDocument)
                         yield return content;
                 }
             }

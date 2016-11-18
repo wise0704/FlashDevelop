@@ -958,8 +958,8 @@ namespace FlashDevelop
         /// </summary>
         private void InitializeComponents()
         {
-            this.editorController = new WinFormsEditorController(this);
             this.dockPanel = new DockPanel();
+            this.editorController = new WinFormsEditorController(this);
             this.statusStrip = new StatusStrip();
             this.toolStripPanel = new ToolStripPanel();
             this.menuStrip = StripBarManager.GetMenuStrip(FileNameHelper.MainMenu);
@@ -1151,7 +1151,6 @@ namespace FlashDevelop
             /**
             * DockPanel events
             */
-            this.dockPanel.ActivePaneChanged += new EventHandler(this.OnActivePaneChanged);
             this.dockPanel.ActiveContentChanged += new EventHandler(this.OnActiveContentChanged);
             this.dockPanel.ActiveDocumentChanged += new EventHandler(this.OnActiveDocumentChanged);
             this.dockPanel.ContentRemoved += new EventHandler<DockContentEventArgs>(this.OnContentRemoved);
@@ -1279,14 +1278,6 @@ namespace FlashDevelop
                 Process.Start(Application.ExecutablePath);
                 Process.GetCurrentProcess().Kill();
             }
-        }
-
-        /// <summary>
-        /// When dock changes, applies the padding to documents
-        /// </summary>
-        private void OnActivePaneChanged(Object sender, EventArgs e)
-        {
-            //this.quickFind.ApplyFixedDocumentPadding();
         }
 
         /// <summary>

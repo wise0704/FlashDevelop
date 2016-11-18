@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using FlashDevelop.Controls;
 using FlashDevelop.Dialogs;
@@ -12,7 +9,6 @@ using PluginCore.Managers;
 namespace FlashDevelop
 {
     // TODO: Share dialogs?
-    // TODO: Fix problem with QuickFind resizing of the documents
     // TODO: Proper shortcuts working without hacks, at least for some main ones like Ctrl+Shift+1, or Save
     class WinFormsEditorController : IEditorController
     {

@@ -63,6 +63,7 @@ namespace FlashDevelop.Controls
 
         protected override void Dispose(bool disposing)
         {
+            PluginBase.MainForm.DockPanel.ActivePaneChanged -= OnActivePaneChanged;
             EventManager.RemoveEventHandler(this);
             base.Dispose(disposing);
         }
@@ -75,12 +76,21 @@ namespace FlashDevelop.Controls
         private void InitializeEvents()
         {
             EventManager.AddEventHandler(this, EventType.FileSwitch);
+            PluginBase.MainForm.DockPanel.ActivePaneChanged += OnActivePaneChanged;
         }
 
         /// <summary>
         /// Handles the internal events
         /// </summary>
         public void HandleEvent(Object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            this.ApplyFixedDocumentPadding();
+        }
+
+        /// <summary>
+        /// When dock changes, applies the padding to documents
+        /// </summary>
+        private void OnActivePaneChanged(Object sender, EventArgs e)
         {
             this.ApplyFixedDocumentPadding();
         }
@@ -552,12 +562,13 @@ namespace FlashDevelop.Controls
         /// </summary>
         public void ApplyFixedDocumentPadding()
         {
-            this.Parent.Controls[1].Margin = new Padding(0, 0, 0, this.Height - 1);
-            return;
-            foreach (ITabbedDocument castable in Globals.MainForm.DockPanel.Documents.OfType<ITabbedDocument>())
+            var parentForm = this.FindForm();
+
+            if (parentForm == null) return;
+
+            foreach (TabbedDocument document in Globals.MainForm.DockPanel.Documents.OfType<TabbedDocument>())
             {
-                TabbedDocument document = castable as TabbedDocument;
-                if (document.IsEditable)
+                if (document.IsEditable && parentForm.Equals(document.Parent.FindForm()))
                 {
                     Rectangle find = this.RectangleToScreen(this.ClientRectangle);
                     Rectangle doc = document.RectangleToScreen(document.ClientRectangle);
