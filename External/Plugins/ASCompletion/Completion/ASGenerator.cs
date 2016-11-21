@@ -1924,7 +1924,7 @@ namespace ASCompletion.Completion
 
             int funcBodyStart = -1;
 
-            int genCount = 0;
+            int genCount = 0, parCount = 0;
             for (int i = posStart; i <= posEnd; i++)
             {
                 char c = (char)sci.CharAt(i);
@@ -1932,7 +1932,7 @@ namespace ASCompletion.Completion
                 if (c == '{')
                 {
                     int style = sci.BaseStyleAt(i);
-                    if (ASComplete.IsCommentStyle(style) || ASComplete.IsLiteralStyle(style) || genCount > 0)
+                    if (ASComplete.IsCommentStyle(style) || ASComplete.IsLiteralStyle(style) || genCount > 0 || parCount > 0)
                         continue;
                     funcBodyStart = i;
                     break;
@@ -1946,8 +1946,20 @@ namespace ASCompletion.Completion
                 else if (c == '>')
                 {
                     int style = sci.BaseStyleAt(i);
-                    if (style == 10)
+                    if (style == 10 && genCount > 0)
                         genCount--;
+                }
+                else if (c == '(')
+                {
+                    int style = sci.BaseStyleAt(i);
+                    if (style == 10)
+                        parCount++;
+                }
+                else if (c == ')')
+                {
+                    int style = sci.BaseStyleAt(i);
+                    if (style == 10)
+                        parCount--;
                 }
             }
 
