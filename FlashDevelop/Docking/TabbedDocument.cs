@@ -21,12 +21,23 @@ using PluginCore;
 
 namespace FlashDevelop.Docking
 {
-    public class CustomFloatWindow : FloatWindow
+    public class CustomFloatWindow : FloatWindow, IEventHandler
     {
         private IEditorController editorController;
 
         public CustomFloatWindow(DockPanel dockPanel, DockPane pane)
             : base(dockPanel, pane)
+        {
+            this.InitializeComponents();
+        }
+
+        public CustomFloatWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
+            : base(dockPanel, pane, bounds)
+        {
+            this.InitializeComponents();
+        }
+
+        private void InitializeComponents()
         {
             FormBorderStyle = FormBorderStyle.Sizable;
             Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
@@ -38,21 +49,15 @@ namespace FlashDevelop.Docking
             this.Controls.Add((Control)editorController.QuickFindControl);
 
             CloneMenuStrip();
+
+            ThemeManager.WalkControls(this);
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
         }
 
-        public CustomFloatWindow(DockPanel dockPanel, DockPane pane, Rectangle bounds)
-            : base(dockPanel, pane, bounds)
+        protected override void Dispose(bool disposing)
         {
-            FormBorderStyle = FormBorderStyle.Sizable;
-            Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
-            ShowInTaskbar = true;
-            Owner = null;
-            DoubleClickTitleBarToDock = false;
-            editorController = new WinFormsEditorController(this);
-
-            this.Controls.Add((Control) editorController.QuickFindControl);
-
-            CloneMenuStrip();
+            EventManager.RemoveEventHandler(this);
+            base.Dispose(disposing);
         }
 
         private void CloneMenuStrip()
@@ -109,6 +114,11 @@ namespace FlashDevelop.Docking
             if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
 
             return processKeys.Value;
+        }
+
+        public void HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            ThemeManager.WalkControls(this);
         }
     }
 
