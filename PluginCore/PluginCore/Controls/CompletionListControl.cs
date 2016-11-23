@@ -9,19 +9,21 @@ using PluginCore.Helpers;
 
 namespace PluginCore.Controls
 {
-    public delegate void CompletionListInsertedTextHandler(Control sender, int position, string text, char trigger, ICompletionListItem item);
+    public delegate void CompletionListInsertedTextHandler(
+        Control sender, int position, string text, char trigger, ICompletionListItem item);
 
     public class CompletionListControl : IMessageFilter
     {
-        public event CompletionListInsertedTextHandler OnInsert;
-        public event CompletionListInsertedTextHandler OnCancel;
-        public event CancelEventHandler OnShowing;
-        public event EventHandler OnHidden;
+        public event CompletionListInsertedTextHandler ItemInserted;
+        public event CompletionListInsertedTextHandler Cancelled;
+        public event CancelEventHandler Showing;
+        public event EventHandler Hidden;
 
         /// <summary>
         /// Properties of the class 
         /// </summary> 
         private System.Timers.Timer tempo;
+
         private System.Timers.Timer tempoTip;
         private System.Windows.Forms.ListBox completionList;
         private System.Windows.Forms.ToolStripControlHost listContainer;
@@ -30,29 +32,30 @@ namespace PluginCore.Controls
 
         #region State Properties
 
-        private  bool disableSmartMatch;
-        private  ICompletionListItem currentItem;
-        private  List<ICompletionListItem> allItems;
-        private  bool exactMatchInList;
-        private  bool smartMatchInList;
-        private  bool autoHideList;
-        private  bool noAutoInsert;
-        private  bool isActive;
+        private bool disableSmartMatch;
+        private ICompletionListItem currentItem;
+        private List<ICompletionListItem> allItems;
+        private bool exactMatchInList;
+        private bool smartMatchInList;
+        private bool autoHideList;
+        private bool noAutoInsert;
+        private bool isActive;
         internal bool listUp;
-        private  bool fullList;
-        private  int startPos;
-        private  int currentPos;
-        private  int lastIndex;
-        private  string currentWord;
-        private  string word;
-        private  bool needResize;
-        private  string widestLabel;
-        private  long showTime;
-        private  ICompletionListItem defaultItem;
+        private bool fullList;
+        private int startPos;
+        private int currentPos;
+        private int lastIndex;
+        private string currentWord;
+        private string word;
+        private bool needResize;
+        private string widestLabel;
+        private long showTime;
+        private ICompletionListItem defaultItem;
 
-        private  ICompletionListHost host;
-        private  RichToolTip tip;
-        private  MethodCallTip callTip;
+        private ICompletionListHost host;
+        private RichToolTip tip;
+        private MethodCallTip callTip;
+        private bool suppressKeyPress;
 
         #endregion
 
@@ -77,11 +80,11 @@ namespace PluginCore.Controls
             listHost.Size = new Size(180, 100);
 
             tempo = new System.Timers.Timer();
-            tempo.SynchronizingObject = (Form)PluginBase.MainForm;
+            tempo.SynchronizingObject = (Form) PluginBase.MainForm;
             tempo.Elapsed += new System.Timers.ElapsedEventHandler(DisplayList);
             tempo.AutoReset = false;
             tempoTip = new System.Timers.Timer();
-            tempoTip.SynchronizingObject = (Form)PluginBase.MainForm;
+            tempoTip.SynchronizingObject = (Form) PluginBase.MainForm;
             tempoTip.Elapsed += new System.Timers.ElapsedEventHandler(UpdateTip);
             tempoTip.AutoReset = false;
             tempoTip.Interval = 800;
@@ -90,16 +93,16 @@ namespace PluginCore.Controls
             completionList.Font = new System.Drawing.Font(PluginBase.Settings.DefaultFont, FontStyle.Regular);
             completionList.ItemHeight = completionList.Font.Height + 2;
             completionList.DrawMode = DrawMode.OwnerDrawFixed;
-            completionList.DrawItem += new DrawItemEventHandler(CLDrawListItem);
-            completionList.Click += new EventHandler(CLClick);
-            completionList.DoubleClick += new EventHandler(CLDoubleClick);
+            completionList.DrawItem += new DrawItemEventHandler(CompletionListDrawListItem);
+            completionList.Click += new EventHandler(CompletionListClick);
+            completionList.DoubleClick += new EventHandler(CompletionListDoubleClick);
 
             listContainer = new ToolStripControlHost(completionList);
             listContainer.AutoToolTip = false;
             listContainer.AutoSize = false;
             listContainer.Margin = Padding.Empty;
             listContainer.Padding = Padding.Empty;
-            
+
             listHost.Items.Add(listContainer);
 
             CharacterClass = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -269,6 +272,12 @@ namespace PluginCore.Controls
             if (tempo.Enabled) tempo.Interval = PluginBase.MainForm.Settings.DisplayDelay;
             FindWordStartingWith(word);
             // state
+            if (!isActive)
+            {
+                // track key input
+                host.KeyDown += Target_KeyDown;
+                host.KeyPress += Target_KeyPress;
+            }
             isActive = true;
             tempoTip.Enabled = false;
             showTime = DateTime.Now.Ticks;
@@ -323,10 +332,11 @@ namespace PluginCore.Controls
                 needResize = false;
                 Graphics g = cl.CreateGraphics();
                 SizeF size = g.MeasureString(widestLabel, cl.Font);
-                listSize.Width = (int)Math.Min(Math.Max(size.Width + 40, 100), ScaleHelper.Scale(400)) + ScaleHelper.Scale(10);
+                listSize.Width = (int) Math.Min(Math.Max(size.Width + 40, 100), ScaleHelper.Scale(400)) +
+                                 ScaleHelper.Scale(10);
             }
             else listSize.Width = cl.Width;
-            int newHeight = Math.Min(cl.Items.Count, 10) * cl.ItemHeight + 4;
+            int newHeight = Math.Min(cl.Items.Count, 10)*cl.ItemHeight + 4;
             listSize.Height = newHeight != cl.Height ? newHeight : cl.Height;
             cl.Size = listContainer.Size = listHost.Size = listSize;
             // place control
@@ -357,7 +367,7 @@ namespace PluginCore.Controls
                 allItems = null;
                 Tip.Hide();
                 tempoTip.Enabled = false;
-                if (visible && OnHidden != null) OnHidden(this, EventArgs.Empty);
+                if (visible) OnHidden(EventArgs.Empty);
             }
         }
 
@@ -369,11 +379,8 @@ namespace PluginCore.Controls
             if (completionList != null && isActive)
             {
                 Hide();
-                if (OnCancel != null)
-                {
-                    if (!host.IsEditable) return;
-                    OnCancel(host.Owner, currentPos, currentWord, trigger, null);
-                }
+                if (!host.IsEditable) return;
+                OnCancel(trigger);
             }
         }
 
@@ -395,13 +402,15 @@ namespace PluginCore.Controls
         /// <summary>
         /// 
         /// </summary>
-        private void CLDrawListItem(Object sender, System.Windows.Forms.DrawItemEventArgs e)
+        private void CompletionListDrawListItem(Object sender, System.Windows.Forms.DrawItemEventArgs e)
         {
             ICompletionListItem item = completionList.Items[e.Index] as ICompletionListItem;
             e.DrawBackground();
             Color fore = PluginBase.MainForm.GetThemeColor("CompletionList.ForeColor");
             bool selected = (e.State & DrawItemState.Selected) > 0;
-            Brush textBrush = (selected) ? SystemBrushes.HighlightText : fore == Color.Empty ? SystemBrushes.WindowText : new SolidBrush(fore);
+            Brush textBrush = (selected)
+                ? SystemBrushes.HighlightText
+                : fore == Color.Empty ? SystemBrushes.WindowText : new SolidBrush(fore);
             Brush packageBrush = Brushes.Gray;
             Rectangle tbounds = new Rectangle(ScaleHelper.Scale(18), e.Bounds.Top, e.Bounds.Width, e.Bounds.Height);
             if (item != null)
@@ -409,14 +418,16 @@ namespace PluginCore.Controls
                 Graphics g = e.Graphics;
                 float newHeight = e.Bounds.Height - 2;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.DrawImage(item.Icon, 1, e.Bounds.Top + ((e.Bounds.Height - newHeight) / 2), newHeight, newHeight);
+                g.DrawImage(item.Icon, 1, e.Bounds.Top + ((e.Bounds.Height - newHeight)/2), newHeight, newHeight);
                 int p = item.Label.LastIndexOf('.');
                 if (p > 0 && !selected)
                 {
                     string package = item.Label.Substring(0, p + 1);
                     g.DrawString(package, e.Font, packageBrush, tbounds, StringFormat.GenericDefault);
                     int left = tbounds.Left + DrawHelper.MeasureDisplayStringWidth(e.Graphics, package, e.Font) - 2;
-                    if (left < tbounds.Right) g.DrawString(item.Label.Substring(p + 1), e.Font, textBrush, left, tbounds.Top, StringFormat.GenericDefault);
+                    if (left < tbounds.Right)
+                        g.DrawString(item.Label.Substring(p + 1), e.Font, textBrush, left, tbounds.Top,
+                            StringFormat.GenericDefault);
                 }
                 else g.DrawString(item.Label, e.Font, textBrush, tbounds, StringFormat.GenericDefault);
             }
@@ -473,7 +484,9 @@ namespace PluginCore.Controls
             }
             coord = host.Owner.PointToScreen(coord);
             var screen = Screen.FromHandle(host.Owner.Handle);
-            listUp = CallTip.CallTipActive || (coord.Y - listHost.Height > screen.WorkingArea.Top && coord.Y + host.GetLineHeight() + listHost.Height > screen.WorkingArea.Bottom);
+            listUp = CallTip.CallTipActive ||
+                     (coord.Y - listHost.Height > screen.WorkingArea.Top &&
+                      coord.Y + host.GetLineHeight() + listHost.Height > screen.WorkingArea.Bottom);
             if (listUp) coord.Y -= listHost.Height;
             else coord.Y += host.GetLineHeight();
             // Keep on screen area
@@ -490,10 +503,10 @@ namespace PluginCore.Controls
             else
             {
                 Redraw();
-                if (OnShowing != null)
+                if (Showing != null)
                 {
                     var cancelArgs = new CancelEventArgs();
-                    OnShowing(this, cancelArgs);
+                    OnShowing(cancelArgs);
                     if (cancelArgs.Cancel)
                     {
                         Hide();
@@ -511,7 +524,7 @@ namespace PluginCore.Controls
         /// <summary>
         /// 
         /// </summary>
-        private void CLClick(Object sender, System.EventArgs e)
+        private void CompletionListClick(Object sender, System.EventArgs e)
         {
             if (!host.IsEditable)
                 Hide();
@@ -520,7 +533,7 @@ namespace PluginCore.Controls
         /// <summary>
         /// 
         /// </summary> 
-        private void CLDoubleClick(Object sender, System.EventArgs e)
+        private void CompletionListDoubleClick(Object sender, System.EventArgs e)
         {
             if (!host.IsEditable)
             {
@@ -639,7 +652,8 @@ namespace PluginCore.Controls
                         // preselected item
                         if (defaultItem != null)
                         {
-                            if (lastScore > 3 || (lastScore > 2 && defaultItem.Label.StartsWith(word, StringComparison.OrdinalIgnoreCase)))
+                            if (lastScore > 3 ||
+                                (lastScore > 2 && defaultItem.Label.StartsWith(word, StringComparison.OrdinalIgnoreCase)))
                             {
                                 lastIndex = lastIndex = TestDefaultItem(lastIndex, word, len);
                             }
@@ -665,7 +679,8 @@ namespace PluginCore.Controls
                     int topIndex = lastIndex;
                     if (defaultItem != null)
                     {
-                        if (lastScore > 3 || (lastScore > 2 && defaultItem.Label.StartsWith(word, StringComparison.OrdinalIgnoreCase)))
+                        if (lastScore > 3 ||
+                            (lastScore > 2 && defaultItem.Label.StartsWith(word, StringComparison.OrdinalIgnoreCase)))
                         {
                             lastIndex = TestDefaultItem(lastIndex, word, len);
                         }
@@ -677,7 +692,7 @@ namespace PluginCore.Controls
                 catch (Exception ex)
                 {
                     Hide('\0');
-                    ErrorManager.ShowError(/*"Completion list populate error.", */ ex);
+                    ErrorManager.ShowError( /*"Completion list populate error.", */ ex);
                     return;
                 }
                 finally
@@ -734,7 +749,7 @@ namespace PluginCore.Controls
                 }
                 return 0;
             }
-            
+
             // try abbreviation
             bool firstUpper = char.IsUpper(word[0]);
             if (firstUpper)
@@ -818,7 +833,11 @@ namespace PluginCore.Controls
             int p;
             int p2;
             int score = 0;
-            if (label[0] == c) { p2 = 0; score = 1; }
+            if (label[0] == c)
+            {
+                p2 = 0;
+                score = 1;
+            }
             else if (label.IndexOf('.') < 0)
             {
                 p2 = label.IndexOf(c);
@@ -828,7 +847,11 @@ namespace PluginCore.Controls
             else
             {
                 p2 = label.IndexOfOrdinal("." + c);
-                if (p2 >= 0) { score = 2; p2++; }
+                if (p2 >= 0)
+                {
+                    score = 2;
+                    p2++;
+                }
                 else
                 {
                     p2 = label.IndexOf(c);
@@ -848,7 +871,10 @@ namespace PluginCore.Controls
 
                 int ups = 0;
                 for (int i2 = p + 1; i2 < p2; i2++)
-                    if (label[i2] == '_') { ups = 0; }
+                    if (label[i2] == '_')
+                    {
+                        ups = 0;
+                    }
                     else if (char.IsUpper(label[i2])) ups++;
                 score += Math.Min(3, ups); // malus if skipped upper chars
 
@@ -893,7 +919,8 @@ namespace PluginCore.Controls
                     {
                         if (word != null && tail.Length > 0)
                         {
-                            if (replace.StartsWith(word, StringComparison.OrdinalIgnoreCase) && replace.IndexOfOrdinal(tail) >= word.Length)
+                            if (replace.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
+                                replace.IndexOfOrdinal(tail) >= word.Length)
                             {
                                 replace = replace.Substring(0, replace.IndexOfOrdinal(tail));
                             }
@@ -901,8 +928,8 @@ namespace PluginCore.Controls
                         host.BeginUndoAction();
                         host.SetSelection(startPos, host.CurrentPos);
                         host.SelectedText = replace;
-                        if (OnInsert != null) OnInsert(host.Owner, startPos, replace, trigger, item);
-                        if (tail.Length > 0) host.SelectedText = tail;
+                        OnItemInserted(replace, trigger, item);
+                        //if (tail.Length > 0) host.SelectedText = tail;
                     }
                     return true;
                 }
@@ -912,6 +939,26 @@ namespace PluginCore.Controls
             {
                 host.EndUndoAction();
             }
+        }
+
+        virtual protected void OnCancel(char trigger)
+        {
+            if (Cancelled != null) Cancelled(host.Owner, currentPos, currentWord, trigger, null);
+        }
+
+        virtual protected void OnHidden(EventArgs e)
+        {
+            if (Hidden != null) Hidden(this, e);
+        }
+
+        virtual protected void OnItemInserted(string value, char trigger, ICompletionListItem item)
+        {
+            if (ItemInserted != null) ItemInserted(host.Owner, startPos, value, trigger, item);
+        }
+
+        virtual protected void OnShowing(CancelEventArgs e)
+        {
+            if (Showing != null) Showing(this, e);
         }
 
         #endregion
@@ -932,8 +979,6 @@ namespace PluginCore.Controls
                 Application.AddMessageFilter(this);
             host.LostFocus += Target_LostFocus;
             host.MouseDown += Target_MouseDown;
-            host.KeyDown += Target_KeyDown;
-            host.KeyPress += Target_KeyPress;
             host.PositionChanged += Target_PositionChanged;
             host.SizeChanged += Target_SizeChanged;
 
@@ -971,22 +1016,32 @@ namespace PluginCore.Controls
         private void Target_KeyDown(object sender, KeyEventArgs e)
         {
             if (!e.Handled)
-                e.SuppressKeyPress = e.Handled = HandleKeys(e.KeyData);
+            {
+                var hostCopy = this.host;
+                hostCopy.KeyPress += Target_PendingKeyPress;
+
+                try
+                {
+                    e.SuppressKeyPress = e.Handled = HandleKeys(e.KeyData);
+                }
+                finally
+                {
+                    hostCopy.KeyPress -= Target_PendingKeyPress;
+                }
+            }
         }
 
         private void Target_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsControl(e.KeyChar) && !e.Handled)
             {
-                // Hacky... the current implementation relies on the OnChar Scintilla event, which happens after the KeyPress event
-                // We either create an OnChar event in ICompletionListHost and implement it, or change the current behaviour
-                e.Handled = true;
-                host.SelectedText = new string(e.KeyChar, 1);
-                int pos = host.CurrentPos + 1;
-                host.SetSelection(pos, pos);
-
-                OnChar(e.KeyChar);
+                e.Handled = OnChar(e.KeyChar);
             }
+        }
+
+        private void Target_PendingKeyPress(object sender, KeyPressEventArgs e)
+        {
+            e.Handled = suppressKeyPress;
         }
 
         private void Target_PositionChanged(object sender, EventArgs e)
@@ -1012,12 +1067,11 @@ namespace PluginCore.Controls
                 word += c;
                 currentPos++;
                 FindWordStartingWith(word);
-                return true;
+                return false;
             }
             else if (noAutoInsert)
             {
                 Hide('\0');
-                // handle this char
                 return false;
             }
             else
@@ -1036,7 +1090,6 @@ namespace PluginCore.Controls
                 {
                     ReplaceText(c.ToString(), c);
                 }
-                // handle this char
                 return false;
             }
         }
@@ -1047,9 +1100,11 @@ namespace PluginCore.Controls
         public bool HandleKeys(Keys key)
         {
             int index;
+            suppressKeyPress = true;
             switch (key)
             {
                 case Keys.Back:
+                    suppressKeyPress = false;
                     if (word.Length > MinWordLength)
                     {
                         word = word.Substring(0, word.Length - 1);
@@ -1058,27 +1113,28 @@ namespace PluginCore.Controls
                         FindWordStartingWith(word);
                     }
                     else Hide((char)8);
-                    return false;
+                    break;
 
                 case Keys.Enter:
                     if (noAutoInsert || !ReplaceText('\n'))
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
-                    return true;
+                    break;
 
                 case Keys.Tab:
                     if (!ReplaceText('\t'))
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
-                    return true;
+                    break;
 
                 case Keys.Space:
                     if (noAutoInsert) Hide();
-                    return false;
+                    suppressKeyPress = false;
+                    break;
 
                 case Keys.Up:
                     noAutoInsert = false;
@@ -1086,10 +1142,10 @@ namespace PluginCore.Controls
                     if (!listHost.Visible)
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
                     // go up the list
-                    if (completionList.SelectedIndex > 0)
+                    else if (completionList.SelectedIndex > 0)
                     {
                         RefreshTip();
                         index = completionList.SelectedIndex - 1;
@@ -1110,10 +1166,10 @@ namespace PluginCore.Controls
                     if (!listHost.Visible)
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
                     // go down the list
-                    if (completionList.SelectedIndex < completionList.Items.Count - 1)
+                    else if (completionList.SelectedIndex < completionList.Items.Count - 1)
                     {
                         RefreshTip();
                         index = completionList.SelectedIndex + 1;
@@ -1136,10 +1192,10 @@ namespace PluginCore.Controls
                     if (!listHost.Visible)
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
                     // go up the list
-                    if (completionList.SelectedIndex > 0)
+                    else if (completionList.SelectedIndex > 0)
                     {
                         RefreshTip();
                         index = completionList.SelectedIndex - completionList.Height / completionList.ItemHeight;
@@ -1156,10 +1212,10 @@ namespace PluginCore.Controls
                     if (!listHost.Visible)
                     {
                         Hide();
-                        return false;
+                        suppressKeyPress = false;
                     }
                     // go down the list
-                    if (completionList.SelectedIndex < completionList.Items.Count - 1)
+                    else if (completionList.SelectedIndex < completionList.Items.Count - 1)
                     {
                         RefreshTip();
                         index = completionList.SelectedIndex + completionList.Height / completionList.ItemHeight;
@@ -1171,7 +1227,8 @@ namespace PluginCore.Controls
                 case Keys.Home:
                 case Keys.End:
                     Hide();
-                    return false;
+                    suppressKeyPress = false;
+                    break;
                 /* These could be interesting with some shortcut or condition...
                     noAutoInsert = false;
                     // go down the list
@@ -1202,7 +1259,8 @@ namespace PluginCore.Controls
                 case Keys.Left:
                 case Keys.Right:
                     Hide();
-                    return false;
+                    suppressKeyPress = false;
+                    break;
 
                 case Keys.Escape:
                     Hide((char) 27);
@@ -1230,9 +1288,10 @@ namespace PluginCore.Controls
                             Hide();
                     }
 
-                    return false;
+                    suppressKeyPress = false;
+                    break;
             }
-            return true;
+            return suppressKeyPress;
         }
 
         private void RefreshTip()

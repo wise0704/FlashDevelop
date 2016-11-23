@@ -30,8 +30,9 @@ namespace PluginCore.Controls
         bool IsEditable { get; }
 
         int GetLineFromCharIndex(int pos);
-        Point GetPositionFromCharIndex(int pos);
         int GetLineHeight();
+        Point GetPositionFromCharIndex(int pos);
+        int GetTextLength(string text);
         void SetSelection(int start, int end);
 
         void BeginUndoAction();

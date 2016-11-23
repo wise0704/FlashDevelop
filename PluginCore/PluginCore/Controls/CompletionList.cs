@@ -49,8 +49,8 @@ namespace PluginCore.Controls
         public static void CreateControl(IMainForm mainForm)
         {
             completionList = new CompletionListControl(new ScintillaHost());
-            completionList.OnCancel += OnCancelHandler;
-            completionList.OnInsert += OnInsertHandler;
+            completionList.Cancelled += OnCancelHandler;
+            completionList.ItemInserted += OnInsertHandler;
         }
 
         #endregion
@@ -330,9 +330,11 @@ namespace PluginCore.Controls
                 remove { SciControl.KeyPosted -= value; }
             }
 
-            #pragma warning disable 0067
-            public event KeyPressEventHandler KeyPress; // Unhandled for this one, although we could
-            #pragma warning restore 0067
+            public event KeyPressEventHandler KeyPress
+            {
+                add { Owner.KeyPress += value; }
+                remove { Owner.KeyPress -= value; }
+            }
 
             public event MouseEventHandler MouseDown
             {
@@ -387,6 +389,11 @@ namespace PluginCore.Controls
             {
                 var sci = SciControl;
                 return new Point(sci.PointXFromPosition(pos), sci.PointYFromPosition(pos));
+            }
+
+            public int GetTextLength(string text)
+            {
+                return SciControl.MBSafeTextLength(text);
             }
 
             public void SetSelection(int start, int end)
