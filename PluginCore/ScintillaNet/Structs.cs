@@ -30,6 +30,10 @@ namespace ScintillaNet
         public int listType;
         public int x;
         public int y;
+        public int token;
+        public int annotationLinesAdded;
+        public int updated;
+        public int listCompletionMethod;
     };
 
     [StructLayout(LayoutKind.Sequential)]
