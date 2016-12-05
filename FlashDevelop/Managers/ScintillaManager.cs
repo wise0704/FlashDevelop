@@ -299,17 +299,27 @@ namespace FlashDevelop.Managers
                 /**
                 * Adjust caret policy based on settings
                 */
+                Color color = PluginBase.MainForm.GetThemeColor("ScrollBar.ForeColor");
+                String value = PluginBase.MainForm.GetThemeValue("ScrollBar.UseCustom");
+                Boolean usingCustomScrollBars = value == "True" || (value == null && color != Color.Empty);
                 if (settings.KeepCaretCentered)
                 {
                     sci.SetXCaretPolicy((Int32)(CaretPolicy.Jumps | CaretPolicy.Even), 30);
                     sci.SetYCaretPolicy((Int32)(CaretPolicy.Jumps | CaretPolicy.Even), 2);
+                    sci.SetVisiblePolicy((Int32)(CaretPolicy.Strict | CaretPolicy.Even), 0);
                 }
-                else // Match edge...
+                else if (!usingCustomScrollBars) // Match edge...
                 {
-                    sci.SetXCaretPolicy((Int32)CaretPolicy.Even, 0);
-                    sci.SetYCaretPolicy((Int32)CaretPolicy.Even, 0);
+                    sci.SetXCaretPolicy((Int32) CaretPolicy.Even, 0);
+                    sci.SetYCaretPolicy((Int32) CaretPolicy.Even, 0);
+                    sci.SetVisiblePolicy((Int32) (CaretPolicy.Strict | CaretPolicy.Even), 0);
                 }
-                sci.SetVisiblePolicy((Int32)(CaretPolicy.Strict | CaretPolicy.Even), 0);
+                else
+                {
+                    sci.SetXCaretPolicy((Int32)(CaretPolicy.Strict | CaretPolicy.Even | CaretPolicy.Slop), 15);
+                    sci.SetYCaretPolicy((Int32)(CaretPolicy.Strict | CaretPolicy.Even | CaretPolicy.Slop), 1);
+                    sci.SetVisiblePolicy((Int32)(CaretPolicy.Strict | CaretPolicy.Even), 1);
+                }
                 /**
                 * Adjust the print margin
                 */

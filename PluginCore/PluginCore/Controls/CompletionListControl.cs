@@ -1035,7 +1035,7 @@ namespace PluginCore.Controls
         {
             if (!char.IsControl(e.KeyChar) && !e.Handled)
             {
-                e.Handled = OnChar(e.KeyChar);
+                OnChar(e.KeyChar);
             }
         }
 
@@ -1067,12 +1067,11 @@ namespace PluginCore.Controls
                 word += c;
                 currentPos++;
                 FindWordStartingWith(word);
-                return false;
+                return true;
             }
             else if (noAutoInsert)
             {
                 Hide('\0');
-                return false;
             }
             else
             {
@@ -1090,8 +1089,8 @@ namespace PluginCore.Controls
                 {
                     ReplaceText(c.ToString(), c);
                 }
-                return false;
             }
+            return false;
         }
 
         /// <summary>
