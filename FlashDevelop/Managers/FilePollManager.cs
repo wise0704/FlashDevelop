@@ -81,7 +81,7 @@ namespace FlashDevelop.Managers
                 FilePollTimer.Enabled = false;
                 ITabbedDocument[] documents = Globals.MainForm.Documents;
                 ITabbedDocument current = Globals.MainForm.CurrentDocument;
-                CheckFileChange(current); // Check the current first..
+                if (current != null) CheckFileChange(current); // Check the current first..
                 foreach (ITabbedDocument document in documents)
                 {
                     if (document != current) CheckFileChange(document);
