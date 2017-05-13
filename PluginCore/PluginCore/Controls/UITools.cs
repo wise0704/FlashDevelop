@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using PluginCore.Managers;
@@ -7,7 +8,6 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace PluginCore.Controls
 {
-    
     public class UITools : IMessageFilter, IEventHandler
     {
         public delegate void CharAddedHandler(ScintillaControl sender, int value);
@@ -15,42 +15,41 @@ namespace PluginCore.Controls
         public delegate void MouseHoverHandler(ScintillaControl sender, int position);
         public delegate void LineEventHandler(ScintillaControl sender, int line);
 
+        private const Keys ToggleShowDetailsKey = Keys.F1;
+
         #region Singleton Instance
-        static private UITools manager;
 
-        static public UITools Manager
-        {
-            get {
-                if (manager == null)
-                {
-                    manager = new UITools();
-                }
-                return manager; 
-            }
-        }
+        private static UITools manager;
 
-        static public CodeTip CodeTip
-        {
-            get { return manager.codeTip; }
-        }
-
-        static public RichToolTip Tip
-        {
-            get { return manager.simpleTip; }
-        }
-
-        static public MethodCallTip CallTip
-        {
-            get { return manager.callTip; }
-        }
-
-        static public void Init()
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static void Initialize()
         {
             if (manager == null)
             {
                 manager = new UITools();
             }
         }
+
+        public static UITools Manager
+        {
+            get { return manager; }
+        }
+
+        public static CodeTip CodeTip
+        {
+            get { return manager.codeTip; }
+        }
+
+        public static RichToolTip Tip
+        {
+            get { return manager.simpleTip; }
+        }
+
+        public static MethodCallTip CallTip
+        {
+            get { return manager.callTip; }
+        }
+
         #endregion
 
         #region Initialization
@@ -75,22 +74,16 @@ namespace PluginCore.Controls
             get { return showDetails; }
             set { showDetails = value; }
         }
-
-        private EventType eventMask = 
-            EventType.Keys | 
-            EventType.FileSave | 
-            EventType.Command | 
-            EventType.FileSwitch;
-
+        
+        private bool ignoreKeys;
+        private bool showDetails;
         private CodeTip codeTip;
         private RichToolTip simpleTip;
         private MethodCallTip callTip;
 
-        private bool ignoreKeys;
-        private bool showDetails;
-
         private UITools()
         {
+            ignoreKeys = false;
             showDetails = PluginBase.Settings.ShowDetails;
             //
             // CONTROLS
@@ -107,13 +100,19 @@ namespace PluginCore.Controls
                 ErrorManager.ShowError(/*"Error while creating editor controls.",*/ ex);
             }
             //
+            // Shortcuts
+            //
+            PluginBase.MainForm.AddIgnoredKeys(ToggleShowDetailsKey);
+            PluginBase.MainForm.RegisterShortcut("Completion.ListMembers", Keys.Control | Keys.Space);
+            PluginBase.MainForm.RegisterShortcut("Completion.ParameterInfo", Keys.Control | Keys.Shift | Keys.Space);
+            ScintillaControl.InitShortcuts();
+            //
             // Events
             //
-            PluginBase.MainForm.AddIgnoredKeys(Keys.Space | Keys.Control); // complete member
-            PluginBase.MainForm.AddIgnoredKeys(Keys.Space | Keys.Control | Keys.Shift); // complete method
             PluginBase.MainForm.DockPanel.ActivePaneChanged += new EventHandler(DockPanel_ActivePaneChanged);
-            EventManager.AddEventHandler(this, eventMask);
+            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.ShortcutKeys);
         }
+
         #endregion
 
         private WeakReference lockedSciControl;
@@ -134,10 +133,6 @@ namespace PluginCore.Controls
         {
             switch (e.Type)
             {
-                case EventType.Keys:
-                    e.Handled = HandleKeys(e as KeyEvent);
-                    return;
-                    
                 case EventType.FileSave:
                     MessageBar.HideWarning();
                     return;
@@ -154,6 +149,13 @@ namespace PluginCore.Controls
                         || cmd.IndexOfOrdinal("SDK") > 0)
                         return; // ignore notifications
                     break;
+
+                case EventType.ShortcutKeys:
+                    var shortcutKeysEvent = (ShortcutKeysEvent) e;
+                    var sci = PluginBase.MainForm.CurrentDocument.SciControl;
+                    e.Handled = HandleShortcut(shortcutKeysEvent)
+                        || sci != null && sci.IsFocus && sci.HandleShortcut(shortcutKeysEvent);
+                    return;
             }
             // most of the time, an event should hide the list
             OnUIRefresh(null);
@@ -260,7 +262,7 @@ namespace PluginCore.Controls
             }
             else if (m.Msg == Win32.WM_KEYDOWN)
             {
-                if ((int)m.WParam == 17) // Ctrl
+                if ((Keys) m.WParam == Keys.ControlKey) // Ctrl
                 {
                     if (CompletionList.Active) CompletionList.FadeOut();
                     if (callTip.CallTipActive && !callTip.Focused) callTip.FadeOut();
@@ -268,7 +270,7 @@ namespace PluginCore.Controls
             }
             else if (m.Msg == Win32.WM_KEYUP)
             {
-                if ((int)m.WParam == 17 || (int)m.WParam == 18) // Ctrl / AltGr
+                if ((Keys) m.WParam == Keys.ControlKey || (Keys) m.WParam == Keys.Menu) // Ctrl / AltGr
                 {
                     if (CompletionList.Active) CompletionList.FadeIn();
                     if (callTip.CallTipActive) callTip.FadeIn();
@@ -359,92 +361,116 @@ namespace PluginCore.Controls
         {
             if (OnCharAdded != null) OnCharAdded(sci, value);   
         }
-        
-        private bool HandleKeys(KeyEvent e)
+
+        private bool HandleShortcut(ShortcutKeysEvent e)
         {
-            Keys key = e.Keys;
-
             // UITools is currently broadcasting a shortcut, ignore!
-            if (ignoreKeys || DisableEvents) return false;
-            
-            // list/tip shortcut dispatching
-            if ((key == (Keys.Control | Keys.Space)) || (key == (Keys.Shift | Keys.Control | Keys.Space)))
+            if (ignoreKeys || DisableEvents)
             {
-                /*if (CompletionList.Active || callTip.CallTipActive)
+                return false;
+            }
+
+            switch (e.Id)
+            {
+                case "Completion.ListMembers":
+                case "Completion.ParameterInfo":
+                    /*if (CompletionList.Active || callTip.CallTipActive)
+                    {
+                        UnlockControl();
+                        CompletionList.Hide();
+                        codeTip.Hide();
+                        callTip.Hide();
+                    }*/
+
+                    // Offer to handle the shortcut
+                    /*ignoreKeys = true;
+                    var newEvent = new ShortcutKeysEvent(EventType.ShortcutKeys, e.Id, e.ShortcutKeys);
+                    EventManager.DispatchEvent(this, newEvent);
+                    ignoreKeys = false;
+                    if (newEvent.Handled) return true;*/
+
+                    // If not handled - show snippets
+                    if (PluginBase.MainForm.CurrentDocument.IsEditable
+                        && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
+                    {
+                        PluginBase.MainForm.CallCommand("InsertSnippet", "null");
+                    }
+                    return true;
+
+                default:
+                    return HandleKeys((Keys) e.ShortcutKeys);
+            }
+        }
+
+        private bool HandleKeys(Keys key)
+        {
+            if (key == Keys.None)
+            {
+                return false;
+            }
+
+            if (key == ToggleShowDetailsKey)
+            {
+                // Toggle "long-description" for the hover tooltip
+                if (simpleTip.Visible && !CompletionList.Active)
                 {
-                    UnlockControl();
-                    CompletionList.Hide();
-                    codeTip.Hide();
-                    callTip.Hide();
-                }*/
-                // offer to handle the shortcut
-                ignoreKeys = true;
-                KeyEvent ke = new KeyEvent(EventType.Keys, key, e.Command);
-                EventManager.DispatchEvent(this, ke);
-                ignoreKeys = false;
-                // if not handled - show snippets
-                if (!ke.Handled && PluginBase.MainForm.CurrentDocument.IsEditable
-                    && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
-                {
-                    PluginBase.MainForm.CallCommand("InsertSnippet", "null");
+                    showDetails = !showDetails;
+                    simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
+                    return true;
                 }
-                return true;
             }
 
-            // toggle "long-description" for the hover tooltip
-            if (key == Keys.F1 && Tip.Visible && !CompletionList.Active)
+            // Are we currently displaying something?
+            if (CompletionList.Active || callTip.CallTipActive)
             {
-                showDetails = !showDetails;
-                simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
-                return true;
-            }
+                var sci = (ScintillaControl) lockedSciControl?.Target;
 
-            // are we currently displaying something?
-            if (!CompletionList.Active && !callTip.CallTipActive) return false;
-            
-            // hide if pressing Esc or Ctrl+Key combination
-            if (lockedSciControl == null || !lockedSciControl.IsAlive || key == Keys.Escape
-                || ((Control.ModifierKeys & Keys.Control) != 0 && Control.ModifierKeys != (Keys.Control|Keys.Alt)) )
-            {
-                if (key == (Keys.Control | Keys.C) || key == (Keys.Control | Keys.A))
-                    return false; // let text copy in tip
+                if (sci != null)
+                {
+                    switch (key)
+                    {
+                        case ToggleShowDetailsKey:
+                            // Toggle "long-description"
+                            showDetails = !showDetails;
+                            if (callTip.CallTipActive) callTip.UpdateTip(sci);
+                            else CompletionList.UpdateTip(null, null);
+                            return true;
+
+                        case Keys.Escape:
+                            // Hide if pressing Escape
+                            break;
+
+                        case Keys.Control | Keys.C: // Hacky...
+                        case Keys.Control | Keys.A:
+                            if (callTip.Focused)
+                            {
+                                return false; // Let text copy in tip
+                            }
+                            // Hide if pressing Ctrl+Key combination
+                            break;
+
+                        default:
+                            // Hide if pressing Ctrl+Key combination
+                            if ((key & Keys.Control) != 0 && (key & Keys.Modifiers) != (Keys.Control | Keys.Alt))
+                            {
+                                break;
+                            }
+                            // Handle special keys
+                            return callTip.CallTipActive && callTip.HandleKeys(sci, key)
+                                | CompletionList.Active && CompletionList.HandleKeys(sci, key);
+                    }
+                }
+
+                // Hide - reach here with the 'break' statement
                 UnlockControl();
-                CompletionList.Hide((char)27);
+                CompletionList.Hide('\u001B');
                 codeTip.Hide();
                 callTip.Hide();
-                return false;
-            }
-            ScintillaControl sci = (ScintillaControl)lockedSciControl.Target;
-            // chars
-            string ks = key.ToString();
-            if (ks.Length == 1 || (ks.EndsWithOrdinal(", Shift") && ks.IndexOf(',') == 1) || ks.StartsWithOrdinal("NumPad"))
-            {
-                return false;
             }
 
-            // toggle "long-description"
-            if (key == Keys.F1)
-            {
-                showDetails = !showDetails;
-                if (callTip.CallTipActive) callTip.UpdateTip(sci);
-                else CompletionList.UpdateTip(null, null);
-                return true;
-            }
-            
-            // switches
-            else if ((key & Keys.ShiftKey) == Keys.ShiftKey || (key & Keys.ControlKey) == Keys.ControlKey || (key & Keys.Menu) == Keys.Menu)
-            {
-                return false;
-            }
-
-            // handle special keys
-            bool handled = false;
-            if (callTip.CallTipActive) handled |= callTip.HandleKeys(sci, key);
-            if (CompletionList.Active) handled |= CompletionList.HandleKeys(sci, key);
-            return handled;
+            return false;
         }
-        
-        
+
         /// <summary>
         /// Compute current editor line height
         /// </summary>

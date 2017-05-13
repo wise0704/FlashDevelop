@@ -5,11 +5,11 @@ using PluginCore;
 
 namespace FlashDevelop.Managers
 {
-    class TabbingManager
+    internal static class TabbingManager
     {
-        public static Timer TabTimer;
-        public static List<ITabbedDocument> TabHistory;
-        public static Int32 SequentialIndex;
+        internal static Timer TabTimer;
+        internal static List<ITabbedDocument> TabHistory;
+        internal static Int32 SequentialIndex;
 
         static TabbingManager()
         {
@@ -18,6 +18,41 @@ namespace FlashDevelop.Managers
             TabTimer.Tick += new EventHandler(OnTabTimer);
             TabHistory = new List<ITabbedDocument>();
             SequentialIndex = 0;
+        }
+
+        internal static bool ProcessCmdKeys(ref Message m, Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Control | Keys.PageDown:
+                case Keys.Control | Keys.Tab:
+                    TabTimer.Enabled = true;
+                    if (keyData == (Keys.Control | Keys.PageDown) || Globals.Settings.SequentialTabbing)
+                    {
+                        NavigateTabsSequentially(1);
+                    }
+                    else
+                    {
+                        NavigateTabHistory(1);
+                    }
+                    return true;
+
+                case Keys.Control | Keys.PageUp:
+                case Keys.Control | Keys.Shift | Keys.Tab:
+                    TabTimer.Enabled = true;
+                    if (keyData == (Keys.Control | Keys.PageUp) || Globals.Settings.SequentialTabbing)
+                    {
+                        NavigateTabsSequentially(-1);
+                    }
+                    else
+                    {
+                        NavigateTabHistory(-1);
+                    }
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
@@ -36,7 +71,7 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Sets an index of the current document
         /// </summary>
-        public static void UpdateSequentialIndex(ITabbedDocument document)
+        internal static void UpdateSequentialIndex(ITabbedDocument document)
         {
             ITabbedDocument[] documents = Globals.MainForm.Documents;
             Int32 count = documents.Length;
@@ -53,7 +88,7 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Activates next document in tabs
         /// </summary>
-        public static void NavigateTabsSequentially(Int32 direction)
+        internal static void NavigateTabsSequentially(Int32 direction)
         {
             ITabbedDocument current = Globals.CurrentDocument;
             ITabbedDocument[] documents = Globals.MainForm.Documents;
@@ -79,7 +114,7 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Visual Studio style keyboard tab navigation: similar to Alt-Tab
         /// </summary>
-        public static void NavigateTabHistory(Int32 direction)
+        internal static void NavigateTabHistory(Int32 direction)
         {
             Int32 currentIndex = 0;
             if (TabHistory.Count < 1) return;
@@ -91,7 +126,5 @@ namespace FlashDevelop.Managers
             }
             TabHistory[currentIndex].Activate();
         }
-
     }
-
 }

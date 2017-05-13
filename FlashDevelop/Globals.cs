@@ -21,7 +21,7 @@ namespace FlashDevelop
         /// </summary>
         public static ITabbedDocument CurrentDocument 
         {
-            get { return PluginBase.MainForm.CurrentDocument; }
+            get { return MainForm.CurrentDocument; }
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace FlashDevelop
         /// </summary>
         public static SettingObject Settings
         {
-            get { return (SettingObject)PluginBase.MainForm.Settings; }
+            get { return MainForm.AppSettings; }
         }
 
     }

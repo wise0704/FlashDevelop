@@ -982,12 +982,11 @@ namespace FlashDevelop
                     if (Directory.Exists(userPluginDir)) PluginServices.FindPlugins(userPluginDir);
                     else Directory.CreateDirectory(userPluginDir);
                 }
+                UITools.Initialize();
                 LayoutManager.BuildLayoutSystems(FileNameHelper.LayoutData);
-                ScintillaControl.InitShortcuts();
                 ShortcutManager.LoadCustomShortcuts();
                 ArgumentDialog.LoadCustomArguments();
                 ClipboardManager.Initialize(this);
-                PluginCore.Controls.UITools.Init();
             }
             catch (Exception ex)
             {
@@ -1617,7 +1616,7 @@ namespace FlashDevelop
         /// <summary>
         /// Handles the mouse wheel on hover
         /// </summary>
-        public Boolean PreFilterMessage(ref Message m)
+        public bool PreFilterMessage(ref Message m)
         {
             if (Win32.ShouldUseWin32())
             {
@@ -1626,12 +1625,12 @@ namespace FlashDevelop
                     case 0x201: // WM_LBUTTONDOWN
                     case 0x204: // WM_RBUTTONDOWN
                     case 0x207: // WM_MBUTTONDOWN
-                        if (currentKeys.IsSimple)
+                        if (lockStatusLabel)
                         {
                             // Cancel any extended shortcut in progress
-                            currentKeys = ShortcutKeys.None;
                             lockStatusLabel = false;
                             StatusLabelText = null;
+                            currentKeys = ShortcutKeys.None;
                         }
                         break;
                     case 0x20A: // WM_MOUSEWHEEL
@@ -1640,13 +1639,13 @@ namespace FlashDevelop
                         IntPtr hWnd = Win32.WindowFromPoint(new Point(x, y));
                         if (hWnd != IntPtr.Zero)
                         {
-                            ITabbedDocument doc = Globals.CurrentDocument;
                             if (Control.FromHandle(hWnd) != null)
                             {
                                 Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
                                 return true;
                             }
-                            else if (doc != null && doc.IsEditable && (hWnd == doc.SplitSci1.HandleSci || hWnd == doc.SplitSci2.HandleSci))
+                            ITabbedDocument doc = Globals.CurrentDocument;
+                            if (doc != null && doc.IsEditable && (hWnd == doc.SplitSci1.HandleSci || hWnd == doc.SplitSci2.HandleSci))
                             {
                                 Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
                                 return true;
@@ -1661,9 +1660,9 @@ namespace FlashDevelop
         /// <summary>
         /// Handles the application shortcuts
         /// </summary>
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        protected override bool ProcessCmdKey(ref Message m, Keys keyData)
         {
-            /**
+            /*
              * Don't process ControlKey, ShiftKey or Menu
              */
             switch (keyData & Keys.KeyCode)
@@ -1672,22 +1671,50 @@ namespace FlashDevelop
                 case Keys.ControlKey:
                 case Keys.ShiftKey:
                 case Keys.Menu:
-                    return base.ProcessCmdKey(ref msg, keyData);
+                    return base.ProcessCmdKey(ref m, keyData);
             }
 
-            /**
+            /*
              * Update the current keys
              */
             ShortcutKeysManager.UpdateShortcutKeys(ref currentKeys, keyData);
 
-            /**
+            /*
              * Process shortcut
              */
-            if (ProcessCmdKeyImpl(ref msg, keyData))
+            var item = ShortcutManager.GetRegisteredItem(currentKeys);
+            var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item?.Id, currentKeys);
+            EventManager.DispatchEvent(this, e);
+            if (!e.Handled && currentKeys.IsSimple)
+            {
+                #pragma warning disable CS0612 // Type or member is obsolete
+                e.Handled = DispatchKeyEvent(keyData)
+                #pragma warning restore CS0612 // Type or member is obsolete
+                     || TabbingManager.ProcessCmdKeys(ref m, keyData);
+            }
+            if (!e.Handled && item != null)
+            {
+                for (int i = 0; i < item.Items.Length; i++)
+                {
+                    var menuItem = item.Items[i] as ToolStripMenuItem;
+                    if (menuItem != null && menuItem.Enabled && menuItem.Available && !menuItem.HasDropDownItems)
+                    {
+                        menuItem.PerformClick();
+                        e.Handled = true;
+                        break;
+                    }
+                }
+            }
+
+            /*
+             * Shortcut has been handled
+             */
+            if (e.Handled)
             {
                 if (currentKeys.IsExtended)
                 {
                     lockStatusLabel = false;
+                    StatusLabelText = null;
                 }
                 else
                 {
@@ -1695,37 +1722,34 @@ namespace FlashDevelop
                 }
                 return true;
             }
-            else if (currentKeys.IsExtended)
+
+            /**
+             * Shortcut exists but not handled
+             */
+            if (ShortcutManager.AllShortcuts.Contains(currentKeys))
             {
-                lockStatusLabel = false;
-                if (ShortcutKeysManager.ProcessCmdKey(ref msg, currentKeys))
+                if (currentKeys.IsExtended)
                 {
+                    lockStatusLabel = false;
                     StatusLabelText = null;
                 }
                 else
                 {
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
+                    currentKeys = ShortcutKeys.None;
                 }
                 return true;
             }
-            else if (base.ProcessCmdKey(ref msg, keyData))
+
+            /**
+             * Shortcut does not exist
+             */
+            if (currentKeys.IsExtended)
             {
-                currentKeys = ShortcutKeys.None;
+                lockStatusLabel = false;
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
                 return true;
             }
 
-            /**
-             * Shortcut may exist but not handled
-             */
-            else if (ShortcutManager.AllShortcuts.Contains(currentKeys))
-            {
-                currentKeys = ShortcutKeys.None;
-                return true;
-            }
-
-            /**
-             * Shortcut doesn't exist
-             */
             switch (GetUndefinedShortcutType(keyData))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
@@ -1748,88 +1772,18 @@ namespace FlashDevelop
                 default:
                     currentKeys = ShortcutKeys.None;
                     return false;
-
             }
         }
 
         /// <summary>
-        /// Notify plugins and scintilla, and check for tabbing process.
+        /// Dispatches the obsolete <see cref="EventType.Keys"/> event.
         /// </summary>
-        private bool ProcessCmdKeyImpl(ref Message msg, Keys keyData)
+        [Obsolete] // Needs to be marked obsolete to avoid error messages.
+        private bool DispatchKeyEvent(Keys keyData)
         {
-            string command = GetShortcutId(currentKeys);
-
-            /**
-             * Notify plugins.
-             */
-            var ke = new KeyEvent(EventType.Keys, currentKeys, command);
-            EventManager.DispatchEvent(this, ke);
-            if (ke.Handled)
-            {
-                return true;
-            }
-
-            /**
-             * Handle ScintillaControl shortcuts
-             */
-            if (Globals.SciControl != null && Globals.SciControl.IsFocus && Globals.SciControl.ExecuteShortcut(command))
-            {
-                return true;
-            }
-
-            /**
-             * Do not handle when the new key combination is a part of an extended key combination.
-             */
-            if (currentKeys.IsExtended)
-            {
-                return false;
-            }
-
-            ///**
-            // * Ignore basic control keys if sci doesn't have focus.
-            // */
-            //if (Globals.SciControl == null || !Globals.SciControl.IsFocus)
-            //{
-            //    if (keyData == (Keys.Control | Keys.A) ||
-            //        keyData == (Keys.Control | Keys.C) ||
-            //        keyData == (Keys.Control | Keys.V) ||
-            //        keyData == (Keys.Control | Keys.X) ||
-            //        keyData == (Keys.Control | Keys.Y) ||
-            //        keyData == (Keys.Control | Keys.Z))
-            //    {
-            //        return false;
-            //    }
-            //}
-
-            /**
-             * Process special key combinations and allow "chaining" of 
-             * Ctrl-Tab commands if you keep holding control down.
-             */
-            if ((keyData & Keys.Control) != 0)
-            {
-                if (keyData == (Keys.Control | Keys.PageDown) || keyData == (Keys.Control | Keys.Tab))
-                {
-                    TabbingManager.TabTimer.Enabled = true;
-                    if (keyData == (Keys.Control | Keys.PageDown) || appSettings.SequentialTabbing)
-                    {
-                        TabbingManager.NavigateTabsSequentially(1);
-                    }
-                    else TabbingManager.NavigateTabHistory(1);
-                    return true;
-                }
-                else if (keyData == (Keys.Control | Keys.PageUp) || keyData == (Keys.Control | Keys.Shift | Keys.Tab))
-                {
-                    TabbingManager.TabTimer.Enabled = true;
-                    if (keyData == (Keys.Control | Keys.PageUp) || appSettings.SequentialTabbing)
-                    {
-                        TabbingManager.NavigateTabsSequentially(-1);
-                    }
-                    else TabbingManager.NavigateTabHistory(-1);
-                    return true;
-                }
-            }
-
-            return false;
+            var e = new KeyEvent(EventType.Keys, keyData);
+            EventManager.DispatchEvent(this, e);
+            return e.Handled;
         }
 
         /// <summary>
@@ -2211,8 +2165,7 @@ namespace FlashDevelop
         /// </summary>
         public string GetShortcutId(ShortcutKeys keys)
         {
-            var item = ShortcutManager.GetRegisteredItem(keys);
-            return item != null ? item.Id : string.Empty;
+            return ShortcutManager.GetRegisteredItem(keys)?.Id;
         }
 
         /// <summary>
@@ -2375,14 +2328,21 @@ namespace FlashDevelop
             shortcutId = GetShortcutId(previousKeys);
             if (shortcutId.Length == 0)
             {
+                if (ShortcutManager.AllShortcuts.Contains(previousKeys))
+                {
+                    if (previousKeys.IsExtended)
+                    {
+                        StatusLabelText = null;
+                    }
+                    else
+                    {
+                        previousKeys = ShortcutKeys.None;
+                    }
+                    return true;
+                }
                 if (previousKeys.IsExtended)
                 {
                     StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), previousKeys);
-                    return true;
-                }
-                else if (ShortcutManager.AllShortcuts.Contains(previousKeys))
-                {
-                    previousKeys = ShortcutKeys.None;
                     return true;
                 }
                 switch (GetUndefinedShortcutType(input, true))
@@ -4460,8 +4420,7 @@ namespace FlashDevelop
             {
                 ToolStripItem button = (ToolStripItem)sender;
                 String registeredItem = ((ItemData)button.Tag).Tag;
-                ShortcutItem item = ShortcutManager.GetRegisteredItem(registeredItem);
-                if (item.Item != null) item.Item.PerformClick();
+                GetShortcutItem(registeredItem)?.PerformClick();
             }
             catch (Exception ex)
             {
@@ -4517,7 +4476,7 @@ namespace FlashDevelop
                 var method = this.GetType().GetMethod(command);
                 if (method == null) throw new MethodAccessException();
                 var item = new ToolStripMenuItem();
-                item.Tag = new ItemData(null, args, null); // Tag is used for args
+                item.Tag = new ItemData(null, null, args, null); // Tag is used for args
                 method.Invoke(this, new[] { item, null });
                 return true;
             }

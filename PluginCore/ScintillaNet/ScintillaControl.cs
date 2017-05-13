@@ -5300,58 +5300,27 @@ namespace ScintillaNet
 
         #region Scintilla Shortcuts
 
-        private static ShortcutKeys ShortcutKey_ResetZoom = Keys.Control | Keys.NumPad0;
-        private static ShortcutKeys ShortcutKey_ZoomIn = Keys.Control | Keys.Add;
-        private static ShortcutKeys ShortcutKey_ZoomOut = Keys.Control | Keys.Subtract;
-
         /// <summary>
         /// Initializes the user customizable shortcut overrides
         /// </summary>
-        public static void InitShortcuts()
+        internal static void InitShortcuts()
         {
-            // reference: http://www.scintilla.org/SciTEDoc.html "Keyboard commands"
-            PluginBase.MainForm.RegisterShortcutItem("Scintilla.ResetZoom", ShortcutKey_ResetZoom);
-            PluginBase.MainForm.RegisterShortcutItem("Scintilla.ZoomIn", ShortcutKey_ZoomIn);
-            PluginBase.MainForm.RegisterShortcutItem("Scintilla.ZoomOut", ShortcutKey_ZoomOut);
+            // Reference: http://www.scintilla.org/SciTEDoc.html "Keyboard commands"
+            PluginBase.MainForm.RegisterShortcut("Scintilla.ResetZoom", Keys.Control | Keys.NumPad0);
+            PluginBase.MainForm.RegisterShortcut("Scintilla.ZoomIn", Keys.Control | Keys.Add);
+            PluginBase.MainForm.RegisterShortcut("Scintilla.ZoomOut", Keys.Control | Keys.Subtract);
         }
 
-        /// <summary>
-        /// [deprecated] Use the <see cref="UpdateShortcut(string, ShortcutKeys)"/> method instead.
-        /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static void UpdateShortcut(string id, Keys shortcut)
-        {
-            UpdateShortcut(id, (ShortcutKeys) shortcut);
-        }
+        public static void UpdateShortcut(string id, Keys shortcut) { }
 
         /// <summary>
-        /// Updates the shortcut if it changes or needs updating
+        /// Handles shortcut event.
         /// </summary>
-        public static bool UpdateShortcut(string id, ShortcutKeys shortcut)
+        internal bool HandleShortcut(ShortcutKeysEvent e)
         {
-            switch (id)
-            {
-                case "Scintilla.ResetZoom":
-                    ShortcutKey_ResetZoom = shortcut;
-                    return true;
-                case "Scintilla.ZoomIn":
-                    ShortcutKey_ZoomIn = shortcut;
-                    return true;
-                case "Scintilla.ZoomOut":
-                    ShortcutKey_ZoomOut = shortcut;
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        /// <summary>
-        /// Execute the shortcut override using reflection
-        /// </summary>
-        public bool ExecuteShortcut(string action)
-        {
-            switch (action)
+            switch (e.Id)
             {
                 case "Scintilla.ResetZoom":
                     ResetZoom();

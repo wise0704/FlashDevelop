@@ -108,28 +108,29 @@ namespace PluginCore
     }
 
     /// <summary>
-    /// Represents events with shortcut event data.
+    /// Represents events with shortcut keys.
     /// </summary>
     public class ShortcutKeysEvent : NotifyEvent
     {
-        private string command;
+        private string id;
         private ShortcutKeys shortcutKeys;
 
         /// <summary>
         /// Creates a new instance of the <see cref="ShortcutKeysEvent"/> class.
         /// </summary>
-        public ShortcutKeysEvent(EventType type, string command, ShortcutKeys shortcutKeys) : base(type)
+        public ShortcutKeysEvent(EventType type, string id, ShortcutKeys shortcutKeys) : base(type)
         {
-            this.command = command;
+            this.id = id;
             this.shortcutKeys = shortcutKeys;
         }
 
         /// <summary>
-        /// Gets the shortcut command string associated with this <see cref="ShortcutKeysEvent"/> object.
+        /// Gets the shortcut ID associated with this <see cref="ShortcutKeysEvent"/> object.
+        /// If this property is <see langword="null"/>, the associated shortcut key is not a registered shortcut.
         /// </summary>
-        public string Command
+        public string Id
         {
-            get { return this.command; }
+            get { return this.id; }
         }
 
         /// <summary>
