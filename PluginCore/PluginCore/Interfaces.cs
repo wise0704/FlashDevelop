@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using PluginCore.Controls;
 using PluginCore.Localization;
 using ScintillaNet;
 using ScintillaNet.Configuration;
@@ -141,7 +141,7 @@ namespace PluginCore
         /// </summary>
         void AutoUpdateMenuItem(ToolStripItem item, String action);
         /// <summary>
-        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcutItem(string, ShortcutKeys, bool)"/>,
+        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcut(string, ShortcutKeys[])"/>,
         /// but should not prompt an "undefined shortcut keys" message. Instead these keys should have their default behaviors.
         /// These are constant shortcuts which cannot be modified using the shortcut dialog.
         /// </summary>
@@ -149,11 +149,11 @@ namespace PluginCore
         /// <summary>
         /// Returns a <see cref="bool"/> value indicating whether the specified key is ignored.
         /// </summary>
-        Boolean ContainsIgnoredKeys(ShortcutKeys keys);
+        bool ContainsIgnoredKeys(ShortcutKeys keys);
         /// <summary>
         /// Removes the specified key from ignored keys.
         /// </summary>
-        void RemoveIgnoredKeys(ShortcutKeys keys);
+        bool RemoveIgnoredKeys(ShortcutKeys keys);
         /// <summary>
         /// Clears all ignored keys.
         /// </summary>
@@ -161,31 +161,63 @@ namespace PluginCore
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
         /// <para/>
-        /// [deprecated] Use the <see cref="RegisterShortcutItem(string, ShortcutKeys, bool)"/> method instead.
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ShortcutKeys[])"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        void RegisterShortcutItem(String id, Keys keys);
-        /// <summary>
-        /// Registers a new menu item with the shortcut manager.
-        /// </summary>
-        void RegisterShortcutItem(String id, ShortcutKeys keys, bool supportsExtended = true);
+        void RegisterShortcutItem(string id, Keys keys);
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
         /// <para/>
-        /// [deprecated] Use the <see cref="RegisterShortcutItem(string, ToolStripMenuItemEx)"/> method instead.
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ToolStripItem[])"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        void RegisterShortcutItem(String id, ToolStripMenuItem item);
+        void RegisterShortcutItem(string id, ToolStripMenuItem item);
         /// <summary>
-        /// Registers a new menu item with the shortcut manager.
+        /// Registers a new secondary menu item with the shortcut manager
+        /// <para/>
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ToolStripItem[])"/> method instead.
         /// </summary>
-        void RegisterShortcutItem(String id, ToolStripMenuItemEx item);
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void RegisterSecondaryItem(string id, ToolStripItem item);
         /// <summary>
-        /// Registers a new secondary menu item with the shortcut manager.
+        /// Registers the specified shortcut ID, and sets the default keys to the specified key.
+        /// If the shortcut ID is already registered, the specified key is concatenated to the existing default keys.
+        /// A <see cref="ShortcutKeys.None"/> value is ignored.
         /// </summary>
-        void RegisterSecondaryItem(String id, ToolStripItem item);
+        void RegisterShortcut(string id, [Optional] ShortcutKeys defaultShortcut);
+        /// <summary>
+        /// Registers the specified shortcut ID, and sets the default keys to the specified keys.
+        /// If the shortcut ID is already registered, the specified keys are concatenated to the existing default keys.
+        /// <see cref="ShortcutKeys.None"/> values are ignored.
+        /// </summary>
+        void RegisterShortcut(string id, params ShortcutKeys[] defaultShortcuts);
+        /// <summary>
+        /// Registers the specified shortcut ID, and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified tool strip items and their shortcut keys are concatenated to the existing items and default keys.
+        /// </summary>
+        void RegisterShortcut(string id, params ToolStripItem[] toolStripItems);
+        /// <summary>
+        /// Registers the specified shortcut ID, sets the default keys to the specified key and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// </summary>
+        void RegisterShortcut(string id, ShortcutKeys defaultShortcut, params ToolStripItem[] toolStripItems);
+        /// <summary>
+        /// Registers the specified shortcut ID, sets the default keys to the specified keys and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// </summary>
+        void RegisterShortcut(string id, ShortcutKeys[] defaultShortcuts, ToolStripItem[] toolStripItems);
         /// <summary>
         /// Updates a registered secondary menu item in the shortcut manager
         /// - should be called when the tooltip changes.

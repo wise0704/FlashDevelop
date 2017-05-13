@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -263,10 +264,7 @@ namespace FlashDevelop
         /// </summary>
         [Obsolete("This property has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public List<Keys> IgnoredKeys
-        {
-            get { return new List<Keys>(); }
-        }
+        public List<Keys> IgnoredKeys => new List<Keys>();
 
         /// <summary>
         /// Gets the Settings interface
@@ -985,6 +983,7 @@ namespace FlashDevelop
                     else Directory.CreateDirectory(userPluginDir);
                 }
                 LayoutManager.BuildLayoutSystems(FileNameHelper.LayoutData);
+                ScintillaControl.InitShortcuts();
                 ShortcutManager.LoadCustomShortcuts();
                 ArgumentDialog.LoadCustomArguments();
                 ClipboardManager.Initialize(this);
@@ -2149,7 +2148,7 @@ namespace FlashDevelop
         /// <summary>
         /// Finds the specified menu item by name
         /// </summary>
-        public ToolStripItem FindMenuItem(String name)
+        public ToolStripItem FindMenuItem(string name)
         {
             return StripBarManager.FindMenuItem(name);
         }
@@ -2157,7 +2156,7 @@ namespace FlashDevelop
         /// <summary>
         /// Finds the menu items that have the specified name
         /// </summary>
-        public List<ToolStripItem> FindMenuItems(String name)
+        public List<ToolStripItem> FindMenuItems(string name)
         {
             return StripBarManager.FindMenuItems(name);
         }
@@ -2178,10 +2177,7 @@ namespace FlashDevelop
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public Keys GetShortcutItemKeys(String id)
-        {
-            return (Keys) GetShortcutKeys(id);
-        }
+        public Keys GetShortcutItemKeys(string id) => (Keys) GetShortcutKeys(id);
 
         /// <summary>
         /// Gets the specified item's id.
@@ -2190,29 +2186,37 @@ namespace FlashDevelop
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public String GetShortcutItemId(Keys keys)
+        public string GetShortcutItemId(Keys keys) => GetShortcutId((ShortcutKeys) keys);
+
+        /// <summary>
+        /// Gets the specified item's first shortcut keys.
+        /// </summary>
+        public ShortcutKeys GetShortcutKeys(string id)
         {
-            return GetShortcutId((ShortcutKeys) keys);
+            var item = ShortcutManager.GetRegisteredItem(id);
+            return item != null && item.Custom.Length > 0 ? item.Custom[0] : ShortcutKeys.None;
         }
 
         /// <summary>
-        /// Gets the specified item's shortcut keys.
+        /// Gets the specified item's first associated tool strip item.
         /// </summary>
-        public ShortcutKeys GetShortcutKeys(String id)
+        public ToolStripItem GetShortcutItem(string id)
         {
-            return ShortcutManager.GetRegisteredItem(id)?.Custom ?? ShortcutKeys.None;
+            var item = ShortcutManager.GetRegisteredItem(id);
+            return item != null && item.Items.Length > 0 ? item.Items[0] : null;
         }
 
         /// <summary>
         /// Gets the specified item's id.
         /// </summary>
-        public String GetShortcutId(ShortcutKeys keys)
+        public string GetShortcutId(ShortcutKeys keys)
         {
-            return ShortcutManager.GetRegisteredItem(keys)?.Id ?? string.Empty;
+            var item = ShortcutManager.GetRegisteredItem(keys);
+            return item != null ? item.Id : string.Empty;
         }
 
         /// <summary>
-        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcutItem(string, ShortcutKeys, bool)"/>,
+        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcut(string, ShortcutKeys[])"/>,
         /// but should not prompt an "undefined shortcut keys" message. Instead these keys should have their default behaviors.
         /// These are constant shortcuts which cannot be modified using the shortcut dialog.
         /// </summary>
@@ -2224,7 +2228,7 @@ namespace FlashDevelop
         /// <summary>
         /// Returns a <see cref="bool"/> value indicating whether the specified key is ignored.
         /// </summary>
-        public Boolean ContainsIgnoredKeys(ShortcutKeys keys)
+        public bool ContainsIgnoredKeys(ShortcutKeys keys)
         {
             return ShortcutManager.IgnoredKeys.Contains(keys);
         }
@@ -2232,9 +2236,9 @@ namespace FlashDevelop
         /// <summary>
         /// Removes the specified key from ignored keys.
         /// </summary>
-        public void RemoveIgnoredKeys(ShortcutKeys keys)
+        public bool RemoveIgnoredKeys(ShortcutKeys keys)
         {
-            ShortcutManager.IgnoredKeys.Remove(keys);
+            return ShortcutManager.IgnoredKeys.Remove(keys);
         }
 
         /// <summary>
@@ -2248,49 +2252,84 @@ namespace FlashDevelop
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
         /// <para/>
-        /// [deprecated] Use the <see cref="RegisterShortcutItem(string, ShortcutKeys, bool)"/> method instead.
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ShortcutKeys[])"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public void RegisterShortcutItem(String id, Keys keys)
-        {
-            RegisterShortcutItem(id, (ShortcutKeys) keys, false);
-        }
-
-        /// <summary>
-        /// Registers a new menu item with the shortcut manager
-        /// </summary>
-        public void RegisterShortcutItem(String id, ShortcutKeys keys, bool supportsExtended = true)
-        {
-            ShortcutManager.RegisterItem(id, keys, supportsExtended);
-        }
+        public void RegisterShortcutItem(string id, Keys keys) => RegisterShortcut(id, (ShortcutKeys) keys);
 
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
         /// <para/>
-        /// [deprecated] Use the <see cref="RegisterShortcutItem(string, ToolStripMenuItemEx)"/> method instead.
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ToolStripItem[])"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public void RegisterShortcutItem(String id, ToolStripMenuItem item)
-        {
-            ShortcutManager.RegisterItem(id, item);
-        }
-
-        /// <summary>
-        /// Registers a new menu item with the shortcut manager.
-        /// </summary>
-        public void RegisterShortcutItem(String id, ToolStripMenuItemEx item)
-        {
-            ShortcutManager.RegisterItem(id, item);
-        }
+        public void RegisterShortcutItem(string id, ToolStripMenuItem item) => RegisterShortcut(id, item);
 
         /// <summary>
         /// Registers a new secondary menu item with the shortcut manager
+        /// <para/>
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ToolStripItem[])"/> method instead.
         /// </summary>
-        public void RegisterSecondaryItem(String id, ToolStripItem item)
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void RegisterSecondaryItem(string id, ToolStripItem item) => RegisterShortcut(id, item);
+
+        /// <summary>
+        /// Registers the specified shortcut ID, and sets the default keys to the specified key.
+        /// If the shortcut ID is already registered, the specified key is concatenated to the existing default keys.
+        /// A <see cref="ShortcutKeys.None"/> value is ignored.
+        /// </summary>
+        public void RegisterShortcut(string id, [Optional] ShortcutKeys defaultShortcut)
         {
-            ShortcutManager.RegisterSecondaryItem(id, item);
+            ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, null);
+        }
+
+        /// <summary>
+        /// Registers the specified shortcut ID, and sets the default keys to the specified keys.
+        /// If the shortcut ID is already registered, the specified keys are concatenated to the existing default keys.
+        /// <see cref="ShortcutKeys.None"/> values are ignored.
+        /// </summary>
+        public void RegisterShortcut(string id, params ShortcutKeys[] defaultShortcuts)
+        {
+            ShortcutManager.RegisterShortcut(id, defaultShortcuts, null);
+        }
+
+        /// <summary>
+        /// Registers the specified shortcut ID, and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified tool strip items and their shortcut keys are concatenated to the existing items and default keys.
+        /// </summary>
+        public void RegisterShortcut(string id, params ToolStripItem[] toolStripItems)
+        {
+            ShortcutManager.RegisterShortcut(id, null, toolStripItems);
+        }
+
+        /// <summary>
+        /// Registers the specified shortcut ID, sets the default keys to the specified key and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// </summary>
+        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut, params ToolStripItem[] toolStripItems)
+        {
+            ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, toolStripItems);
+        }
+
+        /// <summary>
+        /// Registers the specified shortcut ID, sets the default keys to the specified keys and sets the associated <see cref="ToolStripItem"/> objects.
+        /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
+        /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// </summary>
+        public void RegisterShortcut(string id, ShortcutKeys[] defaultShortcuts, ToolStripItem[] toolStripItems)
+        {
+            ShortcutManager.RegisterShortcut(id, defaultShortcuts, toolStripItems);
         }
 
         /// <summary>
@@ -2299,7 +2338,7 @@ namespace FlashDevelop
         /// </summary>
         public void ApplySecondaryShortcut(ToolStripItem item)
         {
-            ShortcutManager.ApplySecondaryShortcut(item);
+            ShortcutManager.UpdateShortcutKeyDisplayString(item);
         }
 
         /// <summary>
