@@ -72,46 +72,24 @@ namespace PluginCore
     /// <summary>
     /// Events with Key data
     /// </summary>
+    [Obsolete("This class has been deprecated.", true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class KeyEvent : NotifyEvent
     {
-        private ShortcutKeys value;
-        private String command;
+        private Keys value;
         private Boolean processKey;
 
         /// <summary>
-        /// Gets the <see cref="System.Windows.Forms.Keys"/> value associated with this <see cref="KeyEvent"/>.
-        /// <para/>
-        /// [deprecated] Use the <see cref="Keys"/> property instead.
+        /// Gets the <see cref="Keys"/> value associated with this <see cref="KeyEvent"/>.
         /// </summary>
-        [Obsolete("This property has been deprecated.", true)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public Keys Value
         {
             get { return this.value; }
-            set { }
-        }
-
-        /// <summary>
-        /// Gets the <see cref="ShortcutKeys"/> value associated with this <see cref="KeyEvent"/>.
-        /// </summary>
-        public ShortcutKeys Keys
-        {
-            get { return this.value; }
-            //set { this.value = value; }
-        }
-
-        /// <summary>
-        /// Gets the shortcut command string associated with this <see cref="KeyEvent"/>.
-        /// </summary>
-        public String Command
-        {
-            get { return this.command; }
+            set { this.value = value; }
         }
 
         /// <summary>
         /// Gets or sets whether to process the keys associated with this <see cref="KeyEvent"/>.
-        /// <para/>
-        /// This property is currently not used by any of the default plugins. Prefer using the <see cref="NotifyEvent.Handled"/> property.
         /// </summary>
         public Boolean ProcessKey
         {
@@ -121,29 +99,79 @@ namespace PluginCore
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyEvent"/> class.
-        /// <para/>
-        /// [deprecated] Use the <see cref="KeyEvent(EventType, ShortcutKeys)"/> constructor instead.
         /// </summary>
-        [Obsolete("This constructor has been deprecated.", true)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public KeyEvent(EventType type, Keys value) : this(type, (ShortcutKeys) value) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KeyEvent"/> class.
-        /// </summary>
-        public KeyEvent(EventType type, ShortcutKeys value) : base(type)
+        public KeyEvent(EventType type, Keys value) : base(type)
         {
             this.value = value;
-            this.command = PluginBase.MainForm.GetShortcutId(this.value);
+            this.processKey = false;
+        }
+    }
+
+    /// <summary>
+    /// Represents events with shortcut event data.
+    /// </summary>
+    public class ShortcutKeysEvent : NotifyEvent
+    {
+        private string command;
+        private ShortcutKeys shortcutKeys;
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="ShortcutKeysEvent"/> class.
+        /// </summary>
+        public ShortcutKeysEvent(EventType type, string command, ShortcutKeys shortcutKeys) : base(type)
+        {
+            this.command = command;
+            this.shortcutKeys = shortcutKeys;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="KeyEvent"/> class.
+        /// Gets the shortcut command string associated with this <see cref="ShortcutKeysEvent"/> object.
         /// </summary>
-        public KeyEvent(EventType type, ShortcutKeys value, String command) : base(type)
+        public string Command
         {
-            this.value = value;
+            get { return this.command; }
+        }
+
+        /// <summary>
+        /// Gets the shortcut keys associated with this <see cref="ShortcutKeysEvent"/> object.
+        /// </summary>
+        public ShortcutKeys ShortcutKeys
+        {
+            get { return this.shortcutKeys; }
+        }
+    }
+
+    /// <summary>
+    /// Represents events with shortcut update event data.
+    /// </summary>
+    public class ShortcutUpdateEvent : NotifyEvent
+    {
+        private string command;
+        private ShortcutKeys[] shortcutKeys;
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="ShortcutUpdateEvent"/> class.
+        /// </summary>
+        public ShortcutUpdateEvent(EventType type, string command, ShortcutKeys[] shortcutKeys) : base(type)
+        {
             this.command = command;
+            this.shortcutKeys = shortcutKeys;
+        }
+
+        /// <summary>
+        /// Gets the shortcut command string associated with this <see cref="ShortcutUpdateEvent"/> object.
+        /// </summary>
+        public string Command
+        {
+            get { return this.command; }
+        }
+
+        /// <summary>
+        /// Gets the array of shortcut keys associated with this <see cref="ShortcutUpdateEvent"/> object.
+        /// </summary>
+        public ShortcutKeys[] ShortcutKeys
+        {
+            get { return this.shortcutKeys; }
         }
     }
 
