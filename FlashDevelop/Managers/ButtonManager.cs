@@ -284,7 +284,7 @@ namespace FlashDevelop.Managers
         {
             try
             {
-                ToolStripMenuItem reopenMenu = (ToolStripMenuItem)StripBarManager.FindMenuItem("ReopenMenu");
+                ToolStripMenuItem reopenMenu = (ToolStripMenuItem)Globals.MainForm.FindMenuItem("ReopenMenu");
                 reopenMenu.DropDownItems.Clear();
                 for (Int32 i = 0; i < Globals.PreviousDocuments.Count; i++)
                 {

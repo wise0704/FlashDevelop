@@ -13,17 +13,33 @@ namespace PluginCore
     /// </summary>
     public class ItemData
     {
-        public String Id = String.Empty;
-        public String Tag = String.Empty;
-        public String Flags = String.Empty;
+        /// <summary>
+        /// The <c>label</c> attribute value.
+        /// </summary>
+        public string Label;
 
-        public ItemData(String id, String tag, String flags)
+        /// <summary>
+        /// The <c>keyid</c> attribute value.
+        /// </summary>
+        public string KeyId;
+
+        /// <summary>
+        /// The <c>tag</c> attribute value.
+        /// </summary>
+        public string Tag;
+
+        /// <summary>
+        /// The <c>flags</c> attribute value.
+        /// </summary>
+        public string Flags;
+
+        public ItemData(string label, string keyid, string tag, string flags)
         {
-            if (id != null) this.Id = id;
-            if (tag != null) this.Tag = tag;
-            if (flags != null) this.Flags = flags;
+            Label = label ?? string.Empty;
+            KeyId = keyid ?? string.Empty;
+            Tag = tag ?? string.Empty;
+            Flags = flags ?? string.Empty;
         }
-
     }
 
     /// <summary>

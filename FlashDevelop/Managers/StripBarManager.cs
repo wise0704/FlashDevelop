@@ -12,253 +12,301 @@ using PluginCore.Managers;
 
 namespace FlashDevelop.Managers
 {
-    static class StripBarManager
+    internal static class StripBarManager
     {
-        public static List<ToolStripItem> Items = new List<ToolStripItem>();
+        internal static readonly List<ToolStripItem> Items = new List<ToolStripItem>();
 
         /// <summary>
-        /// Finds the tool or menu strip item by name or text
+        /// Finds the tool or menu strip item by name or shortcut command id.
         /// </summary>
-        public static ToolStripItem FindMenuItem(String name)
+        internal static ToolStripItem FindMenuItem(string name)
         {
-            for (Int32 i = 0; i < Items.Count; i++)
+            for (int i = 0; i < Items.Count; i++)
             {
-                ToolStripItem item = Items[i];
-                if (item.Name == name) return item;
+                if (Items[i].Name == name)
+                {
+                    return Items[i];
+                }
             }
-            ShortcutItem item2 = ShortcutManager.GetRegisteredItem(name);
-            if (item2 != null) return item2.Item;
-            ToolStripItem item3 = ShortcutManager.GetSecondaryItem(name);
-            return item3;
+
+            // Redundant
+            var item = ShortcutManager.GetRegisteredItem(name);
+            if (item != null && item.Items.Length > 0)
+            {
+                return item.Items[0];
+            }
+
+            return null;
         }
 
         /// <summary>
-        /// Finds the tool or menu strip items by name or text
+        /// Finds the tool or menu strip items by name or shortcut command id.
         /// </summary>
-        public static List<ToolStripItem> FindMenuItems(String name)
+        internal static List<ToolStripItem> FindMenuItems(string name)
         {
-            List<ToolStripItem> found = new List<ToolStripItem>();
-            for (Int32 i = 0; i < Items.Count; i++)
+            var found = new List<ToolStripItem>();
+            for (int i = 0; i < Items.Count; i++)
             {
-                ToolStripItem item = Items[i];
-                if (item.Name == name) found.Add(item);
+                if (Items[i].Name == name)
+                {
+                    found.Add(Items[i]);
+                }
             }
-            ShortcutItem item2 = ShortcutManager.GetRegisteredItem(name);
-            if (item2 != null) found.Add(item2.Item);
-            ToolStripItem item3 = ShortcutManager.GetSecondaryItem(name);
-            if (item3 != null) found.Add(item3);
+
+            // Redundant
+            var item = ShortcutManager.GetRegisteredItem(name);
+            if (item != null)
+            {
+                found.AddRange(item.Items);
+            }
+
             return found;
         }
 
         /// <summary>
-        /// Gets a tool strip from the specified xml file
+        /// Gets a menu strip from the specified XML file.
         /// </summary>
-        public static ToolStrip GetToolStrip(String file)
+        internal static MenuStrip GetMenuStrip(string file)
         {
-            ToolStripEx toolStrip = new ToolStripEx();            
-            toolStrip.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
-            XmlNode rootNode = XmlHelper.LoadXmlDocument(file);
-            foreach (XmlNode subNode in rootNode.ChildNodes)
-            {
-                FillToolItems(toolStrip.Items, subNode);
-            }
-            return toolStrip;
-        }
-
-        /// <summary>
-        /// Gets a context menu strip from the specified xml file
-        /// </summary>
-        public static ContextMenuStrip GetContextMenu(String file)
-        {
-            ContextMenuStrip contextMenu = new ContextMenuStrip();
-            contextMenu.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
-            XmlNode rootNode = XmlHelper.LoadXmlDocument(file);
-            foreach (XmlNode subNode in rootNode.ChildNodes)
-            {
-                FillMenuItems(contextMenu.Items, subNode);
-            }
-            return contextMenu;
-        }
-
-        /// <summary>
-        /// Gets a menu strip from the specified xml file
-        /// </summary>
-        public static MenuStrip GetMenuStrip(String file)
-        {
-            MenuStrip menuStrip = new MenuStrip();
+            var menuStrip = new MenuStrip();
             menuStrip.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
-            XmlNode rootNode = XmlHelper.LoadXmlDocument(file);
-            foreach (XmlNode subNode in rootNode.ChildNodes)
-            {
-                FillMenuItems(menuStrip.Items, subNode);
-            }
+            FillMenuItems(menuStrip.Items, XmlHelper.LoadXmlDocument(file));
             return menuStrip;
         }
 
         /// <summary>
-        /// Fills items to the specified tool strip item collection
+        /// Gets a tool strip from the specified XML file.
         /// </summary>
-        public static void FillMenuItems(ToolStripItemCollection items, XmlNode node)
+        internal static ToolStrip GetToolStrip(string file)
         {
-            switch (node.Name)
+            var toolStrip = new ToolStripEx();
+            toolStrip.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
+            FillToolItems(toolStrip.Items, XmlHelper.LoadXmlDocument(file));
+            return toolStrip;
+        }
+
+        /// <summary>
+        /// Gets a context menu strip from the specified XML file.
+        /// </summary>
+        internal static ContextMenuStrip GetContextMenu(string file)
+        {
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.ImageScalingSize = ScaleHelper.Scale(new Size(16, 16));
+            FillMenuItems(contextMenu.Items, XmlHelper.LoadXmlDocument(file));
+            return contextMenu;
+        }
+
+        /// <summary>
+        /// Adds tool strip menu items to the specified tool strip.
+        /// </summary>
+        private static void FillMenuItems(ToolStripItemCollection items, XmlNode xmlNode)
+        {
+            foreach (XmlNode node in xmlNode.ChildNodes)
             {
-                case "menu" :
-                    String name = XmlHelper.GetAttribute(node, "name");
-                    if (name == "SyntaxMenu") node.InnerXml = GetSyntaxMenuXml();
-                    items.Add(GetMenu(node));
-                    break;
-                case "separator" :
-                    items.Add(GetSeparator(node));
-                    break;
-                case "button" :
-                    ToolStripMenuItemEx menu = GetMenuItem(node);
-                    items.Add(menu); // Add menu first to get the id correct
-                    String id = GetMenuItemId(menu);
-                    if (id.IndexOf('.') > -1 && ShortcutManager.GetRegisteredItem(id) == null)
-                    {
-                        Globals.MainForm.RegisterShortcutItem(id, menu);
-                    }
-                    else ShortcutManager.RegisterSecondaryItem(menu);
-                    break;
+                switch (node.Name)
+                {
+                    case "menu":
+                        GenerateRuntimeXmlData(node);
+                        var menu = GetMenu(node);
+                        items.Add(menu); // Add item first to get the correct id
+                        CreateKeyId(menu); // Create id first to get the correct children id's
+                        FillMenuItems(menu.DropDown.Items, node);
+                        break;
+
+                    case "separator":
+                        var separator = GetSeparator(node);
+                        items.Add(separator);
+                        break;
+
+                    case "button":
+                        var button = GetMenuItem(node);
+                        items.Add(button); // Add item first to get the correct id
+                        CreateKeyId(button);
+                        Globals.MainForm.RegisterShortcut(((ItemData) button.Tag).KeyId, button);
+                        break;
+                }
             }
         }
 
         /// <summary>
-        /// Fills items to the specified tool strip item collection
+        /// Adds a tool strip item to the specified tool strip item collection.
         /// </summary>
-        public static void FillToolItems(ToolStripItemCollection items, XmlNode node)
+        private static void FillToolItems(ToolStripItemCollection items, XmlNode xmlNode)
         {
-            switch (node.Name)
+            foreach (XmlNode node in xmlNode.ChildNodes)
             {
-                case "separator":
-                    items.Add(GetSeparator(node));
-                    break;
-                case "button":
-                    ToolStripItem button = GetButtonItem(node);
-                    items.Add(button); // Add button first to get the id correct
-                    ShortcutManager.RegisterSecondaryItem(button);
-                    break;
+                switch (node.Name)
+                {
+                    case "separator":
+                        var separator = GetSeparator(node);
+                        items.Add(separator);
+                        break;
+
+                    case "button":
+                        var button = GetButtonItem(node);
+                        items.Add(button); // Add item first to get the correct id
+                        CreateKeyId(button);
+                        Globals.MainForm.RegisterShortcut(((ItemData) button.Tag).KeyId, button);
+                        break;
+                }
             }
         }
 
         /// <summary>
-        /// Gets a menu from the specified xml node
+        /// Gets a menu from the specified XML node.
         /// </summary>
         public static ToolStripMenuItem GetMenu(XmlNode node)
         {
-            ToolStripMenuItem menu = new ToolStripMenuItem();
-            String name = XmlHelper.GetAttribute(node, "name");
-            String image = XmlHelper.GetAttribute(node, "image");
-            String label = XmlHelper.GetAttribute(node, "label");
-            String click = XmlHelper.GetAttribute(node, "click");
-            String flags = XmlHelper.GetAttribute(node, "flags");
-            String enabled = XmlHelper.GetAttribute(node, "enabled");
-            String tag = XmlHelper.GetAttribute(node, "tag");
-            menu.Tag = new ItemData(label, tag, flags);
-            menu.Text = GetLocalizedString(label);
-            if (name != null) menu.Name = name; // Use the given name
-            else menu.Name = label.Replace("Label.", ""); // Assign from id
-            if (enabled != null) menu.Enabled = Convert.ToBoolean(enabled);
-            if (image != null) menu.Image = Globals.MainForm.FindImage(image);
-            if (click != null) menu.Click += GetEventHandler(click);
-            foreach (XmlNode subNode in node.ChildNodes)
-            {
-                FillMenuItems(menu.DropDownItems, subNode);
-            }
-            Items.Add(menu);
-            return menu;
+            var item = new ToolStripMenuItem();
+            string name = XmlHelper.GetAttribute(node, "name");
+            string label = XmlHelper.GetAttribute(node, "label");
+            string image = XmlHelper.GetAttribute(node, "image");
+            string click = XmlHelper.GetAttribute(node, "click");
+            string flags = XmlHelper.GetAttribute(node, "flags");
+            string enabled = XmlHelper.GetAttribute(node, "enabled");
+            string tag = XmlHelper.GetAttribute(node, "tag");
+            item.Tag = new ItemData(label, null, tag, flags);
+            item.Text = GetLocalizedString(label);
+            if (name != null) item.Name = name; // Use the given name
+            else item.Name = GetNameFromLabel(label); // Assign from id
+            if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
+            if (image != null) item.Image = Globals.MainForm.FindImage(image);
+            if (click != null) item.Click += GetEventHandler(click);
+            Items.Add(item);
+            return item;
         }
 
         /// <summary>
         /// Gets a button item from the specified xml node
         /// </summary>
-        public static ToolStripItem GetButtonItem(XmlNode node)
+        private static ToolStripButton GetButtonItem(XmlNode node)
         {
-            ToolStripButton button = new ToolStripButton();
-            String name = XmlHelper.GetAttribute(node, "name");
-            String image = XmlHelper.GetAttribute(node, "image");
-            String label = XmlHelper.GetAttribute(node, "label");
-            String click = XmlHelper.GetAttribute(node, "click");
-            String flags = XmlHelper.GetAttribute(node, "flags");
-            String enabled = XmlHelper.GetAttribute(node, "enabled");
-            String keyId = XmlHelper.GetAttribute(node, "keyid");
-            String tag = XmlHelper.GetAttribute(node, "tag");
-            button.Tag = new ItemData(label + ";" + keyId, tag, flags);
-            if (name != null) button.Name = name; // Use the given name
-            else button.Name = label.Replace("Label.", ""); // Assign from id
-            String stripped = GetStrippedString(GetLocalizedString(label), false);
-            if (image != null) button.ToolTipText = stripped;
-            else button.Text = stripped; // Use text instead...
-            if (enabled != null) button.Enabled = Convert.ToBoolean(enabled);
-            if (image != null) button.Image = Globals.MainForm.FindImage(image);
-            if (click != null) button.Click += GetEventHandler(click);
-            Items.Add(button);
-            return button;
+            var item = new ToolStripButton();
+            string name = XmlHelper.GetAttribute(node, "name");
+            string label = XmlHelper.GetAttribute(node, "label");
+            string image = XmlHelper.GetAttribute(node, "image");
+            string click = XmlHelper.GetAttribute(node, "click");
+            string flags = XmlHelper.GetAttribute(node, "flags");
+            string enabled = XmlHelper.GetAttribute(node, "enabled");
+            string keyId = XmlHelper.GetAttribute(node, "keyid");
+            string tag = XmlHelper.GetAttribute(node, "tag");
+            item.Tag = new ItemData(label, keyId, tag, flags);
+            if (image != null) item.ToolTipText = TextHelper.RemoveMnemonicsAndEllipsis(GetLocalizedString(label));
+            else item.Text = TextHelper.RemoveMnemonicsAndEllipsis(GetLocalizedString(label)); // Use text instead...
+            if (name != null) item.Name = name; // Use the given name
+            else item.Name = GetNameFromLabel(label); // Assign from id
+            if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
+            if (image != null) item.Image = Globals.MainForm.FindImage(image);
+            if (click != null) item.Click += GetEventHandler(click);
+            Items.Add(item);
+            return item;
         }
 
         /// <summary>
-        /// Get a menu item from the specified xml node
+        /// Gets a menu item from the specified XML node.
         /// </summary>
-        public static ToolStripMenuItemEx GetMenuItem(XmlNode node)
+        private static ToolStripMenuItemEx GetMenuItem(XmlNode node)
         {
-            ToolStripMenuItemEx menu = new ToolStripMenuItemEx();
-            String name = XmlHelper.GetAttribute(node, "name");
-            String image = XmlHelper.GetAttribute(node, "image");
-            String label = XmlHelper.GetAttribute(node, "label");
-            String click = XmlHelper.GetAttribute(node, "click");
-            String enabled = XmlHelper.GetAttribute(node, "enabled");
-            String shortcut = XmlHelper.GetAttribute(node, "shortcut");
-            String keytext = XmlHelper.GetAttribute(node, "keytext");
-            String keyId = XmlHelper.GetAttribute(node, "keyid");
-            String flags = XmlHelper.GetAttribute(node, "flags");
-            String tag = XmlHelper.GetAttribute(node, "tag");
-            menu.Tag = new ItemData(label + ";" + keyId, tag, flags);
-            menu.Text = GetLocalizedString(label);
-            if (name != null) menu.Name = name; // Use the given name
-            else menu.Name = label.Replace("Label.", ""); // Assign from id
-            if (image != null) menu.Image = Globals.MainForm.FindImage(image);
-            if (enabled != null) menu.Enabled = Convert.ToBoolean(enabled);
-            if (keytext != null) menu.ShortcutKeyDisplayString = GetKeyText(keytext);
-            if (click != null) menu.Click += GetEventHandler(click);
-            if (shortcut != null) menu.ShortcutKeys = GetKeys(shortcut);
-            Items.Add(menu);
-            return menu;
+            var item = new ToolStripMenuItemEx();
+            string name = XmlHelper.GetAttribute(node, "name");
+            string label = XmlHelper.GetAttribute(node, "label");
+            string image = XmlHelper.GetAttribute(node, "image");
+            string click = XmlHelper.GetAttribute(node, "click");
+            string flags = XmlHelper.GetAttribute(node, "flags");
+            string enabled = XmlHelper.GetAttribute(node, "enabled");
+            string shortcut = XmlHelper.GetAttribute(node, "shortcut");
+            string keytext = XmlHelper.GetAttribute(node, "keytext");
+            string keyId = XmlHelper.GetAttribute(node, "keyid");
+            string tag = XmlHelper.GetAttribute(node, "tag");
+            item.Tag = new ItemData(label, keyId, tag, flags);
+            item.Text = GetLocalizedString(label);
+            if (name != null) item.Name = name; // Use the given name
+            else item.Name = GetNameFromLabel(label); // Assign from id
+            if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
+            if (image != null) item.Image = Globals.MainForm.FindImage(image);
+            if (shortcut != null) item.ShortcutKeys = GetKeys(shortcut);
+            if (keytext != null) item.ShortcutKeyDisplayString = GetKeyText(keytext);
+            if (click != null) item.Click += GetEventHandler(click);
+            Items.Add(item);
+            return item;
         }
 
         /// <summary>
-        /// Gets a new tool strip separetor item
+        /// Gets a separator item from the specified XML node.
         /// </summary>
-        public static ToolStripSeparator GetSeparator(XmlNode node)
+        private static ToolStripSeparator GetSeparator(XmlNode node)
         {
             return new ToolStripSeparator();
         }
 
         /// <summary>
-        /// Gets the dynamic syntax menu xml (easy integration :)
+        /// Generates XML data at runtime.
         /// </summary>
-        private static String GetSyntaxMenuXml()
+        private static void GenerateRuntimeXmlData(XmlNode node)
         {
-            String syntaxXml = "";
-            String[] syntaxFiles = Directory.GetFiles(Path.Combine(PathHelper.SettingDir, "Languages"), "*.xml");
-            String xmlTmpl = "<button label=\"{0}\" click=\"ChangeSyntax\" tag=\"{1}\" image=\"559\" flags=\"Enable:IsEditable+Check:IsEditable|IsActiveSyntax\" />";
-            for (Int32 i = 0; i < syntaxFiles.Length; i++)
+            switch (XmlHelper.GetAttribute(node, "name"))
             {
-                String fileName = Path.GetFileNameWithoutExtension(syntaxFiles[i]);
-                syntaxXml += String.Format(xmlTmpl, fileName, fileName.ToLower());
+                case "SyntaxMenu":
+                    node.InnerXml = GetSyntaxMenuXml();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Gets the dynamic syntax menu XML (easy integration :)
+        /// </summary>
+        private static string GetSyntaxMenuXml()
+        {
+            string syntaxXml = "";
+            string xmlFormat = "<button label=\"{0}\" click=\"ChangeSyntax\" tag=\"{1}\" image=\"559\" flags=\"Enable:IsEditable+Check:IsEditable|IsActiveSyntax\" />";
+            string[] syntaxFiles = Directory.GetFiles(Path.Combine(PathHelper.SettingDir, "Languages"), "*.xml");
+            for (int i = 0; i < syntaxFiles.Length; i++)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(syntaxFiles[i]);
+                syntaxXml += string.Format(xmlFormat, fileName, fileName.ToLower());
             }
             return syntaxXml;
         }
 
         /// <summary>
-        /// Strips normal label characters from the string
+        /// Creates a key id from the item name if not defined.
         /// </summary>
-        private static String GetStrippedString(String text, Boolean removeWhite)
+        private static void CreateKeyId(ToolStripItem item)
         {
-            text = TextHelper.RemoveMnemonicsAndEllipsis(text);
-            if (removeWhite)
+            var data = (ItemData) item.Tag;
+            if (string.IsNullOrEmpty(data.KeyId))
             {
-                text = text.Replace(" ", "");
-                text = text.Replace("\t", "");
+                if (item.OwnerItem == null)
+                {
+                    data.KeyId = GetKeyIdFromName(item.Name);
+                }
+                else
+                {
+                    data.KeyId = ((ItemData) item.OwnerItem.Tag).KeyId + "." + GetKeyIdFromName(item.Name);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes "Menu" from the end of the specified text.
+        /// </summary>
+        private static string GetKeyIdFromName(string text)
+        {
+            if (text.EndsWithOrdinal("Menu"))
+            {
+                return text.Remove(text.Length - 4);
+            }
+            return text;
+        }
+
+        /// <summary>
+        /// Removes "Label." from the beginning of the text.
+        /// </summary>
+        private static string GetNameFromLabel(string text)
+        {
+            if (text.StartsWithOrdinal("Label."))
+            {
+                return text.Substring(6);
             }
             return text;
         }
@@ -266,51 +314,27 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Gets a localized string if available
         /// </summary>
-        private static String GetLocalizedString(String key)
+        private static string GetLocalizedString(string key)
         {
             try
             {
-                if (!key.StartsWithOrdinal("Label.")) return key;
-                else return TextHelper.GetString(key);
+                return key.StartsWithOrdinal("Label.") ? TextHelper.GetString(key) : key;
             }
             catch (Exception ex)
             {
                 ErrorManager.ShowError(ex);
-                return String.Empty;
+                return string.Empty;
             }
-        }
-
-        /// <summary>
-        /// Gets the id of the menu item from owner tree
-        /// </summary>
-        public static String GetMenuItemId(ToolStripItem menu)
-        {
-            if (menu.OwnerItem != null)
-            {
-                ToolStripItem parent = menu.OwnerItem;
-                return GetMenuItemId(parent) + "." + GetStrippedString(menu.Name, true);
-            }
-            else return GetStrippedString(menu.Name, true);
-        }
-
-        /// <summary>
-        /// Gets a shortcut key string from a string
-        /// </summary>
-        private static String GetKeyText(String data)
-        {
-            data = data.Replace('|', '+');
-            data = data.Replace("Control", "Ctrl");
-            return data;
         }
 
         /// <summary>
         /// Gets a shortcut keys from a string
         /// </summary>
-        private static ShortcutKeys GetKeys(String data)
+        private static ShortcutKeys GetKeys(string data)
         {
             try
             {
-                return ShortcutKeys.Parse(data.Replace('|', '+'));
+                return ShortcutKeys.Parse(GetKeyText(data));
             }
             catch (Exception ex)
             {
@@ -320,13 +344,21 @@ namespace FlashDevelop.Managers
         }
 
         /// <summary>
-        /// Gets a click handler from a string
+        /// Gets a shortcut key string from a string
         /// </summary>
-        private static EventHandler GetEventHandler(String method)
+        private static string GetKeyText(string data)
+        {
+            return data.Replace('|', '+').Replace("Control", "Ctrl");
+        }
+
+        /// <summary>
+        /// Gets a click handler from method name.
+        /// </summary>
+        private static EventHandler GetEventHandler(string method)
         {
             try
             {
-                return (EventHandler)Delegate.CreateDelegate(typeof(EventHandler), Globals.MainForm, method);
+                return (EventHandler) Delegate.CreateDelegate(typeof(EventHandler), Globals.MainForm, method);
             }
             catch (Exception ex)
             {
@@ -334,7 +366,5 @@ namespace FlashDevelop.Managers
                 return null;
             }
         }
-
     }
-
 }

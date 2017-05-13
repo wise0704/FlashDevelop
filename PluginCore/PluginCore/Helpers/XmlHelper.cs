@@ -4,15 +4,14 @@ using PluginCore.Managers;
 
 namespace PluginCore.Helpers
 {
-    public class XmlHelper
+    public static class XmlHelper
     {
         /// <summary>
         /// Gets the value of the specified XmlNode.
         /// </summary>
         public static String GetValue(XmlNode node)
         {
-            if (node != null && node.FirstChild != null) return node.FirstChild.Value;
-            else return null;
+            return node?.FirstChild?.Value;
         }
 
         /// <summary>
@@ -20,10 +19,9 @@ namespace PluginCore.Helpers
         /// </summary>
         public static String GetAttribute(XmlNode node, String attName)
         {
-            if (node != null && node.Attributes[attName] != null) return node.Attributes[attName].Value;
-            else return null;
+            return node?.Attributes[attName]?.Value;
         }
-        
+
         /// <summary>
         /// Checks that if the XmlNode has a value.
         /// </summary>
@@ -39,7 +37,7 @@ namespace PluginCore.Helpers
         {
             return (node != null && node.Attributes[attName] != null);
         }
-        
+
         /// <summary>
         /// Reads a xml file and returns it as a XmlNode. Returns null on failure.
         /// </summary>
@@ -49,7 +47,7 @@ namespace PluginCore.Helpers
             {
                 XmlDocument document = new XmlDocument();
                 document.PreserveWhitespace = false;
-                document.Load(file); 
+                document.Load(file);
                 try
                 {
                     XmlNode declNode = document.FirstChild;
@@ -68,7 +66,7 @@ namespace PluginCore.Helpers
                 return null;
             }
         }
-        
+
     }
-    
+
 }

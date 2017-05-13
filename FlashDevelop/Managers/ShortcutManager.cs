@@ -110,14 +110,14 @@ namespace FlashDevelop.Managers
                         }
                         else if (toolStripItem.Tag is ItemData)
                         {
-                            if (StripBarManager.GetKeyId(toolStripItem) != id)
+                            if (((ItemData) toolStripItem.Tag).KeyId != id)
                             {
-                                throw new ArgumentException($"The shortcut ID of the specified {nameof(ToolStripItem)} object is different from the specified shortcut ID '{id}': {StripBarManager.GetKeyId(toolStripItem)}");
+                                throw new ArgumentException($"The shortcut ID of the specified {nameof(ToolStripItem)} object is different from the specified shortcut ID '{id}': {((ItemData) toolStripItem.Tag).KeyId}");
                             }
                         }
                         else
                         {
-                            toolStripItem.Tag = new ItemData("none;" + id, null, null);
+                            toolStripItem.Tag = new ItemData(null, id, null, null);
                         }
                     }
                 }
@@ -204,7 +204,7 @@ namespace FlashDevelop.Managers
         {
             if (item?.Tag is ItemData)
             {
-                var keys = Globals.MainForm.GetShortcutKeys(StripBarManager.GetKeyId(item));
+                var keys = Globals.MainForm.GetShortcutKeys(((ItemData) item.Tag).KeyId);
                 UpdateShortcutKeyDisplayString(item, keys);
             }
         }
