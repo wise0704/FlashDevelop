@@ -48,12 +48,12 @@
 		<button label="Label.ClearBookmarks" click="ClearBookmarks" image="402|4|4|4" flags="Enable:HasBookmarks" />
 	</menu>
 	<separator />
-	<button label="Label.Undo" click="ScintillaCommand" tag="Undo" image="73" flags="Enable:CanUndo" keyid="EditMenu.Undo" />
-	<button label="Label.Redo" click="ScintillaCommand" tag="Redo" image="65" flags="Enable:CanRedo" keyid="EditMenu.Redo" />
+	<button label="Label.Undo" click="ScintillaCommand" tag="Undo" image="73" flags="Enable:CanUndo" keyid="Edit.Undo" />
+	<button label="Label.Redo" click="ScintillaCommand" tag="Redo" image="65" flags="Enable:CanRedo" keyid="Edit.Redo" />
 	<separator />
-	<button label="Label.Cut" click="ScintillaCommand" tag="CutAllowLine" image="158" keyid="EditMenu.Cut" />
-	<button label="Label.Copy" click="ScintillaCommand" tag="CopyAllowLineEx" image="278" keyid="EditMenu.Copy" />
-	<button label="Label.Paste" click="SmartPaste" image="283" flags="Enable:CanPaste" keyid="EditMenu.Paste"/>
+	<button label="Label.Cut" click="ScintillaCommand" tag="CutAllowLine" image="158" keyid="Edit.Cut" />
+	<button label="Label.Copy" click="ScintillaCommand" tag="CopyAllowLineEx" image="278" keyid="Edit.Copy" />
+	<button label="Label.Paste" click="SmartPaste" image="283" flags="Enable:CanPaste" keyid="Edit.Paste"/>
 	<separator />
-	<button label="Label.SelectAll" click="ScintillaCommand" tag="SelectAll" keyid="EditMenu.SelectAll" />
+	<button label="Label.SelectAll" click="ScintillaCommand" tag="SelectAll" keyid="Edit.SelectAll" />
 </scintillamenu>
