@@ -47,7 +47,6 @@ namespace ASCompletion.Completion
         #endregion
 
         #region fields
-        static public ShortcutKeys HelpKeys = Keys.F1;
 
         //stores the currently used class namespace and name
         static private String currentClassHash = null;
@@ -242,48 +241,52 @@ namespace ASCompletion.Completion
         }
 
         /// <summary>
-        /// Handle shortcuts.
-        /// <para/>
-        /// [deprecated] Use the <see cref="OnShortcut(ShortcutKeys, ScintillaControl)"/> method instead.
+        /// Handle key inputs.
         /// </summary>
-        [Obsolete("This method has been deprecated.", true)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public static bool OnShortcut(Keys keys, ScintillaControl sci)
         {
-            return OnShortcut((ShortcutKeys) keys, sci);
-        }
-
-        /// <summary>
-        /// Handle shortcuts.
-        /// </summary>
-        /// <param name="keys">Test keys</param>
-        public static bool OnShortcut(ShortcutKeys keys, ScintillaControl sci)
-        {
             if (sci.IsSelectionRectangle)
-                return false;
-
-            switch ((Keys) keys)
             {
-                case Keys.Control | Keys.Space: // dot complete
-                    if (ASContext.HasContext && ASContext.Context.IsFileValid)
-                    {
-                        // try to get completion as if we had just typed the previous char
-                        if (OnChar(sci, sci.CharAt(sci.PositionBefore(sci.CurrentPos)), false))
-                            return true;
-                        else
-                        {
-                            // force dot completion
-                            OnChar(sci, '.', false);
-                            return true;
-                        }
-                    }
-                    return false;
+                return false;
+            }
 
+            switch (keys)
+            {
                 case Keys.Back:
                     HandleAddClosingBraces(sci, sci.CurrentChar, false);
                     return false;
 
-                case Keys.Control | Keys.Shift | Keys.Space: // show calltip
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Handle shortcut events.
+        /// </summary>
+        public static bool OnShortcut(string id, ScintillaControl sci)
+        {
+            if (sci.IsSelectionRectangle)
+            {
+                return false;
+            }
+
+            switch (id)
+            {
+                case "Completion.ListMembers": // dot complete
+                    if (ASContext.HasContext && ASContext.Context.IsFileValid)
+                    {
+                        // try to get completion as if we had just typed the previous char
+                        if (!OnChar(sci, sci.CharAt(sci.PositionBefore(sci.CurrentPos)), false))
+                        {
+                            // force dot completion
+                            OnChar(sci, '.', false);
+                        }
+                        return true;
+                    }
+                    return false;
+
+                case "Completion.ParameterInfo": // show calltip
                     if (ASContext.HasContext && ASContext.Context.IsFileValid)
                     {
                         //HandleFunctionCompletion(Sci);
@@ -293,12 +296,12 @@ namespace ASCompletion.Completion
                     }
                     return false;
 
-                case Keys.Control | Keys.Alt | Keys.Space: // project types completion
+                case "Completion.ListClasses": // project types completion
                     if (ASContext.HasContext && ASContext.Context.IsFileValid && !ASContext.Context.Settings.LazyClasspathExploration)
                     {
                         int position = sci.CurrentPos - 1;
                         string tail = GetWordLeft(sci, ref position);
-                        ContextFeatures features = ASContext.Context.Features;
+                        var features = ASContext.Context.Features;
                         if (tail.IndexOfOrdinal(features.dot) < 0 && features.HasTypePreKey(tail)) tail = "";
                         // display the full project classes list
                         HandleAllClassesCompletion(sci, tail, false, true);
@@ -306,11 +309,19 @@ namespace ASCompletion.Completion
                     }
                     return false;
 
-                case Keys.Control | Keys.Enter: // hot build
+                case "Completion.ShowHelp":
+                    // help
+                    if (ASContext.HasContext && ASContext.Context.IsFileValid)
+                    {
+                        ResolveElement(sci, "ShowDocumentation");
+                        return true;
+                    }
+                    return false;
+
+                case "Project.HotBuild":
                     // project build
-                    DataEvent de = new DataEvent(EventType.Command, "ProjectManager.HotBuild", null);
+                    var de = new DataEvent(EventType.Command, "ProjectManager.HotBuild", null);
                     EventManager.DispatchEvent(ASContext.Context, de);
-                    //
                     if (!de.Handled)
                     {
                         // quick build
@@ -325,7 +336,9 @@ namespace ASCompletion.Completion
                                     string cmd = Path.Combine("Tools", Path.Combine("flashide", "testmovie.jsfl"));
                                     cmd = PathHelper.ResolvePath(cmd);
                                     if (cmd != null && File.Exists(cmd))
+                                    {
                                         CallFlashIDE.Run(idePath, cmd);
+                                    }
                                 }
                             }
                         }
@@ -333,16 +346,10 @@ namespace ASCompletion.Completion
                     return true;
 
                 default:
-                    // help
-                    if (keys == HelpKeys && ASContext.HasContext && ASContext.Context.IsFileValid)
-                    {
-                        ResolveElement(sci, "ShowDocumentation");
-                        return true;
-                    }
                     return false;
             }
         }
-
+        
         /// <summary>
         /// Fire the completion automatically
         /// </summary>

@@ -156,8 +156,8 @@ namespace BookmarkPanel
         public void CreateMenuItem()
         {
             ToolStripMenuItem viewMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            ToolStripMenuItemEx viewItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.ViewMenuItem"), this.pluginImage, new EventHandler(this.OpenPanel));
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowBookmarks", viewItem);
+            ToolStripMenuItem viewItem = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), this.pluginImage, this.OpenPanel);
+            PluginBase.MainForm.RegisterShortcut("View.ShowBookmarks", viewItem);
             viewMenu.DropDownItems.Add(viewItem);
         }
 

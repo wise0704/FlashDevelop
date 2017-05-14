@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -638,14 +639,21 @@ namespace XMLCompletion
                     break;
             }
         }
-        
+
         /// <summary>
         /// Handles the incoming keys object
         /// </summary> 
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static Boolean OnShortCut(Keys keys)
         {
+            return false;
+        }
+
+        public static Boolean OnShortcut(ShortcutKeysEvent e)
+        {
             if (cType == XMLType.Invalid) return false;
-            if (keys == (Keys.Control | Keys.Space))
+            if (e.Id == "Completion.ListMembers")
             {
                 ITabbedDocument document = PluginBase.MainForm.CurrentDocument;
                 if (!document.IsEditable) return false;

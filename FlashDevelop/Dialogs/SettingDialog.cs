@@ -306,11 +306,11 @@ namespace FlashDevelop.Dialogs
         private void InitializeContextMenu()
         {
             ContextMenuStrip contextMenu = new ContextMenuStrip();
-            ToolStripMenuItemEx collapseAll = new ToolStripMenuItemEx(TextHelper.GetString("Label.CollapseAll"));
+            ToolStripMenuItem collapseAll = new ToolStripMenuItem(TextHelper.GetString("Label.CollapseAll"));
             collapseAll.ShortcutKeyDisplayString = PluginBase.MainForm.GetShortcutKeys("ViewMenu.CollapseAll").ToString();
             collapseAll.Click += delegate { this.itemPropertyGrid.CollapseAllGridItems(); };
             contextMenu.Items.Add(collapseAll);
-            ToolStripMenuItemEx expandAll = new ToolStripMenuItemEx(TextHelper.GetString("Label.ExpandAll"));
+            ToolStripMenuItem expandAll = new ToolStripMenuItem(TextHelper.GetString("Label.ExpandAll"));
             expandAll.ShortcutKeyDisplayString = PluginBase.MainForm.GetShortcutKeys("ViewMenu.ExpandAll").ToString();
             expandAll.Click += delegate { this.itemPropertyGrid.ExpandAllGridItems(); };
             contextMenu.Items.Add(expandAll);
@@ -367,10 +367,10 @@ namespace FlashDevelop.Dialogs
             {
                 switch (shortcutId)
                 {
-                    case "ViewMenu.CollapseAll":
+                    case "View.CollapseAll":
                         if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.CollapseAllGridItems();
                         return true;
-                    case "ViewMenu.ExpandAll":
+                    case "View.ExpandAll":
                         if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.ExpandAllGridItems();
                         return true;
                 }

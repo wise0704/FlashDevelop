@@ -298,7 +298,7 @@ namespace ProjectManager
         /// <summary>
         /// 
         /// </summary>
-        private void RenameNode(Object sender, EventArgs e)
+        internal void RenameNode()
         {
             if (tree.SelectedNode is ProjectNode)
             {

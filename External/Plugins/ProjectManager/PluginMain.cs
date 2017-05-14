@@ -94,7 +94,7 @@ namespace ProjectManager
 
         const EventType eventMask = EventType.UIStarted | EventType.UIClosing | EventType.FileOpening
             | EventType.FileOpen | EventType.FileSave | EventType.FileSwitch | EventType.ProcessStart | EventType.ProcessEnd
-            | EventType.ProcessArgs | EventType.Command | EventType.Keys | EventType.ApplySettings;
+            | EventType.ProcessArgs | EventType.Command | EventType.ShortcutKeys | EventType.ApplySettings;
 
         #region Load/Save Settings
 
@@ -540,8 +540,8 @@ namespace ProjectManager
                     }
                     break;
 
-                case EventType.Keys:
-                    e.Handled = HandleKeyEvent(e as KeyEvent);
+                case EventType.ShortcutKeys:
+                    e.Handled = HandleKeyEvent((ShortcutKeysEvent) e);
                     break;
             }
         }
@@ -555,54 +555,54 @@ namespace ProjectManager
             }
         }
 
-        private bool HandleKeyEvent(KeyEvent ke)
+        private bool HandleKeyEvent(ShortcutKeysEvent e)
         {
             if (activeProject == null) return false;
 
-            if (ke.Command == "ProjectMenu.ConfigurationSelector")
+            switch (e.Id)
             {
-                pluginUI.menus.ConfigurationSelector.Focus();
-            }
-            else if (ke.Command == "ProjectMenu.ConfigurationSelectorToggle")
-            {
-                pluginUI.menus.ToggleDebugRelease();
-            }
-            else if (ke.Command == "ProjectMenu.TargetBuildSelector")
-            {
-                pluginUI.menus.TargetBuildSelector.Focus();
-            }
-            else if (ke.Command == "ProjectTree.LocateActiveFile")
-            {
-                TreeSyncToCurrentFile();
+                case "Project.ConfigurationSelector":
+                    pluginUI.menus.ConfigurationSelector.Focus();
+                    return true;
+                case "Project.ConfigurationSelectorToggle":
+                    pluginUI.menus.ToggleDebugRelease();
+                    return true;
+                case "Project.TargetBuildSelector":
+                    pluginUI.menus.TargetBuildSelector.Focus();
+                    return true;
+                case "ProjectTree.LocateActiveFile":
+                    TreeSyncToCurrentFile();
+                    return true;
             }
 
             // Handle tree-level simple shortcuts like copy/paste/del
-            else if (Tree.Focused && !pluginUI.IsEditingLabel)
+            if (Tree.Focused && !pluginUI.IsEditingLabel)
             {
-                switch ((Keys) ke.Keys)
+                switch ((Keys) e.ShortcutKeys)
                 {
                     case Keys.Control | Keys.C:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Copy)) TreeCopyItems();
-                        break;
+                        return true;
                     case Keys.Control | Keys.X:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Cut)) TreeCutItems();
-                        break;
+                        return true;
                     case Keys.Control | Keys.V:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Paste)) TreePasteItems();
-                        break;
+                        return true;
                     case Keys.Delete:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Delete)) TreeDeleteItems();
-                        break;
+                        return true;
+                    case Keys.F2:
+                        if (pluginUI.Menu.Contains(pluginUI.Menu.Rename)) TreeRenameItem();
+                        return true;
                     case Keys.Enter:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Open)) TreeOpenItems();
                         else if (pluginUI.Menu.Contains(pluginUI.Menu.Insert)) TreeInsertItem();
-                        break;
-                    default:
-                        return false;
+                        return true;
                 }
             }
-            else return false;
-            return true;
+
+            return false;
         }
         
         #endregion
@@ -1377,6 +1377,11 @@ namespace ProjectManager
         private void TreeDeleteItems()
         {
             fileActions.Delete(Tree.SelectedPaths);
+        }
+
+        private void TreeRenameItem()
+        {
+            pluginUI.RenameNode();
         }
 
         private void TreeLibraryOptions()

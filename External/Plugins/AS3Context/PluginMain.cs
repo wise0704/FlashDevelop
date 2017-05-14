@@ -178,16 +178,14 @@ namespace AS3Context
                         }
                         break;
 
-                    case EventType.Keys:
+                    case EventType.ShortcutKeys:
                         if (inMXML)
                         {
-                            KeyEvent ke = e as KeyEvent;
-                            if (ke.Command == "SearchMenu.GotoDeclaration")
+                            if (((ShortcutKeysEvent) e).Id == "Search.GotoDeclaration")
                             {
                                 if (MxmlComplete.GotoDeclaration())
                                 {
-                                    ke.Handled = true;
-                                    //ke.ProcessKey = false; // Setting Handled to true stop the event propagation.
+                                    e.Handled = true;
                                 }
                             }
                         }
@@ -367,15 +365,15 @@ namespace AS3Context
             ToolStripMenuItem menu = PluginBase.MainForm.FindMenuItem("ViewMenu") as ToolStripMenuItem;
             if (menu == null) return;
 
-            ToolStripMenuItemEx viewItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.ViewMenuItem"), pluginIcon, new EventHandler(OpenPanel));
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowProfiler", viewItem);
+            var viewItem = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginIcon, OpenPanel);
             menu.DropDownItems.Add(viewItem);
 
             viewButton = new ToolStripButton(pluginIcon);
             viewButton.Name = "ShowProfiler";
             viewButton.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.ViewMenuItem");
-            PluginBase.MainForm.RegisterSecondaryItem("ViewMenu.ShowProfiler", viewButton);
             viewButton.Click += OpenPanel;
+
+            PluginBase.MainForm.RegisterShortcut("View.ShowProfiler", viewItem, viewButton);
         }
 
         /// <summary>
@@ -421,7 +419,7 @@ namespace AS3Context
         {
             EventManager.AddEventHandler(this, EventType.UIStarted | EventType.ProcessArgs | EventType.FileSwitch | EventType.FileSave);
             EventManager.AddEventHandler(this, EventType.Command, HandlingPriority.High);
-            EventManager.AddEventHandler(this, EventType.Command | EventType.Keys | EventType.ProcessArgs, HandlingPriority.Low);
+            EventManager.AddEventHandler(this, EventType.Command | EventType.ShortcutKeys | EventType.ProcessArgs, HandlingPriority.Low);
         }
 
         /// <summary>

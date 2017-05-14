@@ -383,11 +383,11 @@ namespace PluginCore.Controls
                     }*/
 
                     // Offer to handle the shortcut
-                    /*ignoreKeys = true;
+                    ignoreKeys = true;
                     var newEvent = new ShortcutKeysEvent(EventType.ShortcutKeys, e.Id, e.ShortcutKeys);
                     EventManager.DispatchEvent(this, newEvent);
                     ignoreKeys = false;
-                    if (newEvent.Handled) return true;*/
+                    if (newEvent.Handled) return true;
 
                     // If not handled - show snippets
                     if (PluginBase.MainForm.CurrentDocument.IsEditable

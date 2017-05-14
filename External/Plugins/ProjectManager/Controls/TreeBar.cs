@@ -45,13 +45,12 @@ namespace ProjectManager.Controls
             ProjectProperties = new ToolStripButton(Icons.Options.Img);
             ProjectProperties.ToolTipText = TextHelper.GetString("ToolTip.ProjectProperties");
             ProjectProperties.Padding = new Padding(0);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.Properties", ProjectProperties);
+            PluginBase.MainForm.RegisterShortcut("Project.Properties", ProjectProperties);
 
             Synchronize = new ToolStripButton(Icons.SyncToFile.Img);
             Synchronize.ToolTipText = TextHelper.GetString("ToolTip.Synchronize");
             Synchronize.Padding = new Padding(0);
-            PluginBase.MainForm.RegisterShortcutItem("ProjectTree.LocateActiveFile", Keys.Shift | Keys.Alt | Keys.L, true);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectTree.LocateActiveFile", Synchronize);
+            PluginBase.MainForm.RegisterShortcut("Project.Tree.LocateActiveFile", Keys.Shift | Keys.Alt | Keys.L, Synchronize);
 
             SynchronizeMain = new ToolStripButton(Icons.ActionScriptCompile.Img);
             SynchronizeMain.ToolTipText = TextHelper.GetString("ToolTip.SynchronizeMain");
@@ -65,7 +64,7 @@ namespace ProjectManager.Controls
             ProjectTypes.ToolTipText = TextHelper.GetString("ToolTip.ProjectTypes");
             ProjectTypes.Alignment = ToolStripItemAlignment.Right;
             ProjectTypes.Padding = new Padding(0);
-            PluginBase.MainForm.RegisterSecondaryItem("FlashToolsMenu.TypeExplorer", ProjectTypes);
+            PluginBase.MainForm.RegisterShortcut("Tools.FlashTools.TypeExplorer", ProjectTypes);
             
             Separator = new ToolStripSeparator();
             Separator.Margin = new Padding(0, 0, 1, 0);

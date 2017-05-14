@@ -1687,8 +1687,9 @@ namespace FlashDevelop
             EventManager.DispatchEvent(this, e);
             if (!e.Handled && currentKeys.IsSimple)
             {
+                e.Handled = 
                 #pragma warning disable CS0612 // Type or member is obsolete
-                e.Handled = DispatchKeyEvent(keyData)
+                    DispatchKeyEvent(keyData)
                 #pragma warning restore CS0612 // Type or member is obsolete
                      || TabbingManager.ProcessCmdKeys(ref m, keyData);
             }

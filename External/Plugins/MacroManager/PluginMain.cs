@@ -23,7 +23,7 @@ namespace MacroManager
         private ToolStripSeparator toolbarSeparator;
         private List<ToolStripItem> toolbarItems;
         private ToolStripMenuItem macroMenuItem;
-        private ToolStripMenuItemEx editMenuItem;
+        private ToolStripMenuItem editMenuItem;
         private String settingFilename;
         private Settings settingObject;
 
@@ -139,6 +139,19 @@ namespace MacroManager
                 }
                 this.RunAutoRunMacros();
             }
+            else if (e.Type == EventType.ShortcutKeys)
+            {
+                var ske = (ShortcutKeysEvent) e;
+                foreach (Macro macro in this.settingObject.UserMacros)
+                {
+                    if (macro.ShortcutKeys == ske.ShortcutKeys)
+                    {
+                        ExecuteMacro(macro);
+                        ske.Handled = true;
+                        break;
+                    }
+                }
+            }
         }
         
         #endregion
@@ -165,6 +178,7 @@ namespace MacroManager
             if (!Directory.Exists(dataPath)) Directory.CreateDirectory(dataPath);
             this.settingFilename = Path.Combine(dataPath, "Settings.fdb");
             EventManager.AddEventHandler(this, EventType.UIStarted);
+            EventManager.AddEventHandler(this, EventType.ShortcutKeys, HandlingPriority.Low); // Handle macro shortcuts with low priority
         }
 
         /// <summary>
@@ -174,8 +188,8 @@ namespace MacroManager
         {
             MenuStrip mainMenu = PluginBase.MainForm.MenuStrip;
             this.macroMenuItem = new ToolStripMenuItem(TextHelper.GetString("Label.Macros"));
-            this.editMenuItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.EditMacros"), null, this.EditMenuItemClick, Keys.Control | Keys.F11);
-            PluginBase.MainForm.RegisterShortcutItem("MacrosMenu.EditMacros", this.editMenuItem);
+            this.editMenuItem = new ToolStripMenuItem(TextHelper.GetString("Label.EditMacros"), null, this.EditMenuItemClick);
+            PluginBase.MainForm.RegisterShortcut("Macros.EditMacros", Keys.Control | Keys.F11, this.editMenuItem);
             mainMenu.Items.Insert(mainMenu.Items.Count - 2, this.macroMenuItem);
         }
 
@@ -189,9 +203,9 @@ namespace MacroManager
             {
                 if (!macro.AutoRun)
                 {
-                    ToolStripMenuItemEx macroItem = new ToolStripMenuItemEx();
+                    ToolStripMenuItem macroItem = new ToolStripMenuItem();
                     macroItem.Click += new EventHandler(this.MacroMenuItemClick);
-                    macroItem.ShortcutKeys = macro.ShortcutKeys;
+                    macroItem.ShortcutKeyDisplayString = macro.ShortcutKeys.ToString();
                     macroItem.Text = macro.Label;
                     macroItem.Tag = macro;
                     if (!String.IsNullOrEmpty(macro.Image))
@@ -199,10 +213,6 @@ namespace MacroManager
                         macroItem.Image = PluginBase.MainForm.FindImage(macro.Image);
                     }
                     this.macroMenuItem.DropDownItems.Add(macroItem);
-                    //if (!PluginBase.MainForm.IgnoredKeys.Contains(macro.Shortcut))
-                    //{
-                    //    PluginBase.MainForm.IgnoredKeys.Add(macro.Shortcut);
-                    //}
                 }
             }
             this.macroMenuItem.DropDownItems.Add(new ToolStripSeparator());
@@ -237,10 +247,6 @@ namespace MacroManager
                         macroButton.Image = PluginBase.MainForm.FindImage(macro.Image);
                     }
                     else macroButton.Image = PluginBase.MainForm.FindImage("528|13|0|0");
-                    //if (!PluginBase.MainForm.IgnoredKeys.Contains(macro.Shortcut))
-                    //{
-                    //    PluginBase.MainForm.IgnoredKeys.Add(macro.Shortcut);
-                    //}
                     this.toolbarItems.Add(macroButton);
                 }
             }
@@ -314,7 +320,20 @@ namespace MacroManager
             try
             {
                 ToolStripItem macroItem = sender as ToolStripItem;
-                foreach (String entry in ((Macro)macroItem.Tag).Entries)
+                ExecuteMacro((Macro) macroItem.Tag);
+            }
+            catch (Exception)
+            {
+                String message = TextHelper.GetString("Info.CouldNotRunMacro");
+                ErrorManager.ShowWarning(message, null);
+            }
+        }
+
+        private static void ExecuteMacro(Macro macro)
+        {
+            try
+            {
+                foreach (string entry in macro.Entries)
                 {
                     String data = entry;
                     if (data.StartsWith('#')) // Hardcore mode :)
@@ -330,10 +349,9 @@ namespace MacroManager
                     else PluginBase.MainForm.CallCommand(data, "");
                 }
             }
-            catch (Exception)
+            catch
             {
-                String message = TextHelper.GetString("Info.CouldNotRunMacro");
-                ErrorManager.ShowWarning(message, null);
+                ErrorManager.ShowWarning(TextHelper.GetString("Info.CouldNotRunMacro"), null);
             }
         }
 

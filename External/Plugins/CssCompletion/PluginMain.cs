@@ -123,9 +123,9 @@ namespace CssCompletion
             if (document == null || !document.IsEditable) return;
             switch (e.Type)
             {
-                case EventType.Keys:
+                case EventType.ShortcutKeys:
                 {
-                    if (this.IsSupported(document) && (e as KeyEvent).Keys == (Keys.Control | Keys.Space))
+                    if (this.IsSupported(document) && ((ShortcutKeysEvent) e).Id == "Completion.ListMembers")
                     {
                         if (completion != null)
                         {
@@ -213,8 +213,10 @@ namespace CssCompletion
             UITools.Manager.OnCharAdded += SciControlCharAdded;
             UITools.Manager.OnTextChanged += SciControlTextChanged;
             CompletionList.OnInsert += CompletionList_OnInsert;
-            EventType eventTypes = EventType.Keys | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Completion;
+            EventType eventTypes = EventType.ShortcutKeys | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Completion;
             EventManager.AddEventHandler(this, eventTypes);
+
+            PluginBase.MainForm.RegisterShortcut("Completion.ListMembers", Keys.Control | Keys.Space);
         }
 
         /// <summary>

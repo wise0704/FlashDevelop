@@ -26,7 +26,7 @@ namespace ResultsPanel
         internal Image pluginImage;
         internal PanelContextMenu contextMenuStrip;
         private ToolStripMenuItem viewItem;
-        private ToolStripMenuItemEx viewItemMainPanel;
+        private ToolStripMenuItem viewItemMainPanel;
         private ToolStripSeparator viewItemSeparator;
 
         #region Required Properties
@@ -155,27 +155,29 @@ namespace ResultsPanel
                     ResultsPanelHelper.OnFileOpen((TextEvent) e);
                     break;
 
-                case EventType.Keys:
-                    KeyEvent ke = (KeyEvent)e;
-                    switch (ke.Command)
+                case EventType.ShortcutKeys:
+                    var ske = (ShortcutKeysEvent) e;
+                    switch (ske.Id)
                     {
-                        case null:
-                            break;
                         case "ResultsPanel.ShowNextResult":
-                            ke.Handled = ResultsPanelHelper.ActiveUI.NextEntry();
+                            ResultsPanelHelper.ActiveUI.NextEntry();
+                            ske.Handled = true;
                             break;
                         case "ResultsPanel.ShowPrevResult":
-                            ke.Handled = ResultsPanelHelper.ActiveUI.PreviousEntry();
+                            ResultsPanelHelper.ActiveUI.PreviousEntry();
+                            ske.Handled = true;
                             break;
                         case "ResultsPanel.ClearResults":
-                            ke.Handled = ResultsPanelHelper.ActiveUI.ClearOutput();
+                            ResultsPanelHelper.ActiveUI.ClearOutput();
+                            ske.Handled = true;
                             break;
                         case "ResultsPanel.ClearIgnoredEntries":
-                            ke.Handled = ResultsPanelHelper.ActiveUI.ClearIgnoredEntries();
+                            ResultsPanelHelper.ActiveUI.ClearIgnoredEntries();
+                            ske.Handled = true;
                             break;
                         default:
-                            if (ke.Keys == PanelContextMenu.CopyEntryKeys) ke.Handled = ResultsPanelHelper.ActiveUI.CopyTextShortcut();
-                            else if (ke.Keys == PanelContextMenu.IgnoreEntryKeys) ke.Handled = ResultsPanelHelper.ActiveUI.IgnoreEntryShortcut();
+                            if (ske.ShortcutKeys == PanelContextMenu.CopyEntryKeys) ske.Handled = ResultsPanelHelper.ActiveUI.CopyTextShortcut();
+                            else if (ske.ShortcutKeys == PanelContextMenu.IgnoreEntryKeys) ske.Handled = ResultsPanelHelper.ActiveUI.IgnoreEntryShortcut();
                             break;
                     }
 
@@ -227,7 +229,7 @@ namespace ResultsPanel
         public void AddEventHandlers()
         {
             EventType eventMask = EventType.ProcessEnd | EventType.ProcessStart | EventType.FileOpen | EventType.Command
-                | EventType.Trace | EventType.Keys | EventType.Shortcut | EventType.ApplySettings | EventType.ApplyTheme;
+                | EventType.Trace | EventType.ShortcutKeys | EventType.ApplySettings | EventType.ApplyTheme;
             EventManager.AddEventHandler(this, eventMask);
         }
 
@@ -247,7 +249,7 @@ namespace ResultsPanel
         /// </summary>
         public void CreateMenuItem()
         {
-            viewItemMainPanel = new ToolStripMenuItemEx(TextHelper.GetString("Label.ViewMenuItem"), pluginImage) { Tag = pluginUI.GroupData };
+            viewItemMainPanel = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginImage) { Tag = pluginUI.GroupData };
             viewItemSeparator = new ToolStripSeparator();
 
             viewItem = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginImage);
@@ -259,11 +261,11 @@ namespace ResultsPanel
             viewMenu.DropDownItems.Add(viewItem);
 
             this.contextMenuStrip = new PanelContextMenu();
-            PluginBase.MainForm.RegisterShortcutItem("ResultsPanel.ShowNextResult", this.contextMenuStrip.NextEntry);
-            PluginBase.MainForm.RegisterShortcutItem("ResultsPanel.ShowPrevResult", this.contextMenuStrip.PreviousEntry);
-            PluginBase.MainForm.RegisterShortcutItem("ResultsPanel.ClearResults", this.contextMenuStrip.ClearEntries);
-            PluginBase.MainForm.RegisterShortcutItem("ResultsPanel.ClearIgnoredEntries", this.contextMenuStrip.ClearIgnoredEntries);
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowResults", viewItemMainPanel);
+            PluginBase.MainForm.RegisterShortcut("ResultsPanel.ShowNextResult", this.contextMenuStrip.NextEntry);
+            PluginBase.MainForm.RegisterShortcut("ResultsPanel.ShowPrevResult", this.contextMenuStrip.PreviousEntry);
+            PluginBase.MainForm.RegisterShortcut("ResultsPanel.ClearResults", this.contextMenuStrip.ClearEntries);
+            PluginBase.MainForm.RegisterShortcut("ResultsPanel.ClearIgnoredEntries", this.contextMenuStrip.ClearIgnoredEntries);
+            PluginBase.MainForm.RegisterShortcut("View.ShowResults", viewItemMainPanel);
         }
 
         private void ViewItem_DropDownOpening(object sender, EventArgs e)

@@ -16,12 +16,12 @@ namespace ResultsPanel
 
         public PanelContextMenu()
         {
-            ClearEntries = new ToolStripMenuItemEx(TextHelper.GetString("Label.ClearEntries"), null, ClearEntries_Click);
-            CopyEntry = new ToolStripMenuItemEx(TextHelper.GetString("Label.CopyEntry"), null, CopyEntry_Click);
-            IgnoreEntry = new ToolStripMenuItemEx(TextHelper.GetString("Label.IgnoreEntry"), null, IgnoreEntry_Click);
-            ClearIgnoredEntries = new ToolStripMenuItemEx(TextHelper.GetString("Label.ClearIgnoredEntries"), null, ClearIgnoredEntries_Click);
-            NextEntry = new ToolStripMenuItemEx(TextHelper.GetString("Label.NextEntry"), null, NextEntry_Click);
-            PreviousEntry = new ToolStripMenuItemEx(TextHelper.GetString("Label.PreviousEntry"), null, PreviousEntry_Click);
+            ClearEntries = new ToolStripMenuItem(TextHelper.GetString("Label.ClearEntries"), null, ClearEntries_Click);
+            CopyEntry = new ToolStripMenuItem(TextHelper.GetString("Label.CopyEntry"), null, CopyEntry_Click);
+            IgnoreEntry = new ToolStripMenuItem(TextHelper.GetString("Label.IgnoreEntry"), null, IgnoreEntry_Click);
+            ClearIgnoredEntries = new ToolStripMenuItem(TextHelper.GetString("Label.ClearIgnoredEntries"), null, ClearIgnoredEntries_Click);
+            NextEntry = new ToolStripMenuItem(TextHelper.GetString("Label.NextEntry"), null, NextEntry_Click);
+            PreviousEntry = new ToolStripMenuItem(TextHelper.GetString("Label.PreviousEntry"), null, PreviousEntry_Click);
 
             CopyEntry.ShortcutKeyDisplayString = DataConverter.KeysToString(CopyEntryKeys);
             IgnoreEntry.ShortcutKeyDisplayString = DataConverter.KeysToString(IgnoreEntryKeys);
@@ -40,17 +40,17 @@ namespace ResultsPanel
             Renderer = new DockPanelStripRenderer(false);
         }
 
-        public ToolStripMenuItemEx ClearEntries { get; }
+        public ToolStripMenuItem ClearEntries { get; }
 
-        public ToolStripMenuItemEx CopyEntry { get; }
+        public ToolStripMenuItem CopyEntry { get; }
 
-        public ToolStripMenuItemEx IgnoreEntry { get; }
+        public ToolStripMenuItem IgnoreEntry { get; }
 
-        public ToolStripMenuItemEx ClearIgnoredEntries { get; }
+        public ToolStripMenuItem ClearIgnoredEntries { get; }
 
-        public ToolStripMenuItemEx NextEntry { get; }
+        public ToolStripMenuItem NextEntry { get; }
 
-        public ToolStripMenuItemEx PreviousEntry { get; }
+        public ToolStripMenuItem PreviousEntry { get; }
         
         protected override void OnOpening(CancelEventArgs e)
         {

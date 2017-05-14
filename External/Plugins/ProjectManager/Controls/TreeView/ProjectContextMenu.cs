@@ -10,7 +10,6 @@ using PluginCore.Localization;
 using PluginCore.Helpers;
 using PluginCore;
 using PluginCore.Utilities;
-using PluginCore.Controls;
 
 namespace ProjectManager.Controls.TreeView
 {
@@ -46,12 +45,12 @@ namespace ProjectManager.Controls.TreeView
         public ToolStripMenuItem DocumentClass = new ToolStripMenuItem(TextHelper.GetString("Label.DocumentClass"));
         public ToolStripMenuItem SetDocumentClass = new ToolStripMenuItem(TextHelper.GetString("Label.SetDocumentClass"), Icons.DocumentClass.Img);
         public ToolStripMenuItem AddLibrary = new ToolStripMenuItem(TextHelper.GetString("Label.AddToLibrary"));
-        public ToolStripMenuItem TestMovie = new ToolStripMenuItemEx(TextHelper.GetString("Label.TestMovie"), Icons.GreenCheck.Img);
-        public ToolStripMenuItem RunProject = new ToolStripMenuItemEx(TextHelper.GetString("Label.RunProject"));
-        public ToolStripMenuItem BuildProject = new ToolStripMenuItemEx(TextHelper.GetString("Label.BuildProject"), Icons.Gear.Img);
-        public ToolStripMenuItem CleanProject = new ToolStripMenuItemEx(TextHelper.GetString("Label.CleanProject"));
-        public ToolStripMenuItem CloseProject = new ToolStripMenuItemEx(TextHelper.GetString("Label.CloseProject"));
-        public ToolStripMenuItem Properties = new ToolStripMenuItemEx(TextHelper.GetString("Label.Properties"), Icons.Options.Img);
+        public ToolStripMenuItem TestMovie = new ToolStripMenuItem(TextHelper.GetString("Label.TestMovie"), Icons.GreenCheck.Img);
+        public ToolStripMenuItem RunProject = new ToolStripMenuItem(TextHelper.GetString("Label.RunProject"));
+        public ToolStripMenuItem BuildProject = new ToolStripMenuItem(TextHelper.GetString("Label.BuildProject"), Icons.Gear.Img);
+        public ToolStripMenuItem CleanProject = new ToolStripMenuItem(TextHelper.GetString("Label.CleanProject"));
+        public ToolStripMenuItem CloseProject = new ToolStripMenuItem(TextHelper.GetString("Label.CloseProject"));
+        public ToolStripMenuItem Properties = new ToolStripMenuItem(TextHelper.GetString("Label.Properties"), Icons.Options.Img);
         public ToolStripMenuItem ShellMenu = new ToolStripMenuItem(TextHelper.GetString("Label.ShellMenu"));
         public ToolStripMenuItem TestAllProjects = new ToolStripMenuItem(TextHelper.GetString("Label.TestAllProjects"));
         public ToolStripMenuItem BuildAllProjects = new ToolStripMenuItem(TextHelper.GetString("Label.BuildAllProjects"));
@@ -73,12 +72,12 @@ namespace ProjectManager.Controls.TreeView
             NothingToDo.Enabled = false;
             NoProjectOutput.Enabled = false;
             // Register menu items
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.TestMovie", TestMovie);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.Properties", Properties);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.RunProject", RunProject);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.BuildProject", BuildProject);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.CleanProject", CleanProject);
-            PluginBase.MainForm.RegisterSecondaryItem("ProjectMenu.CloseProject", CloseProject);
+            PluginBase.MainForm.RegisterShortcut("Project.TestMovie", TestMovie);
+            PluginBase.MainForm.RegisterShortcut("Project.Properties", Properties);
+            PluginBase.MainForm.RegisterShortcut("Project.RunProject", RunProject);
+            PluginBase.MainForm.RegisterShortcut("Project.BuildProject", BuildProject);
+            PluginBase.MainForm.RegisterShortcut("Project.CleanProject", CleanProject);
+            PluginBase.MainForm.RegisterShortcut("Project.CloseProject", CloseProject);
             // Set default key strings
             if (PluginBase.Settings.ViewShortcuts)
             {
@@ -87,6 +86,7 @@ namespace ProjectManager.Controls.TreeView
                 this.Copy.ShortcutKeyDisplayString = DataConverter.KeysToString(Keys.Control | Keys.C);
                 this.Paste.ShortcutKeyDisplayString = DataConverter.KeysToString(Keys.Control | Keys.P);
                 this.Delete.ShortcutKeyDisplayString = DataConverter.KeysToString(Keys.Delete);
+                this.Rename.ShortcutKeyDisplayString = DataConverter.KeysToString(Keys.F2);
             }
         }
 
@@ -250,7 +250,7 @@ namespace ProjectManager.Controls.TreeView
 
         public void AssignShortcuts()
         {
-            Rename.ShortcutKeys = (Rename.Enabled) ? Keys.F2 : Keys.None;
+
         }
 
         #endregion

@@ -127,30 +127,32 @@ namespace BasicCompletion
             if (document == null || !document.IsEditable) return;
             switch (e.Type)
             {
-                case EventType.Keys:
-                {
-                    ShortcutKeys keys = (e as KeyEvent).Keys;
-                    if (this.isSupported && keys == (Keys.Control | Keys.Space))
+                case EventType.ShortcutKeys:
+                    if (this.isSupported)
                     {
-                        String lang = document.SciControl.ConfigurationLanguage;
-                        List<ICompletionListItem> items = this.GetCompletionListItems(lang, document.FileName);
-                        if (items != null && items.Count > 0)
+                        switch (((ShortcutKeysEvent) e).Id)
                         {
-                            items.Sort();
-                            Int32 curPos = document.SciControl.CurrentPos - 1;
-                            String curWord = document.SciControl.GetWordLeft(curPos, false);
-                            if (curWord == null) curWord = String.Empty;
-                            CompletionList.Show(items, false, curWord);
-                            e.Handled = true;
+                            case "Completion.ListMembers":
+                                String lang = document.SciControl.ConfigurationLanguage;
+                                List<ICompletionListItem> items = this.GetCompletionListItems(lang, document.FileName);
+                                if (items != null && items.Count > 0)
+                                {
+                                    items.Sort();
+                                    Int32 curPos = document.SciControl.CurrentPos - 1;
+                                    String curWord = document.SciControl.GetWordLeft(curPos, false);
+                                    if (curWord == null) curWord = String.Empty;
+                                    CompletionList.Show(items, false, curWord);
+                                    e.Handled = true;
+                                }
+                                break;
+
+                            case "Completion.ListClasses":
+                                PluginBase.MainForm.CallCommand("InsertSnippet", "null");
+                                e.Handled = true;
+                                break;
                         }
                     }
-                    else if (this.isSupported && keys == (Keys.Control | Keys.Alt | Keys.Space))
-                    {
-                        PluginBase.MainForm.CallCommand("InsertSnippet", "null");
-                        e.Handled = true;
-                    }
                     break;
-                }
                 case EventType.UIStarted:
                 {
                     this.isSupported = false;
@@ -275,9 +277,12 @@ namespace BasicCompletion
         {
             UITools.Manager.OnCharAdded += new UITools.CharAddedHandler(this.SciControlCharAdded);
             UITools.Manager.OnTextChanged += new UITools.TextChangedHandler(this.SciControlTextChanged);
-            EventType eventTypes = EventType.Keys | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Command | EventType.UIStarted | EventType.UIClosing;
+            EventType eventTypes = EventType.ShortcutKeys | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Command | EventType.UIStarted | EventType.UIClosing;
             EventManager.AddEventHandler(this, EventType.Completion, HandlingPriority.Low);
             EventManager.AddEventHandler(this, eventTypes);
+
+            PluginBase.MainForm.RegisterShortcut("Completion.ListMembers", Keys.Control | Keys.Space);
+            PluginBase.MainForm.RegisterShortcut("Completion.ListClasses", Keys.Control | Keys.Alt | Keys.Space);
         }
 
         /// <summary>

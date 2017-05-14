@@ -32,14 +32,15 @@ namespace CodeRefactor
         private String pluginHelp = "www.flashdevelop.org/community/";
         private String pluginDesc = "Adds refactoring capabilities to FlashDevelop.";
         private String pluginAuth = "FlashDevelop Team";
-        private ToolStripMenuItemEx editorReferencesItem;
-        private ToolStripMenuItemEx viewReferencesItem;
+        private ToolStripMenuItem editorReferencesItem;
+        private ToolStripMenuItem viewReferencesItem;
         private SurroundMenu surroundContextMenu;
         private RefactorMenu refactorContextMenu;
         private RefactorMenu refactorMainMenu;
         private Settings settingObject;
         private String settingFilename;
-        TreeView projectTreeView;
+        private TreeView projectTreeView;
+        private ToolStripMenuItem projectTreeViewMoveItem;
 
         public const string TraceGroup = "CodeRefactor";
         
@@ -293,13 +294,12 @@ namespace CodeRefactor
             editorMenu.Items.Insert(4, this.surroundContextMenu);
             PluginBase.MainForm.MenuStrip.Items.Insert(5, this.refactorMainMenu);
             ToolStripMenuItem searchMenu = PluginBase.MainForm.FindMenuItem("SearchMenu") as ToolStripMenuItem;
-            this.viewReferencesItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.FindAllReferences"), null, this.FindAllReferencesClicked);
-            this.editorReferencesItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.FindAllReferences"), null, this.FindAllReferencesClicked);
-            PluginBase.MainForm.RegisterShortcutItem("SearchMenu.ViewReferences", this.viewReferencesItem);
-            PluginBase.MainForm.RegisterSecondaryItem("SearchMenu.ViewReferences", this.editorReferencesItem);
+            this.viewReferencesItem = new ToolStripMenuItem(TextHelper.GetString("Label.FindAllReferences"), null, this.FindAllReferencesClicked);
+            this.editorReferencesItem = new ToolStripMenuItem(TextHelper.GetString("Label.FindAllReferences"), null, this.FindAllReferencesClicked);
             searchMenu.DropDownItems.Add(new ToolStripSeparator());
             searchMenu.DropDownItems.Add(this.viewReferencesItem);
             editorMenu.Items.Insert(8, this.editorReferencesItem);
+            this.projectTreeViewMoveItem = new ToolStripMenuItem(TextHelper.GetString("Label.Move"), null, this.OnMoveItemClick);
         }
 
         /// <summary>
@@ -307,24 +307,16 @@ namespace CodeRefactor
         /// </summary>
         private void RegisterMenuItems()
         {
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.Rename", (ToolStripMenuItemEx) this.refactorMainMenu.RenameMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.Move", (ToolStripMenuItemEx) this.refactorMainMenu.MoveMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.ExtractMethod", (ToolStripMenuItemEx) this.refactorMainMenu.ExtractMethodMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.ExtractLocalVariable", (ToolStripMenuItemEx) this.refactorMainMenu.ExtractLocalVariableMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.GenerateDelegateMethods", (ToolStripMenuItemEx) this.refactorMainMenu.DelegateMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.OrganizeImports", (ToolStripMenuItemEx) this.refactorMainMenu.OrganizeMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.TruncateImports", (ToolStripMenuItemEx) this.refactorMainMenu.TruncateMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.CodeGenerator", (ToolStripMenuItemEx) this.refactorMainMenu.CodeGeneratorMenuItem);
-            PluginBase.MainForm.RegisterShortcutItem("RefactorMenu.BatchProcess", (ToolStripMenuItemEx) this.refactorMainMenu.BatchMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.Rename", this.refactorContextMenu.RenameMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.Move", this.refactorContextMenu.MoveMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.ExtractMethod", this.refactorContextMenu.ExtractMethodMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.ExtractLocalVariable", this.refactorContextMenu.ExtractLocalVariableMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.GenerateDelegateMethods", this.refactorContextMenu.DelegateMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.OrganizeImports", this.refactorContextMenu.OrganizeMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.TruncateImports", this.refactorContextMenu.TruncateMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.CodeGenerator", this.refactorContextMenu.CodeGeneratorMenuItem);
-            PluginBase.MainForm.RegisterSecondaryItem("RefactorMenu.BatchProcess", this.refactorContextMenu.BatchMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Search.ViewReferences", this.viewReferencesItem, this.editorReferencesItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.Rename", this.refactorMainMenu.RenameMenuItem, this.refactorContextMenu.RenameMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.Move", this.refactorMainMenu.MoveMenuItem, this.refactorContextMenu.MoveMenuItem, this.projectTreeViewMoveItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.ExtractMethod", this.refactorMainMenu.ExtractMethodMenuItem, this.refactorContextMenu.ExtractMethodMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.ExtractLocalVariable", this.refactorMainMenu.ExtractLocalVariableMenuItem, this.refactorContextMenu.ExtractLocalVariableMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.GenerateDelegateMethods", this.refactorMainMenu.DelegateMenuItem, this.refactorContextMenu.DelegateMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.OrganizeImports", this.refactorMainMenu.OrganizeMenuItem, this.refactorContextMenu.OrganizeMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.TruncateImports", this.refactorMainMenu.TruncateMenuItem, this.refactorContextMenu.TruncateMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.CodeGenerator", Keys.Control | Keys.Shift | Keys.D1, this.refactorMainMenu.CodeGeneratorMenuItem, this.refactorContextMenu.CodeGeneratorMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.BatchProcess", this.refactorMainMenu.BatchMenuItem, this.refactorContextMenu.BatchMenuItem);
         }
 
         private void RegisterTraceGroups()
@@ -755,10 +747,7 @@ namespace CodeRefactor
             var menu = (ProjectContextMenu) projectTreeView.ContextMenuStrip;
             var index = menu.Items.IndexOf(menu.Rename);
             if (index == -1) return;
-            var item = new ToolStripMenuItemEx(TextHelper.GetString("Label.Move"));
-            item.ShortcutKeys = PluginBase.MainForm.GetShortcutKeys("RefactorMenu.Move");
-            item.Click += OnMoveItemClick;
-            menu.Items.Insert(index + 1, item);
+            menu.Items.Insert(index + 1, projectTreeViewMoveItem);
         }
 
         void OnMoveItemClick(object sender, EventArgs eventArgs)

@@ -158,8 +158,8 @@ namespace LayoutManager
         {
             String label = TextHelper.GetString("Label.ViewMenuItem");
             ToolStripMenuItem viewMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            ToolStripMenuItemEx viewItem = new ToolStripMenuItemEx(label, this.pluginImage, new EventHandler(this.OpenPanel));
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowLayouts", viewItem);
+            ToolStripMenuItem viewItem = new ToolStripMenuItem(label, this.pluginImage, this.OpenPanel);
+            PluginBase.MainForm.RegisterShortcut("View.ShowLayouts", viewItem);
             viewMenu.DropDownItems.Add(viewItem);
         }
 

@@ -138,8 +138,8 @@ namespace OutputPanel
                     }
                     break;
 
-                case EventType.Keys:
-                    e.Handled = this.pluginUI.OnShortcut((Keys) (e as KeyEvent).Keys);
+                case EventType.ShortcutKeys:
+                    e.Handled = this.pluginUI.OnShortcut((Keys) (e as ShortcutKeysEvent).ShortcutKeys);
                     break;
 
                 case EventType.ApplySettings:
@@ -203,7 +203,7 @@ namespace OutputPanel
         /// </summary>
         public void AddEventHandlers()
         {
-            EventType eventMask = EventType.ProcessStart | EventType.ProcessEnd | EventType.Trace | EventType.ApplySettings | EventType.Keys | EventType.UIStarted
+            EventType eventMask = EventType.ProcessStart | EventType.ProcessEnd | EventType.Trace | EventType.ApplySettings | EventType.ShortcutKeys | EventType.UIStarted
                 | EventType.Command;
             EventManager.AddEventHandler(this, eventMask);
         }
@@ -215,8 +215,8 @@ namespace OutputPanel
         {
             String label = TextHelper.GetString("Label.ViewMenuItem");
             ToolStripMenuItem viewMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            ToolStripMenuItemEx viewItem = new ToolStripMenuItemEx(label, this.pluginImage, new EventHandler(this.OpenPanel));
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowOutput", viewItem);
+            ToolStripMenuItem viewItem = new ToolStripMenuItem(label, this.pluginImage, this.OpenPanel);
+            PluginBase.MainForm.RegisterShortcut("View.ShowOutput", viewItem);
             viewMenu.DropDownItems.Add(viewItem);
         }
 

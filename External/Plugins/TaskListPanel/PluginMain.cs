@@ -173,8 +173,8 @@ namespace TaskListPanel
         public void CreateMenuItem()
         {
             ToolStripMenuItem viewMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            ToolStripMenuItemEx viewItem = new ToolStripMenuItemEx(TextHelper.GetString("Label.ViewMenuItem"), this.pluginImage, new EventHandler(this.OpenPanel), null);
-            PluginBase.MainForm.RegisterShortcutItem("ViewMenu.ShowTasks", viewItem);
+            ToolStripMenuItem viewItem = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), this.pluginImage, this.OpenPanel, null);
+            PluginBase.MainForm.RegisterShortcut("View.ShowTasks", viewItem);
             viewMenu.DropDownItems.Add(viewItem);
         }
 
