@@ -29,14 +29,7 @@ namespace FlashDevelop.Managers
                 }
             }
 
-            // Redundant
-            var item = ShortcutManager.GetRegisteredItem(name);
-            if (item != null && item.Items.Length > 0)
-            {
-                return item.Items[0];
-            }
-
-            return null;
+            return Globals.MainForm.GetShortcutItem(name);
         }
 
         /// <summary>
@@ -52,8 +45,7 @@ namespace FlashDevelop.Managers
                     found.Add(Items[i]);
                 }
             }
-
-            // Redundant
+            
             var item = ShortcutManager.GetRegisteredItem(name);
             if (item != null)
             {

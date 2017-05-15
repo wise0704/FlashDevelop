@@ -373,7 +373,7 @@ namespace AS3Context
             viewButton.ToolTipText = TextHelper.GetStringWithoutMnemonics("Label.ViewMenuItem");
             viewButton.Click += OpenPanel;
 
-            PluginBase.MainForm.RegisterShortcut("View.ShowProfiler", viewItem, viewButton);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowProfiler", viewItem, viewButton);
         }
 
         /// <summary>

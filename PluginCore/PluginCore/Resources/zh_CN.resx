@@ -6204,4 +6204,8 @@ AND - All conditions are met.</value>
     <value>Disable extended shortcut keys. Extended shortcut keys allow two key combinations to be input as one shortcut.</value>
     <comment>Added after 5.2.0</comment>
   </data>
+  <data name="FlashDebugger.Label.Windows" xml:space="preserve">
+    <value>&amp;Windows</value>
+    <comment>Added after 5.2.0</comment>
+  </data>
 </root>

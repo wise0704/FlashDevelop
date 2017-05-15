@@ -41,15 +41,6 @@ namespace FlashDebugger
             Image imgNext = PluginBase.MainForm.GetAutoAdjustedImage(Resource.Next);
             Image imgFinish = PluginBase.MainForm.GetAutoAdjustedImage(Resource.Finish);
             
-            ToolStripMenuItem viewMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("ViewMenu");
-            var viewBreakpoints = new ToolStripMenuItem(TextHelper.GetString("Label.ViewBreakpointsPanel"), pluginImage, OpenBreakPointPanel);
-            var viewLocalVariables = new ToolStripMenuItem(TextHelper.GetString("Label.ViewLocalVariablesPanel"), pluginImage, OpenLocalVariablesPanel);
-            var viewStackframe = new ToolStripMenuItem(TextHelper.GetString("Label.ViewStackframePanel"), pluginImage, OpenStackframePanel);
-            var viewWatch = new ToolStripMenuItem(TextHelper.GetString("Label.ViewWatchPanel"), pluginImage, OpenWatchPanel);
-            var viewImmediate = new ToolStripMenuItem(TextHelper.GetString("Label.ViewImmediatePanel"), pluginImage, OpenImmediatePanel);
-            var viewThreads = new ToolStripMenuItem(TextHelper.GetString("Label.ViewThreadsPanel"), pluginImage, OpenThreadsPanel);
-            viewMenu.DropDownItems.AddRange(new[] { viewBreakpoints, viewLocalVariables, viewStackframe, viewWatch, viewImmediate, viewThreads });
-
             // Menu           
             ToolStripMenuItem debugMenu = (ToolStripMenuItem)PluginBase.MainForm.FindMenuItem("DebugMenu");
             if (debugMenu == null)
@@ -60,6 +51,21 @@ namespace FlashDebugger
                 if (idx < 0) idx = PluginBase.MainForm.MenuStrip.Items.Count - 1;
                 PluginBase.MainForm.MenuStrip.Items.Insert(idx, debugMenu);
             }
+
+            ToolStripMenuItem viewMenu = new ToolStripMenuItem(TextHelper.GetString("Label.Windows"));
+
+            ToolStripMenuItem viewProfiler = PluginBase.MainForm.FindMenuItem("Debug.ShowProfiler") as ToolStripMenuItem;
+            if (viewProfiler != null)
+            {
+                viewMenu.DropDownItems.AddRange(new ToolStripItem[] { viewProfiler, new ToolStripSeparator() });
+            }
+
+            var viewBreakpoints = new ToolStripMenuItem(TextHelper.GetString("Label.ViewBreakpointsPanel"), pluginImage, OpenBreakPointPanel);
+            var viewLocalVariables = new ToolStripMenuItem(TextHelper.GetString("Label.ViewLocalVariablesPanel"), pluginImage, OpenLocalVariablesPanel);
+            var viewStackframe = new ToolStripMenuItem(TextHelper.GetString("Label.ViewStackframePanel"), pluginImage, OpenStackframePanel);
+            var viewWatch = new ToolStripMenuItem(TextHelper.GetString("Label.ViewWatchPanel"), pluginImage, OpenWatchPanel);
+            var viewImmediate = new ToolStripMenuItem(TextHelper.GetString("Label.ViewImmediatePanel"), pluginImage, OpenImmediatePanel);
+            var viewThreads = new ToolStripMenuItem(TextHelper.GetString("Label.ViewThreadsPanel"), pluginImage, OpenThreadsPanel);
 
             StartContinueMenu = new ToolStripMenuItem(TextHelper.GetString("Label.Start"), imgStartContinue, StartContinue_Click);
             PauseMenu = new ToolStripMenuItem(TextHelper.GetString("Label.Pause"), imgPause, debugManager.Pause_Click);
@@ -79,8 +85,10 @@ namespace FlashDebugger
             EnableAllBreakPointsMenu = new ToolStripMenuItem(TextHelper.GetString("Label.EnableAllBreakpoints"), null, ScintillaHelper.EnableAllBreakPoints_Click);
             StartRemoteDebuggingMenu = new ToolStripMenuItem(TextHelper.GetString("Label.StartRemoteDebugging"), null, StartRemote_Click);
 
+            viewMenu.DropDownItems.AddRange(new[] { viewBreakpoints, viewLocalVariables, viewStackframe, viewWatch, viewImmediate, viewThreads });
             debugMenu.DropDownItems.AddRange(new ToolStripItem[]
             {
+                viewMenu, new ToolStripSeparator(),
                 StartContinueMenu, PauseMenu, StopMenu, BreakOnAllMenu, new ToolStripSeparator(),
                 CurrentMenu, RunToCursorMenu, StepMenu, NextMenu, FinishMenu, new ToolStripSeparator(),
                 ToggleBreakPointMenu, DeleteAllBreakPointsMenu, ToggleBreakPointEnableMenu ,DisableAllBreakPointsMenu, EnableAllBreakPointsMenu, new ToolStripSeparator(),
@@ -114,12 +122,12 @@ namespace FlashDebugger
             PluginMain.settingObject.BreakOnThrowChanged += BreakOnThrowChanged;
 
             // Shortcuts
-            PluginBase.MainForm.RegisterShortcut("View.ShowBreakpoints", viewBreakpoints);
-            PluginBase.MainForm.RegisterShortcut("View.ShowLocalVariables", viewLocalVariables);
-            PluginBase.MainForm.RegisterShortcut("View.ShowStackframe", viewStackframe);
-            PluginBase.MainForm.RegisterShortcut("View.ShowWatch", viewWatch);
-            PluginBase.MainForm.RegisterShortcut("View.ShowImmediate", viewImmediate);
-            PluginBase.MainForm.RegisterShortcut("View.ShowThreads", viewThreads);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowBreakpoints", viewBreakpoints);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowLocalVariables", viewLocalVariables);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowStackframe", viewStackframe);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowWatch", viewWatch);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowImmediate", viewImmediate);
+            PluginBase.MainForm.RegisterShortcut("Debug.ShowThreads", viewThreads);
             PluginBase.MainForm.RegisterShortcut("Debug.Start", StartContinueMenu, StartContinueButton);
             PluginBase.MainForm.RegisterShortcut("Debug.Pause", Keys.Control | Keys.Shift | Keys.F5, PauseMenu, PauseButton);
             PluginBase.MainForm.RegisterShortcut("Debug.Stop", Keys.Shift | Keys.F5, StopMenu, StopButton);
