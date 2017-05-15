@@ -5,7 +5,7 @@
 	<button label="Label.CloseAll" click="CloseAll" keyid="File.CloseAll" flags="Enable:!IsAloneInPane" />
 	<separator />
 	<button label="Label.Reload" click="Reload" keyid="File.Modify.Reload" flags="Enable:IsEditable|!IsUntitled" image="66" />
-	<button label="Label.Duplicate" click="Duplicate" keyId="File.Modify.Duplicate" flags="Enable:IsEditable" image="292" />
+	<button label="Label.Duplicate" click="Duplicate" keyid="File.Modify.Duplicate" flags="Enable:IsEditable" image="292" />
 	<button label="Label.Revert" click="Revert" keyid="File.Modify.Revert" flags="Enable:IsEditable|CanUndo" image="73" />
 	<separator />
 	<button label="Label.Save" click="Save" keyid="File.Save" flags="Enable:IsEditable" image="168" />

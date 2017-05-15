@@ -13,5 +13,5 @@
 	<separator />
 	<button label="Label.CommandPrompt" click="PluginCommand" tag="FileExplorer.PromptHere;$(ProjectDir)" image="57" keyid="Tools.GeneralTools.CommandPrompt" />
 	<button label="Label.WindowsExplorer" click="PluginCommand" tag="FileExplorer.Explore;$(ProjectDir)" image="46" keyid="Tools.GeneralTools.WindowsExplorer" />
-	<button label="Label.CodeSnippets" click="EditSnippets" image="341|5|2|2" keyId="Tools.CodeSnippets" />
+	<button label="Label.CodeSnippets" click="EditSnippets" image="341|5|2|2" keyid="Tools.CodeSnippets" />
 </toolbar>
