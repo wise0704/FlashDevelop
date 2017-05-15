@@ -387,13 +387,14 @@ namespace PluginCore.Controls
                     var newEvent = new ShortcutKeysEvent(EventType.ShortcutKeys, e.Id, e.ShortcutKeys);
                     EventManager.DispatchEvent(this, newEvent);
                     ignoreKeys = false;
-                    if (newEvent.Handled) return true;
-
-                    // If not handled - show snippets
-                    if (PluginBase.MainForm.CurrentDocument.IsEditable
-                        && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
+                    if (!newEvent.Handled)
                     {
-                        PluginBase.MainForm.CallCommand("InsertSnippet", "null");
+                        // If not handled - show snippets
+                        if (PluginBase.MainForm.CurrentDocument.IsEditable
+                            && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
+                        {
+                            PluginBase.MainForm.CallCommand("InsertSnippet", "null");
+                        }
                     }
                     return true;
 

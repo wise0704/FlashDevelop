@@ -974,6 +974,7 @@ namespace FlashDevelop
         {
             try
             {
+                UITools.Initialize();
                 String pluginDir = PathHelper.PluginDir; // Plugins of all users
                 if (Directory.Exists(pluginDir)) PluginServices.FindPlugins(pluginDir);
                 if (!this.StandaloneMode) // No user plugins on standalone...
@@ -982,7 +983,6 @@ namespace FlashDevelop
                     if (Directory.Exists(userPluginDir)) PluginServices.FindPlugins(userPluginDir);
                     else Directory.CreateDirectory(userPluginDir);
                 }
-                UITools.Initialize();
                 LayoutManager.BuildLayoutSystems(FileNameHelper.LayoutData);
                 ShortcutManager.LoadCustomShortcuts();
                 ArgumentDialog.LoadCustomArguments();
@@ -2327,7 +2327,7 @@ namespace FlashDevelop
                 ShortcutKeysManager.UpdateShortcutKeys(ref previousKeys, input);
             }
             shortcutId = GetShortcutId(previousKeys);
-            if (shortcutId.Length == 0)
+            if (shortcutId == null)
             {
                 if (ShortcutManager.AllShortcuts.Contains(previousKeys))
                 {

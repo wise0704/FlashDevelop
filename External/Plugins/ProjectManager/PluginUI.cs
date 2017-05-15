@@ -38,7 +38,6 @@ namespace ProjectManager
             #region Build TreeView and Toolbar
 
             menu = new ProjectContextMenu();
-            menu.Rename.Click += RenameNode;
 
             treeBar = new TreeBar(menus, menu);
 

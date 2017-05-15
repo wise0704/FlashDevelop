@@ -274,13 +274,20 @@ namespace FlashDevelop.Managers
                     var item = GetRegisteredItem(arg.Key);
                     if (item != null)
                     {
-                        if (version >= FileVersionExtendedShortcut)
+                        try
                         {
-                            item.Custom = DeserializeKeys(arg.Value);
+                            if (version >= FileVersionExtendedShortcut)
+                            {
+                                item.Custom = DeserializeKeys(arg.Value);
+                            }
+                            else // for backward compatibility
+                            {
+                                item.Custom = new[] { (ShortcutKeys) (Keys) Enum.Parse(typeof(Keys), arg.Value) };
+                            }
                         }
-                        else // for backward compatibility
+                        catch (Exception ex)
                         {
-                            item.Custom = new[] { (ShortcutKeys) (Keys) Enum.Parse(typeof(Keys), arg.Value) };
+                            ErrorManager.ShowError($"{{ \"{arg.Key}\" = \"{arg.Value}\" }}\n{ex.Message}", ex);
                         }
                     }
                 }
@@ -350,25 +357,32 @@ namespace FlashDevelop.Managers
                         var arg = customShortcuts[i];
                         if (arg.Key == item.Id)
                         {
-                            if (version >= FileVersionExtendedShortcut)
+                            try
                             {
-                                newShortcut = DeserializeKeys(arg.Value);
+                                if (version >= FileVersionExtendedShortcut)
+                                {
+                                    newShortcut = DeserializeKeys(arg.Value);
+                                }
+                                else // for backward compatibility
+                                {
+                                    newShortcut = new[] { (ShortcutKeys) (Keys) Enum.Parse(typeof(Keys), arg.Value) };
+                                }
                             }
-                            else // for backward compatibility
+                            catch (Exception ex)
                             {
-                                newShortcut = new[] { (ShortcutKeys) (Keys) Enum.Parse(typeof(Keys), arg.Value) };
+                                ErrorManager.ShowError($"{{ \"{arg.Key}\" = \"{arg.Value}\" }}\n{ex.Message}", ex);
                             }
                             customShortcuts.RemoveAt(i);
                             count--;
                             break;
                         }
                     }
-                    item.Custom = newShortcut;
+                    item.Custom = new List<ShortcutKeys>(newShortcut);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                ErrorManager.ShowError(e);
+                ErrorManager.ShowError(ex);
             }
         }
 
@@ -387,7 +401,7 @@ namespace FlashDevelop.Managers
                 {
                     if (item.IsModified)
                     {
-                        shortcuts.Add(new Argument(item.Id, SerializeKeys(item.Custom)));
+                        shortcuts.Add(new Argument(item.Id, SerializeKeys(item.Custom.ToArray())));
                     }
                 }
                 ObjectSerializer.Serialize(file, shortcuts);
@@ -423,7 +437,7 @@ namespace FlashDevelop.Managers
         /// </summary>
         internal static ShortcutKeys[] DeserializeKeys(string data)
         {
-            string[] strings = data.Split(new[] { ShortcutKeyDelimiter }, StringSplitOptions.None);
+            string[] strings = data.Split(new[] { ShortcutKeyDelimiter }, StringSplitOptions.RemoveEmptyEntries);
             var keys = new ShortcutKeys[strings.Length];
             for (int i = 0; i < strings.Length; i++)
             {
@@ -454,17 +468,17 @@ namespace FlashDevelop.Managers
             {
                 if (Default.Length != Custom.Length)
                 {
-                    return false;
+                    return true;
                 }
                 // This does a sequential equality check, meaning if the order is different, it's considered modified
                 for (int i = 0; i < Default.Length; i++)
                 {
                     if (Default[i] != Custom[i])
                     {
-                        return false;
+                        return true;
                     }
                 }
-                return true;
+                return false;
             }
         }
     }
@@ -473,7 +487,7 @@ namespace FlashDevelop.Managers
     {
         string Id { get; }
         ShortcutKeys[] Default { get; }
-        ShortcutKeys[] Custom { get; set; }
+        List<ShortcutKeys> Custom { get; set; }
         bool IsModified { get; }
     }
 }

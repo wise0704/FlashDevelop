@@ -217,6 +217,7 @@ namespace PluginCore.Helpers
             names = new Dictionary<Keys, string>();
             keys = new Dictionary<string, Keys>();
             Add(Keys.Enter, "Enter"); // Keys.Return
+            Add(Keys.Pause, "Break");
             Add(Keys.CapsLock, "CapsLock"); // Keys.Capital
             Add(Keys.HangulMode, "HangulMode"); // Keys.HanguelMode, Keys.KannaMode
             Add(Keys.HanjaMode, "HanjaMode"); // Keys.KanjiMode

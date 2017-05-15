@@ -254,6 +254,7 @@ namespace ProjectManager
             pluginUI.Menu.Copy.Click += delegate { TreeCopyItems(); };
             pluginUI.Menu.Paste.Click += delegate { TreePasteItems(); };
             pluginUI.Menu.Delete.Click += delegate { TreeDeleteItems(); };
+            pluginUI.Menu.Rename.Click += delegate { TreeRenameItem(); };
             pluginUI.Menu.LibraryOptions.Click += delegate { TreeLibraryOptions(); };
             pluginUI.Menu.HideItem.Click += delegate { TreeHideItems(); };
             pluginUI.Menu.ShowHidden.Click += delegate { ToggleShowHidden(); };
