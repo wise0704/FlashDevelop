@@ -352,7 +352,7 @@ namespace FlashDevelop.Dialogs
             this.keyHeader.Text = TextHelper.GetString("Label.Shortcut");
             this.infoLabel.Text = TextHelper.GetString("Info.ShortcutEditInfo");
             this.closeButton.Text = TextHelper.GetString("Label.Close");
-            this.removeButton.Text = TextHelper.GetString("Label.RemoveShortcut");
+            this.removeButton.Text = TextHelper.GetString("Label.Remove");
             this.pressNewLabel.Text = TextHelper.GetString("Info.PressNewShortcut");
             this.addButton.Text = TextHelper.GetString("Label.Add");
             this.searchLabel.Text = TextHelper.GetString("Label.ShortcutSearch");

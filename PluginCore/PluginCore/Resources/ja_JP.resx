@@ -6256,4 +6256,8 @@ AND - All conditions are met.</value>
     <value>&amp;Windows</value>
     <comment>Added after 5.2.0</comment>
   </data>
+  <data name="FlashDevelop.Label.Remove" xml:space="preserve">
+    <value>&amp;Remove</value>
+    <comment>Added after 5.2.0</comment>
+  </data>
 </root>
