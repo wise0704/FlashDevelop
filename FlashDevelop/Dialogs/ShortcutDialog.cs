@@ -403,7 +403,6 @@ namespace FlashDevelop.Dialogs
         {
             this.idHeader.Width = ScaleHelper.Scale(this.idHeader.Width);
             this.keyHeader.Width = ScaleHelper.Scale(this.keyHeader.Width);
-            this.comboBox.ItemHeight = ScaleHelper.Scale(this.comboBox.ItemHeight);
         }
 
         #endregion
@@ -583,7 +582,10 @@ namespace FlashDevelop.Dialogs
             this.listView.BeginUpdate();
             foreach (ShortcutListItem item in this.listView.Items)
             {
-                this.RevertToDefault(item);
+                if (item.IsModified)
+                {
+                    this.RevertToDefault(item);
+                }
             }
             this.listView.EndUpdate();
         }
@@ -1167,24 +1169,28 @@ namespace FlashDevelop.Dialogs
                             // Had an indirect conflict with extended shortcuts that share the same first keys
                             foreach (var second2 in first.Values)
                             {
-                                for (int i = 0; i < second2.Count; i++)
+                                if (second2.Count == 1)
                                 {
-                                    UpdateItemDisplayStatus(second2[i], this.HasConflicts(second2[i]));
+                                    UpdateItemDisplayStatus(second2[0], this.HasConflicts(second2[0]));
                                 }
                             }
                         }
-                        else if (first.ContainsKey(Keys.None))
+                        else if (first.TryGetValue(Keys.None, out second))
                         {
                             // Had an indirect conflict with simple shortcuts that share the same first keys
+                            if (first.Count == 1 || second.Count == 1)
+                            {
+                                UpdateItemDisplayStatus(second[0], this.HasConflicts(second[0]));
+                            }
                         }
                     }
                 }
                 else
                 {
                     // Had a direct conflict with two shortcuts that share the same keys
-                    for (int i = 0; i < second.Count; i++)
+                    if (second.Count == 1)
                     {
-                        UpdateItemDisplayStatus(second[i], this.HasConflicts(second[i]));
+                        UpdateItemDisplayStatus(second[0], this.HasConflicts(second[0]));
                     }
                 }
 
