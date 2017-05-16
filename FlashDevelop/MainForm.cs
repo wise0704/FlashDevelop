@@ -1622,6 +1622,14 @@ namespace FlashDevelop
             {
                 switch (m.Msg)
                 {
+                    case 0x100: // WM_KEYDOWN
+                    case 0x104: // WM_SYSKEYDOWN
+                        if (PreProcessCmdKey(ref m, (Keys) unchecked(m.WParam) | ModifierKeys))
+                        {
+                            return true;
+                        }
+                        break;
+
                     case 0x201: // WM_LBUTTONDOWN
                     case 0x204: // WM_RBUTTONDOWN
                     case 0x207: // WM_MBUTTONDOWN
@@ -1660,7 +1668,7 @@ namespace FlashDevelop
         /// <summary>
         /// Handles the application shortcuts
         /// </summary>
-        protected override bool ProcessCmdKey(ref Message m, Keys keyData)
+        private bool PreProcessCmdKey(ref Message m, Keys keyData)
         {
             /*
              * Don't process ControlKey, ShiftKey or Menu
@@ -1671,7 +1679,7 @@ namespace FlashDevelop
                 case Keys.ControlKey:
                 case Keys.ShiftKey:
                 case Keys.Menu:
-                    return base.ProcessCmdKey(ref m, keyData);
+                    return false;
             }
 
             /*
@@ -1691,7 +1699,7 @@ namespace FlashDevelop
                 #pragma warning disable CS0612 // Type or member is obsolete
                     DispatchKeyEvent(keyData)
                 #pragma warning restore CS0612 // Type or member is obsolete
-                     || TabbingManager.ProcessCmdKeys(ref m, keyData);
+                     || TabbingManager.ProcessCmdKey(ref m, keyData);
             }
             if (!e.Handled && item != null)
             {
@@ -1724,7 +1732,7 @@ namespace FlashDevelop
                 return true;
             }
 
-            /**
+            /*
              * Shortcut exists but not handled
              */
             if (ShortcutManager.AllShortcuts.Contains(currentKeys))
@@ -1741,7 +1749,7 @@ namespace FlashDevelop
                 return true;
             }
 
-            /**
+            /*
              * Shortcut does not exist
              */
             if (currentKeys.IsExtended)
@@ -1829,7 +1837,7 @@ namespace FlashDevelop
             }
             return appSettings.DisableExtendedShortcutKeys ? 2 : 0;
         }
-
+        
         /// <summary>
         /// Notifies the plugins for the SyntaxChange event
         /// </summary>
@@ -2294,7 +2302,7 @@ namespace FlashDevelop
         {
             ShortcutManager.UpdateShortcutKeyDisplayString(item);
         }
-
+        
         /// <summary>
         /// A utility method for handling extended shortcuts where the context prevents the default mechanism (e.g. in a dialog form).
         /// Returns <code>true</code> if the current key press is processed; <code>false</code> otherwise.

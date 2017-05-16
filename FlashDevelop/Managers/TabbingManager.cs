@@ -20,7 +20,7 @@ namespace FlashDevelop.Managers
             SequentialIndex = 0;
         }
 
-        internal static bool ProcessCmdKeys(ref Message m, Keys keyData)
+        internal static bool ProcessCmdKey(ref Message m, Keys keyData)
         {
             switch (keyData)
             {
