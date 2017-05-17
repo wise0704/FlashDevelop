@@ -974,7 +974,7 @@ namespace FlashDevelop
         {
             try
             {
-                UITools.Initialize();
+                UITools.Initialize(); // UITools "plugin" is loaded first
                 String pluginDir = PathHelper.PluginDir; // Plugins of all users
                 if (Directory.Exists(pluginDir)) PluginServices.FindPlugins(pluginDir);
                 if (!this.StandaloneMode) // No user plugins on standalone...
@@ -1733,7 +1733,8 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled
              */
-            if (ShortcutManager.AllShortcuts.Contains(currentKeys))
+            if (ShortcutManager.AllShortcuts.Contains(currentKeys)
+                && ShortcutKeysManager.IsValidShortcut(currentKeys)) // Hacky, but required until contextual shortcut is implemented... 
             {
                 lockStatusLabel = false;
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);

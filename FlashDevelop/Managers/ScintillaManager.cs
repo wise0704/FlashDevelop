@@ -316,16 +316,7 @@ namespace FlashDevelop.Managers
                 sci.EdgeColumn = settings.PrintMarginColumn;
                 if (sci.EdgeColumn > 0) sci.EdgeMode = 1;
                 else sci.EdgeMode = 0;
-                /**
-                * Add missing ignored keys
-                */
-                foreach (ShortcutKeys keys in ShortcutManager.IgnoredKeys)
-                {
-                    if (!keys.IsNone && !sci.ContainsIgnoredKeys(keys))
-                    {
-                        sci.AddIgnoredKeys(keys);
-                    }
-                }
+                sci.ClearAllCmdKeys(); // Manage the shortcuts ourselves
                 if (hardUpdate)
                 {
                     String lang = sci.ConfigurationLanguage;

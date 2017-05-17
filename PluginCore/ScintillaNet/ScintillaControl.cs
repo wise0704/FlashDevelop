@@ -2411,32 +2411,40 @@ namespace ScintillaNet
         #region Scintilla Methods
 
         /// <summary>
-        /// Adds a new keys to ignore
+        /// This method has been deprecated.
         /// </summary> 
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual void AddIgnoredKeys(Keys keys)
         {
             //ignoredKeys.Add((int)keys, (int)keys);
         }
 
         /// <summary>
-        /// Removes the ignored keys
+        /// This method has been deprecated.
         /// </summary> 
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual void RemoveIgnoredKeys(Keys keys)
         {
             //ignoredKeys.Remove((int)keys);
         }
 
         /// <summary>
-        /// Clears the ignored keys container
+        /// This method has been deprecated.
         /// </summary> 
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual void ClearIgnoredKeys()
         {
             //ignoredKeys.Clear();
         }
 
         /// <summary>
-        /// Does the container have keys?
+        /// This method has been deprecated. Returns <see langword="false"/>.
         /// </summary> 
+        [Obsolete("This method has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual bool ContainsIgnoredKeys(Keys keys)
         {
             //return ignoredKeys.ContainsKey((int)keys);
@@ -5305,10 +5313,129 @@ namespace ScintillaNet
         /// </summary>
         internal static void InitShortcuts()
         {
-            // Reference: http://www.scintilla.org/SciTEDoc.html "Keyboard commands"
-            PluginBase.MainForm.RegisterShortcut("Scintilla.ResetZoom", Keys.Control | Keys.NumPad0);
-            PluginBase.MainForm.RegisterShortcut("Scintilla.ZoomIn", Keys.Control | Keys.Add);
-            PluginBase.MainForm.RegisterShortcut("Scintilla.ZoomOut", Keys.Control | Keys.Subtract);
+            // References:
+            // - KeyMap.cxx in Scintilla source code
+            // - http://www.scintilla.org/ScintillaDoc.html#KeyboardCommands
+            // - http://www.scintilla.org/ScintillaDoc.html#KeyBindings
+
+            // For easier copy paste
+            const Keys SCI_NORM = Keys.None;
+            const Keys SCI_SHIFT = Keys.Shift;
+            const Keys SCI_CTRL = Keys.Control;
+            const Keys SCI_ALT = Keys.Alt;
+            const Keys SCI_CSHIFT = Keys.Control | Keys.Shift;
+            const Keys SCI_ASHIFT = Keys.Alt | Keys.Shift;
+            const Keys SCI_CTRL_META = Keys.Control;
+            const Keys SCI_SCTRL_META = Keys.Control | Keys.Shift;
+            const Keys SCK_DOWN = Keys.Down;
+            const Keys SCK_UP = Keys.Up;
+            const Keys SCK_LEFT = Keys.Left;
+            const Keys SCK_RIGHT = Keys.Right;
+            const Keys SCK_HOME = Keys.Home;
+            const Keys SCK_END = Keys.End;
+            const Keys SCK_PRIOR = Keys.Prior;
+            const Keys SCK_NEXT = Keys.Next;
+            const Keys SCK_DELETE = Keys.Delete;
+            const Keys SCK_INSERT = Keys.Insert;
+            const Keys SCK_ESCAPE = Keys.Escape;
+            const Keys SCK_BACK = Keys.Back;
+            const Keys SCK_TAB = Keys.Tab;
+            const Keys SCK_RETURN = Keys.Return;
+            const Keys SCK_ADD = Keys.Add;
+            const Keys SCK_SUBTRACT = Keys.Subtract;
+            const Keys SCK_DIVIDE = Keys.Divide;
+            //const Keys SCK_WIN = Keys.LWin;
+            //const Keys SCK_RWIN = Keys.RWin;
+            //const Keys SCK_MENU = Keys.Menu;
+
+            // Copy & paste from KeyMap.cxx, use find & replace with regex, and 'Ctrl+K, W' (Edit.CompleteWord) to get method name for example LINEDOWN to LineDown
+            AddShortcut(SCK_DOWN,     SCI_NORM,       nameof(LineDown));
+            AddShortcut(SCK_DOWN,     SCI_SHIFT,      nameof(LineDownExtend));
+            AddShortcut(SCK_DOWN,     SCI_CTRL_META,  nameof(LineScrollDown));
+            AddShortcut(SCK_DOWN,     SCI_ASHIFT,     nameof(LineDownRectExtend));
+            AddShortcut(SCK_UP,       SCI_NORM,       nameof(LineUp));
+            AddShortcut(SCK_UP,       SCI_SHIFT,      nameof(LineUpExtend));
+            AddShortcut(SCK_UP,       SCI_CTRL_META,  nameof(LineScrollUp));
+            AddShortcut(SCK_UP,       SCI_ASHIFT,     nameof(LineUpRectExtend));
+            AddShortcut('[',          SCI_CTRL,       nameof(ParaUp));
+            AddShortcut('[',          SCI_CSHIFT,     nameof(ParaUpExtend));
+            AddShortcut(']',          SCI_CTRL,       nameof(ParaDown));
+            AddShortcut(']',          SCI_CSHIFT,     nameof(ParaDownExtend));
+            AddShortcut(SCK_LEFT,     SCI_NORM,       nameof(CharLeft));
+            AddShortcut(SCK_LEFT,     SCI_SHIFT,      nameof(CharLeftExtend));
+            AddShortcut(SCK_LEFT,     SCI_CTRL_META,  nameof(WordLeft));
+            AddShortcut(SCK_LEFT,     SCI_SCTRL_META, nameof(WordLeftExtend));
+            AddShortcut(SCK_LEFT,     SCI_ASHIFT,     nameof(CharLeftRectExtend));
+            AddShortcut(SCK_RIGHT,    SCI_NORM,       nameof(CharRight));
+            AddShortcut(SCK_RIGHT,    SCI_SHIFT,      nameof(CharRightExtend));
+            AddShortcut(SCK_RIGHT,    SCI_CTRL_META,  nameof(WordRight));
+            AddShortcut(SCK_RIGHT,    SCI_SCTRL_META, nameof(WordRightExtend));
+            AddShortcut(SCK_RIGHT,    SCI_ASHIFT,     nameof(CharRightRectExtend));
+            AddShortcut('/',          SCI_CTRL,       nameof(WordPartLeft));
+            AddShortcut('/',          SCI_CSHIFT,     nameof(WordPartLeftExtend));
+            AddShortcut('\\',         SCI_CTRL,       nameof(WordPartRight));
+            AddShortcut('\\',         SCI_CSHIFT,     nameof(WordPartRightExtend));
+            AddShortcut(SCK_HOME,     SCI_NORM,       nameof(VCHome));
+            AddShortcut(SCK_HOME,     SCI_SHIFT,      nameof(VCHomeExtend));
+            AddShortcut(SCK_HOME,     SCI_CTRL,       nameof(DocumentStart));
+            AddShortcut(SCK_HOME,     SCI_CSHIFT,     nameof(DocumentStartExtend));
+            AddShortcut(SCK_HOME,     SCI_ALT,        nameof(HomeDisplay));
+            AddShortcut(SCK_HOME,     SCI_ASHIFT,     nameof(VCHomeRectExtend));
+            AddShortcut(SCK_END,      SCI_NORM,       nameof(LineEnd));
+            AddShortcut(SCK_END,      SCI_SHIFT,      nameof(LineEndExtend));
+            AddShortcut(SCK_END,      SCI_CTRL,       nameof(DocumentEnd));
+            AddShortcut(SCK_END,      SCI_CSHIFT,     nameof(DocumentEndExtend));
+            AddShortcut(SCK_END,      SCI_ALT,        nameof(LineEndDisplay));
+            AddShortcut(SCK_END,      SCI_ASHIFT,     nameof(LineEndRectExtend));
+            AddShortcut(SCK_PRIOR,    SCI_NORM,       nameof(PageUp));
+            AddShortcut(SCK_PRIOR,    SCI_SHIFT,      nameof(PageUpExtend));
+            AddShortcut(SCK_PRIOR,    SCI_ASHIFT,     nameof(PageUpRectExtend));
+            AddShortcut(SCK_NEXT,     SCI_NORM,       nameof(PageDown));
+            AddShortcut(SCK_NEXT,     SCI_SHIFT,      nameof(PageDownExtend));
+            AddShortcut(SCK_NEXT,     SCI_ASHIFT,     nameof(PageDownRectExtend));
+            AddShortcut(SCK_DELETE,   SCI_NORM,       nameof(Clear));
+          //AddShortcut(SCK_DELETE,   SCI_SHIFT,      nameof(Cut)); // Edit.Cut
+            AddShortcut(SCK_DELETE,   SCI_CTRL,       nameof(DelWordRight));
+            AddShortcut(SCK_DELETE,   SCI_CSHIFT,     nameof(DelLineRight));
+            AddShortcut(SCK_INSERT,   SCI_NORM,       nameof(EditToggleOvertype));
+          //AddShortcut(SCK_INSERT,   SCI_SHIFT,      nameof(Paste)); // Edit.Paste
+          //AddShortcut(SCK_INSERT,   SCI_CTRL,       nameof(Copy)); // Edit.Copy
+            AddShortcut(SCK_ESCAPE,   SCI_NORM,       nameof(Cancel));
+            AddShortcut(SCK_BACK,     SCI_NORM,       nameof(DeleteBack));
+            AddShortcut(SCK_BACK,     SCI_SHIFT,      nameof(DeleteBack));
+            AddShortcut(SCK_BACK,     SCI_CTRL,       nameof(DelWordLeft));
+          //AddShortcut(SCK_BACK,     SCI_ALT,        nameof(Undo)); // Edit.Undo
+            AddShortcut(SCK_BACK,     SCI_CSHIFT,     nameof(DelLineLeft));
+          //AddShortcut('Z',          SCI_CTRL,       nameof(Undo)); // Edit.Undo
+          //AddShortcut('Y',          SCI_CTRL,       nameof(Redo)); // Edit.Redo
+          //AddShortcut('X',          SCI_CTRL,       nameof(Cut)); // Edit.Cut
+          //AddShortcut('C',          SCI_CTRL,       nameof(Copy)); // Edit.Copy
+          //AddShortcut('V',          SCI_CTRL,       nameof(Paste)); // Edit.Paste
+          //AddShortcut('A',          SCI_CTRL,       nameof(SelectAll)); // Edit.SelectAll
+            AddShortcut(SCK_TAB,      SCI_NORM,       nameof(Tab));
+            AddShortcut(SCK_TAB,      SCI_SHIFT,      nameof(BackTab));
+            AddShortcut(SCK_RETURN,   SCI_NORM,       nameof(NewLine));
+          //AddShortcut(SCK_RETURN,   SCI_SHIFT,      nameof(NewLine));
+            AddShortcut(SCK_ADD,      SCI_CTRL,       nameof(ZoomIn));
+            AddShortcut(SCK_SUBTRACT, SCI_CTRL,       nameof(ZoomOut));
+            AddShortcut(SCK_DIVIDE,   SCI_CTRL,       nameof(ResetZoom)); // SCI_SETZOOM ?
+          //AddShortcut('L',          SCI_CTRL,       nameof(LineCut)); // Edit.CutLine
+          //AddShortcut('L',          SCI_CSHIFT,     nameof(LineDelete)); // Edit.DeleteLine
+          //AddShortcut('T',          SCI_CSHIFT,     nameof(LineCopy)); // Edit.CopyLine
+          //AddShortcut('T',          SCI_CTRL,       nameof(LineTranspose)); // Edit.TransposeLines
+          //AddShortcut('D',          SCI_CTRL,       nameof(SelectionDuplicate)); // Edit.DuplicateSelection
+          //AddShortcut('U',          SCI_CTRL,       nameof(LowerCase)); // Edit.ToLowercase
+          //AddShortcut('U',          SCI_CSHIFT,     nameof(UpperCase)); // Edit.ToUppercase
+        }
+
+        private static void AddShortcut(char charCode, Keys modifiers, string command)
+        {
+            AddShortcut(ShortcutKeys.Parse(charCode.ToString()), modifiers, command);
+        }
+
+        private static void AddShortcut(Keys keyCode, Keys modifiers, string command)
+        {
+            PluginBase.MainForm.RegisterShortcut("Scintilla." + command, modifiers | keyCode);
         }
 
         [Obsolete("This method has been deprecated.", true)]
@@ -5320,20 +5447,16 @@ namespace ScintillaNet
         /// </summary>
         internal bool HandleShortcut(ShortcutKeysEvent e)
         {
-            switch (e.Id)
+            if (e.Id != null && e.Id.StartsWithOrdinal("Scintilla."))
             {
-                case "Scintilla.ResetZoom":
-                    ResetZoom();
+                var method = typeof(ScintillaControl).GetMethod(e.Id.Substring(10), new Type[0]);
+                if (method != null)
+                {
+                    method.Invoke(this, null);
                     return true;
-                case "Scintilla.ZoomIn":
-                    ZoomIn();
-                    return true;
-                case "Scintilla.ZoomOut":
-                    ZoomOut();
-                    return true;
-                default:
-                    return false;
+                }
             }
+            return false;
         }
 
         #endregion

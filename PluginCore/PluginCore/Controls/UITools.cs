@@ -102,7 +102,6 @@ namespace PluginCore.Controls
             //
             // Shortcuts
             //
-            PluginBase.MainForm.AddIgnoredKeys(ToggleShowDetailsKey);
             PluginBase.MainForm.RegisterShortcut("Completion.ListMembers", Keys.Control | Keys.Space);
             PluginBase.MainForm.RegisterShortcut("Completion.ParameterInfo", Keys.Control | Keys.Shift | Keys.Space);
             ScintillaControl.InitShortcuts();
@@ -153,14 +152,14 @@ namespace PluginCore.Controls
                 case EventType.ShortcutKeys:
                     var shortcutKeysEvent = (ShortcutKeysEvent) e;
                     var sci = PluginBase.MainForm.CurrentDocument.SciControl;
-                    e.Handled = HandleShortcut(shortcutKeysEvent)
-                        || sci != null && sci.IsFocus && sci.HandleShortcut(shortcutKeysEvent);
+                    e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut(shortcutKeysEvent)
+                        || HandleShortcut(shortcutKeysEvent);
                     return;
             }
             // most of the time, an event should hide the list
             OnUIRefresh(null);
         }
-        
+
         /// <summary>
         /// Reserved to MainForm
         /// </summary>
