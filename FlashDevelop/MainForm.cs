@@ -1683,7 +1683,7 @@ namespace FlashDevelop
             /*
              * Update the current keys
              */
-            currentKeys = ShortcutKeysManager.UpdateShortcutKeys(currentKeys, keyData);
+            currentKeys += keyData;
 
             /*
              * Process shortcut
@@ -1738,12 +1738,12 @@ namespace FlashDevelop
                 if (currentKeys.IsExtended)
                 {
                     lockStatusLabel = false;
-                    StatusLabelText = null;
                 }
                 else
                 {
                     currentKeys = ShortcutKeys.None;
                 }
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
                 return true;
             }
 
@@ -2353,7 +2353,7 @@ namespace FlashDevelop
             /*
              * Update the current keys
              */
-            currentKeys = ShortcutKeysManager.UpdateShortcutKeys(currentKeys, keyData);
+            currentKeys += keyData;
 
             /*
              * Process shortcut
@@ -2387,12 +2387,12 @@ namespace FlashDevelop
                 if (currentKeys.IsExtended)
                 {
                     lockStatusLabel = false;
-                    StatusLabelText = null;
                 }
                 else
                 {
                     currentKeys = ShortcutKeys.None;
                 }
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
                 return true;
             }
 

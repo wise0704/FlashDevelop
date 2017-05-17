@@ -6221,4 +6221,8 @@ AND - 모든 조건을 만족할때.</value>
     <value>&amp;Remove</value>
     <comment>Added after 5.2.0</comment>
   </data>
+  <data name="FlashDevelop.Info.ShortcutUnavailable" xml:space="preserve">
+    <value>The key combination ({0}) is bound to command ({1}) which is not currently available.</value>
+    <comment>Added after 5.2.0</comment>
+  </data>
 </root>

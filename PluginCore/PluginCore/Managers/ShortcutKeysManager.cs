@@ -36,41 +36,7 @@ namespace PluginCore.Managers
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Updates the <see cref="ShortcutKeys"/> value with the specified input <see cref="Keys"/> value,
-        /// and returns whether the updated <paramref name="shortcutKeys"/> is extended.
-        /// </summary>
-        /// <param name="shortcutKeys">The reference to the <see cref="ShortcutKeys"/> value to update.</param>
-        /// <param name="input">The <see cref="Keys"/> value to update with.</param>
-        public static ShortcutKeys UpdateShortcutKeys(ShortcutKeys shortcutKeys, Keys input)
-        {
-            if (shortcutKeys.IsSimple &&
-                IsValidExtendedShortcutFirst(shortcutKeys.First) &&
-                IsValidExtendedShortcutSecond(input))
-            {
-                return new ShortcutKeys(shortcutKeys.First, input);
-            }
-
-            return input;
-        }
-
-        /// <summary>
-        /// Retrieves a value indicating whether the specified shortcut key is used by any of the <see cref="ToolStrip"/> controls of a form.
-        /// </summary>
-        /// <param name="shortcut">The shortcut key for which to search.</param>
-        public static bool IsShortcutDefined(ShortcutKeys shortcut)
-        {
-            foreach (ToolStrip strip in ToolStrips)
-            {
-                if (strip != null && strip.Shortcuts().Contains(shortcut))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
+        
         /// <summary>
         /// Retrieves a value indicating whether a defined shortcut key is valid.
         /// </summary>

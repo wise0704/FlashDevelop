@@ -160,6 +160,7 @@ namespace ProjectManager.Helpers
                 {
                     case "EditMenu.Copy":
                         this.lineBox.Copy();
+                        e.Handled = true;
                         break;
                     case "EditMenu.CopyLine":
                         {
@@ -169,22 +170,28 @@ namespace ProjectManager.Helpers
                             this.lineBox.Copy();
                             this.lineBox.Select(start, length);
                         }
+                        e.Handled = true;
                         break;
                     case "EditMenu.Cut":
                         this.lineBox.Cut();
+                        e.Handled = true;
                         break;
                     case "EditMenu.CutLine":
                         this.lineBox.SelectAll();
                         this.lineBox.Cut();
+                        e.Handled = true;
                         break;
                     case "EditMenu.DeleteLine":
                         this.lineBox.Clear();
+                        e.Handled = true;
                         break;
                     case "EditMenu.Paste":
                         this.lineBox.Paste();
+                        e.Handled = true;
                         break;
                     case "EditMenu.SelectAll":
                         this.lineBox.SelectAll();
+                        e.Handled = true;
                         break;
                     case "EditMenu.ToLowercase":
                     case "EditMenu.ToUppercase":
@@ -194,9 +201,11 @@ namespace ProjectManager.Helpers
                             this.lineBox.SelectedText = e.Id == "EditMenu.ToLowercase" ? this.lineBox.SelectedText.ToLower() : this.lineBox.SelectedText.ToUpper();
                             this.lineBox.Select(start, length);
                         }
+                        e.Handled = true;
                         break;
                     case "EditMenu.Undo":
                         this.lineBox.Undo();
+                        e.Handled = true;
                         break;
                 }
             }

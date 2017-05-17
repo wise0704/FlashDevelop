@@ -373,11 +373,11 @@ namespace FlashDevelop.Dialogs
             switch (e.Id)
             {
                 case "View.CollapseAll":
-                    if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.CollapseAllGridItems();
+                    this.itemPropertyGrid.CollapseAllGridItems();
                     e.Handled = true;
                     break;
                 case "View.ExpandAll":
-                    if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.ExpandAllGridItems();
+                    this.itemPropertyGrid.ExpandAllGridItems();
                     e.Handled = true;
                     break;
             }

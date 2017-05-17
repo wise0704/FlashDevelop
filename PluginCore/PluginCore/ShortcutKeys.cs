@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing.Design;
 using System.Windows.Forms;
 using PluginCore.Helpers;
+using PluginCore.Managers;
 
 namespace PluginCore
 {
@@ -26,7 +27,7 @@ namespace PluginCore
         public ShortcutKeys(Keys value)
         {
             m_first = value;
-            m_second = 0;
+            m_second = Keys.None;
         }
 
         /// <summary>
@@ -36,7 +37,7 @@ namespace PluginCore
         /// <param name="second">The <see cref="Keys"/> value of the second part of the shortcut keys combination.</param>
         public ShortcutKeys(Keys first, Keys second)
         {
-            if (first == 0 && second != 0)
+            if (first == Keys.None && second != Keys.None)
             {
                 throw new ArgumentException($"Parameter '{nameof(second)}' must be {nameof(Keys)}.{nameof(Keys.None)} if '{nameof(first)}' is {nameof(Keys)}.{nameof(Keys.None)}.", nameof(second));
             }
@@ -49,39 +50,57 @@ namespace PluginCore
 
         #region Operators
 
-        public static bool operator ==(ShortcutKeys a, ShortcutKeys b)
+        public static bool operator ==(ShortcutKeys left, ShortcutKeys right)
         {
-            return a.m_first == b.m_first && a.m_second == b.m_second;
+            return left.m_first == right.m_first && left.m_second == right.m_second;
         }
 
-        public static bool operator !=(ShortcutKeys a, ShortcutKeys b)
+        public static bool operator !=(ShortcutKeys left, ShortcutKeys right)
         {
-            return a.m_first != b.m_first || a.m_second != b.m_second;
+            return left.m_first != right.m_first || left.m_second != right.m_second;
         }
 
-        public static bool operator ==(ShortcutKeys a, Keys b)
+        public static bool operator ==(ShortcutKeys left, Keys right)
         {
-            return a.m_first == b && a.m_second == 0;
+            return left.m_first == right && left.m_second == Keys.None;
         }
 
-        public static bool operator !=(ShortcutKeys a, Keys b)
+        public static bool operator !=(ShortcutKeys left, Keys right)
         {
-            return a.m_first != b || a.m_second != 0;
+            return left.m_first != right || left.m_second != Keys.None;
         }
 
-        public static bool operator ==(Keys a, ShortcutKeys b)
+        public static bool operator ==(Keys left, ShortcutKeys right)
         {
-            return b.m_first == a && b.m_second == 0;
+            return right.m_first == left && right.m_second == Keys.None;
         }
 
-        public static bool operator !=(Keys a, ShortcutKeys b)
+        public static bool operator !=(Keys left, ShortcutKeys right)
         {
-            return b.m_first != a || b.m_second != 0;
+            return right.m_first != left || right.m_second != Keys.None;
+        }
+
+        public static ShortcutKeys operator +(ShortcutKeys left, Keys right)
+        {
+            ShortcutKeys keys;
+            if (left.IsSimple
+                && ShortcutKeysManager.IsValidExtendedShortcutFirst(left.m_first)
+                && ShortcutKeysManager.IsValidExtendedShortcutSecond(right))
+            {
+                keys.m_first = left.m_first;
+                keys.m_second = right;
+            }
+            else
+            {
+                keys.m_first = right;
+                keys.m_second = Keys.None;
+            }
+            return keys;
         }
 
         public static implicit operator Keys(ShortcutKeys value)
         {
-            return value.IsExtended ? 0 : value.m_first;
+            return value.IsExtended ? Keys.None : value.m_first;
         }
 
         public static implicit operator ShortcutKeys(Keys value)
@@ -152,7 +171,7 @@ namespace PluginCore
         /// </summary>
         public bool IsNone
         {
-            get { return m_first == 0; }
+            get { return m_first == Keys.None; }
         }
 
         /// <summary>
@@ -160,7 +179,7 @@ namespace PluginCore
         /// </summary>
         public bool IsSimple
         {
-            get { return m_second == 0 && m_first != 0; }
+            get { return m_second == Keys.None && m_first != Keys.None; }
         }
 
         /// <summary>
@@ -168,7 +187,7 @@ namespace PluginCore
         /// </summary>
         public bool IsExtended
         {
-            get { return m_second != 0; }
+            get { return m_second != Keys.None; }
         }
 
         #endregion
