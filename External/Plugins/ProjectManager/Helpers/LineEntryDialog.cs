@@ -8,9 +8,8 @@ namespace ProjectManager.Helpers
     /// <summary>
     /// A simple form where a user can enter a text string.
     /// </summary>
-    public class LineEntryDialog : Form
+    public class LineEntryDialog : Form, IModalWindowShortcutHandler
     {
-        private ShortcutKeys currentKeys;
         private string line;
         
         private System.Windows.Forms.TextBox lineBox;
@@ -56,7 +55,6 @@ namespace ProjectManager.Helpers
             this.lineBox.Name = "lineBox";
             this.lineBox.Size = new System.Drawing.Size(260, 20);
             this.lineBox.TabIndex = 0;
-            this.lineBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.LineBox_KeyDown);
             // 
             // btnOK
             // 
@@ -145,12 +143,20 @@ namespace ProjectManager.Helpers
             this.Close();
         }
 
-        private void LineBox_KeyDown(object sender, KeyEventArgs e)
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            string shortcutId;
-            if (PluginBase.MainForm.HandleShortcutManually(ref this.currentKeys, e.KeyData, out shortcutId))
+            if (PluginBase.MainForm.ProcessModalWindowCmdKey(this, ref msg, keyData))
             {
-                switch (shortcutId)
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        {
+            if (this.lineBox.Focused)
+            {
+                switch (e.Id)
                 {
                     case "EditMenu.Copy":
                         this.lineBox.Copy();
@@ -185,7 +191,7 @@ namespace ProjectManager.Helpers
                         {
                             int start = this.lineBox.SelectionStart;
                             int length = this.lineBox.SelectionLength;
-                            this.lineBox.SelectedText = shortcutId == "EditMenu.ToLowercase" ? this.lineBox.SelectedText.ToLower() : this.lineBox.SelectedText.ToUpper();
+                            this.lineBox.SelectedText = e.Id == "EditMenu.ToLowercase" ? this.lineBox.SelectedText.ToLower() : this.lineBox.SelectedText.ToUpper();
                             this.lineBox.Select(start, length);
                         }
                         break;
@@ -193,13 +199,12 @@ namespace ProjectManager.Helpers
                         this.lineBox.Undo();
                         break;
                 }
-                
-                e.SuppressKeyPress = true;
             }
-            else if (e.KeyData == (Keys.Shift | Keys.Delete) || e.KeyData == (Keys.Shift | Keys.Insert))
-            {
-                e.SuppressKeyPress = true;
-            }
+        }
+
+        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        {
+            return ProcessMnemonic(charCode);
         }
     }
 

@@ -224,17 +224,13 @@ namespace PluginCore
         /// </summary>
         void ApplySecondaryShortcut(ToolStripItem item);
         /// <summary>
-        /// A utility method for handling extended shortcuts where the context prevents the default mechanism (e.g. in a dialog form).
-        /// Returns <code>true</code> if the current key press is processed; <code>false</code> otherwise.
-        /// <para/>
-        /// This method alters the value of <code>previousKeys</code>, therefore its value should not be used in context after calling this method.
-        /// <para/>
-        /// When calling from <see cref="Control.ProcessCmdKey(ref Message, Keys)"/>, make sure to return <code>true</code> if this method returns <code>true</code>.
+        /// Processes extended shortcuts on a modal window (e.g. dialog form).
+        /// Returns <see langword="true"/> if the key was processed; <see langword="false"/> otherwise.
         /// </summary>
-        /// <param name="previousKeys">The reference to the stored previous <see cref="ShortcutKeys"/> value.</param>
-        /// <param name="input">The <see cref="Keys"/> value specifying the current keyboard input.</param>
-        /// <param name="shortcutId">The shortcut ID to process, or <see cref="string.Empty"/> if this method returns <code>false</code>.</param>
-        bool HandleShortcutManually(ref ShortcutKeys previousKeys, Keys input, out string shortcutId);
+        /// <param name="handler">The modal window which is processing the keys.</param>
+        /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
+        /// <param name="keyData">One of the <see cref="Keys"/> values that represents the key to process.</param>
+        bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, [Optional] Keys keyData);
         /// <summary>
         /// Create the specified new document from the given template.
         /// </summary>
@@ -678,4 +674,23 @@ namespace PluginCore
         #endregion
     }
 
+    /// <summary>
+    /// Represents a modal window that handles the key input with the extended shortcut mechanism.
+    /// <para/>
+    /// A class implementing this interface should override <see cref="Form.ProcessCmdKey(ref Message, Keys)"/>,
+    /// and call <see cref="IMainForm.ProcessModalWindowCmdKey(IModalWindowShortcutHandler, ref Message, Keys)"/>.
+    /// </summary>
+    public interface IModalWindowShortcutHandler
+    {
+        /// <summary>
+        /// Handles a shortcut keys event.
+        /// </summary>
+        /// <param name="e">A <see cref="ShortcutKeysEvent"/> object containing the shortcut keys event data.</param>
+        void HandleShortcutKeysEvent(ShortcutKeysEvent e);
+        /// <summary>
+        /// Calls <see cref="Form.ProcessMnemonic(char)"/>.
+        /// </summary>
+        /// <param name="charCode">The character to process.</param>
+        bool PerformProcessMnemonic(char charCode);
+    }
 }

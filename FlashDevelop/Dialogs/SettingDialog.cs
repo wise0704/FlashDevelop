@@ -13,7 +13,7 @@ using PluginCore.Managers;
 
 namespace FlashDevelop.Dialogs
 {
-    public class SettingDialog : SmartForm
+    public class SettingDialog : SmartForm, IModalWindowShortcutHandler
     {
         private System.String helpUrl;
         private System.Windows.Forms.ListView itemListView;
@@ -33,7 +33,6 @@ namespace FlashDevelop.Dialogs
         private System.Windows.Forms.Label descLabel;
         private String itemFilter = String.Empty;
         private InstalledSDKContext sdkContext;
-        private ShortcutKeys currentKeys;
         private static Int32 lastItemIndex = 0;
         private static Hashtable requireRestart = new Hashtable();
 
@@ -359,26 +358,36 @@ namespace FlashDevelop.Dialogs
             itemFilter = itemName;
             this.SelectCorrectItem(itemName);
         }
-        
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            string shortcutId;
-            if (Globals.MainForm.HandleShortcutManually(ref this.currentKeys, keyData, out shortcutId))
+            if (Globals.MainForm.ProcessModalWindowCmdKey(this, ref msg, keyData))
             {
-                switch (shortcutId)
-                {
-                    case "View.CollapseAll":
-                        if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.CollapseAllGridItems();
-                        return true;
-                    case "View.ExpandAll":
-                        if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.ExpandAllGridItems();
-                        return true;
-                }
                 return true;
             }
-            return false;
+            return base.ProcessCmdKey(ref msg, keyData);
         }
-        
+
+        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        {
+            switch (e.Id)
+            {
+                case "View.CollapseAll":
+                    if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.CollapseAllGridItems();
+                    e.Handled = true;
+                    break;
+                case "View.ExpandAll":
+                    if (this.itemPropertyGrid.ContainsFocus) this.itemPropertyGrid.ExpandAllGridItems();
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        {
+            return ProcessMnemonic(charCode);
+        }
+
         /// <summary>
         /// Selects the correct setting item
         /// </summary>

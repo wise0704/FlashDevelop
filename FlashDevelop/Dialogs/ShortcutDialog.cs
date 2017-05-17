@@ -834,7 +834,7 @@ namespace FlashDevelop.Dialogs
                     }
                     else
                     {
-                        ShortcutKeysManager.UpdateShortcutKeys(ref this.inputKeys, e.KeyData);
+                        this.inputKeys = ShortcutKeysManager.UpdateShortcutKeys(this.inputKeys, e.KeyData);
                     }
                     this.shortcutTextBox.Text = this.inputKeys.ToString();
                     this.shortcutTextBox.SelectionStart = this.shortcutTextBox.TextLength;

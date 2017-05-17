@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -44,20 +43,16 @@ namespace PluginCore.Managers
         /// </summary>
         /// <param name="shortcutKeys">The reference to the <see cref="ShortcutKeys"/> value to update.</param>
         /// <param name="input">The <see cref="Keys"/> value to update with.</param>
-        public static bool UpdateShortcutKeys(ref ShortcutKeys shortcutKeys, Keys input)
+        public static ShortcutKeys UpdateShortcutKeys(ShortcutKeys shortcutKeys, Keys input)
         {
             if (shortcutKeys.IsSimple &&
                 IsValidExtendedShortcutFirst(shortcutKeys.First) &&
                 IsValidExtendedShortcutSecond(input))
             {
-                shortcutKeys = new ShortcutKeys(shortcutKeys.First, input);
-                return true;
+                return new ShortcutKeys(shortcutKeys.First, input);
             }
-            else
-            {
-                shortcutKeys = input;
-                return false;
-            }
+
+            return input;
         }
 
         /// <summary>
@@ -197,45 +192,11 @@ namespace PluginCore.Managers
         }
 
         /// <summary>
-        /// Retrieves a value indicating whether the specified virtual key code and keyboard state has a corresponding Unicode character or characters.
-        /// </summary>
-        /// <param name="keyData">The virtual key code to be translated.</param>
-        public static bool IsCharacterKeys(Keys keyData)
-        {
-            return IsCharacterKeys(keyData, (keyData & Keys.Shift) == Keys.Shift, (keyData & Keys.Control) == Keys.Control, (keyData & Keys.Alt) == Keys.Alt);
-        }
-
-        /// <summary>
-        /// Retrieves a value indicating whether the specified virtual key code and keyboard state has a corresponding Unicode character or characters.
-        /// </summary>
-        /// <param name="keyData">The virtual key code to be translated.</param>
-        /// <param name="shift">Whether <see cref="Keys.Shift"/> is pressed.</param>
-        /// <param name="control">Whether <see cref="Keys.Control"/> is pressed.</param>
-        /// <param name="alt">Whether <see cref="Keys.Alt"/> is pressed.</param>
-        public static bool IsCharacterKeys(Keys keyData, bool shift, bool control, bool alt)
-        {
-            byte[] keyStates = new byte[256];
-            if (shift)
-            {
-                keyStates[(int) Keys.ShiftKey] = byte.MaxValue;
-            }
-            if (control)
-            {
-                keyStates[(int) Keys.ControlKey] = byte.MaxValue;
-            }
-            if (alt)
-            {
-                keyStates[(int) Keys.Menu] = byte.MaxValue;
-            }
-            return ToUnicode((uint) keyData, 0, keyStates, new char[1], 1, 0) != 0;
-        }
-
-        /// <summary>
-        /// Processes a command key. Do not call this method.
+        /// Processes a command key.
         /// </summary>
         /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
         /// <param name="keyData">A <see cref="ShortcutKeys"/> value that represents the key to process.</param>
-        public static bool ProcessCmdKey(ref Message m, ShortcutKeys keyData)
+        private static bool ProcessCmdKey(ref Message m, ShortcutKeys keyData)
         {
             if (IsValidShortcut(keyData))
             {
@@ -404,19 +365,22 @@ namespace PluginCore.Managers
         // Cache: N/A
         internal static ToolStrip OwnerToolStrip(this ToolStripDropDown @this)
         {
-            var ownerItem = @this.OwnerItem;
+            var ownerItem = @this.OwnerItem; //=>ownerItem
             if (ownerItem != null)
             {
-                var parentInternal = ownerItem.GetCurrentParent();
-                if (parentInternal != null)
+                var owner = ownerItem.GetCurrentParent(); //=>Parent.get=>ParentInternal.get
+                if (owner != null)
                 {
-                    return parentInternal;
+                    return owner;
                 }
                 if (ownerItem.Placement == ToolStripItemPlacement.Overflow && ownerItem.Owner != null)
                 {
                     return ownerItem.Owner.OverflowButton.DropDown;
                 }
-                return ownerItem.Owner;
+                if (owner == null)
+                {
+                    return ownerItem.Owner;
+                }
             }
             return null;
         }
@@ -461,12 +425,14 @@ namespace PluginCore.Managers
         // Cache: N/A
         internal static ToolStripDropDown GetFirstDropDown(this ToolStripDropDown @this)
         {
-            var down = @this;
-            for (var down2 = down.OwnerToolStrip() as ToolStripDropDown; down2 != null; down2 = down.OwnerToolStrip() as ToolStripDropDown)
+            var topmost = @this;
+            var ownerDropDown = topmost.OwnerToolStrip() as ToolStripDropDown;
+            while (ownerDropDown != null)
             {
-                down = down2;
+                topmost = ownerDropDown;
+                ownerDropDown = topmost.OwnerToolStrip() as ToolStripDropDown;
             }
-            return down;
+            return topmost;
         }
 
         // Reflection: System.Windows.Forms.ToolStrip.GetToplevelOwnerToolStrip()
@@ -491,22 +457,20 @@ namespace PluginCore.Managers
             m_SetInteger.Invoke(@this.Properties, new object[] { key, value });
         }
 
-        // Reflection: System.Windows.Forms.UnsafeNativeMethods.GetAncestor(HandleRef, Int32)
-        // Cache: N/A
-        [DllImport("user32.dll", EntryPoint = "GetAncestor", ExactSpelling = true)]
-        internal static extern IntPtr UnsafeNativeMethods_GetAncestor([In] HandleRef hwnd, [In] uint flags);
-
-        // Reflection: System.Windows.Forms.WindowsFormsUtils.GetRootHWnd(Control), [inline] System.Windows.Forms.WindowsFormsUtils.GetRootHWnd(HandleRef)
+        // Reflection: System.Windows.Forms.WindowsFormsUtils.GetRootHWnd(Control)
         // Cache: N/A
         internal static HandleRef WindowsFormsUtils_GetRootHWnd(Control control)
         {
-            return new HandleRef(control, UnsafeNativeMethods_GetAncestor(new HandleRef(new HandleRef(control, control.Handle), control.Handle), 2));
+            return WindowsFormsUtils_GetRootHWnd(new HandleRef(control, control.Handle));
         }
 
-        // Reflection: N/A
+        // Reflection: System.Windows.Forms.WindowsFormsUtils.GetRootHWnd(HandleRef)
         // Cache: N/A
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        internal static extern int ToUnicode([In] uint wVirtKey, [In] uint wScanCode, [In, Optional] byte[] lpKeyState, [Out, MarshalAs(UnmanagedType.LPArray)] char[] pwszBuff, [In] int cchBuff, [In] uint wFlags);
+        internal static HandleRef WindowsFormsUtils_GetRootHWnd(HandleRef hwnd)
+        {
+            var rootHwnd = Win32.GetAncestor(new HandleRef(hwnd, hwnd.Handle), Win32.GA_ROOT);
+            return new HandleRef(hwnd.Wrapper, rootHwnd);
+        }
 
         #endregion
     }

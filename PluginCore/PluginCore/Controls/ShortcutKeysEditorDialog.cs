@@ -159,7 +159,7 @@ namespace PluginCore.Controls
                 default:
                     if (supportExtended && !shouldReset)
                     {
-                        ShortcutKeysManager.UpdateShortcutKeys(ref newKeys, keyData);
+                        newKeys = ShortcutKeysManager.UpdateShortcutKeys(newKeys, keyData);
                     }
                     else
                     {

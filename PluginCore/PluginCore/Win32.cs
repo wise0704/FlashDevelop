@@ -126,17 +126,35 @@ namespace PluginCore
         public const Int32 TV_FIRST = 0x1100;
         public const Int32 WM_NCLBUTTONDOWN = 0x00A1;
         public const Int32 WM_LBUTTONDOWN = 0x0201;
+        public const Int32 WM_RBUTTONDOWN = 0x0204;
+        public const Int32 WM_MBUTTONDOWN = 0x0207;
+        public const Int32 VK_SHIFT = 0x10;
+        public const Int32 VK_CONTROL = 0x11;
+        public const Int32 VK_MENU = 0x12;
         public const Int32 VK_ESCAPE = 0x1B;
+        public const Int32 VK_LSHIFT = 0xA0;
+        public const Int32 VK_RSHIFT = 0xA1;
+        public const Int32 VK_LCONTROL = 0xA2;
+        public const Int32 VK_RCONTROL = 0xA3;
+        public const Int32 VK_LMENU = 0xA4;
+        public const Int32 VK_RMENU = 0xA5;
         public const Int32 WM_COPYDATA = 74;
         public const Int32 WM_MOUSEWHEEL = 0x20A;
         public const Int32 WM_KEYDOWN = 0x100;
         public const Int32 WM_KEYUP = 0x101;
+        public const Int32 WM_CHAR = 0x0102;
+        public const Int32 WM_DEADCHAR = 0x0103;
+        public const Int32 WM_SYSKEYDOWN = 0x104;
+        public const Int32 WM_SYSKEYUP = 0x0105;
+        public const Int32 WM_SYSCHAR = 0x0106;
+        public const Int32 WM_SYSDEADCHAR = 0x0107;
         public const Int32 SIF_RANGE = 0x0001;
         public const Int32 SIF_PAGE = 0x0002;
         public const Int32 SIF_POS = 0x0004;
         public const Int32 SIF_DISABLENOSCROLL = 0x0008;
         public const Int32 SIF_TRACKPOS = 0x0010;
         public const Int32 SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS);
+        public const UInt32 GA_ROOT = 2;
 
         #endregion
 
@@ -207,6 +225,20 @@ namespace PluginCore
 
         [DllImport("shell32.dll")]
         public static extern Int32 SHGetFileInfo(String pszPath, UInt32 dwFileAttributes, out SHFILEINFO psfi, UInt32 cbfileInfo, SHGFI uFlags);
+
+        [DllImport("user32.dll", ExactSpelling = true)]
+        public static extern IntPtr GetAncestor([In] HandleRef hwnd, [In] uint flags);
+
+        [DllImport("user32.dll", ExactSpelling = true)]
+        public static extern int ToUnicode([In] uint wVirtKey, [In] uint wScanCode, [In, Optional, MarshalAs(UnmanagedType.LPArray)] byte[] lpKeyState, [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pwszBuff, [In] int cchBuff, [In] uint wFlags);
+
+        [DllImport("user32.dll", EntryPoint = "PostMessageW", ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PostMessage([In, Optional] IntPtr hWnd, [In] int Msg, [In] UIntPtr wParam, [In] IntPtr lParam);
+
+        [DllImport("user32.dll", ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetKeyboardState([Out, MarshalAs(UnmanagedType.LPArray)] byte[] lpKeyState);
 
         #endregion
 

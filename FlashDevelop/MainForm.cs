@@ -1614,53 +1614,51 @@ namespace FlashDevelop
         }
 
         /// <summary>
-        /// Handles the mouse wheel on hover
+        /// Filters out a message before it is dispatched
         /// </summary>
         public bool PreFilterMessage(ref Message m)
         {
-            if (Win32.ShouldUseWin32())
+            switch (m.Msg)
             {
-                switch (m.Msg)
-                {
-                    case 0x100: // WM_KEYDOWN
-                    case 0x104: // WM_SYSKEYDOWN
-                        if (PreProcessCmdKey(ref m, (Keys) unchecked(m.WParam) | ModifierKeys))
+                case Win32.WM_KEYDOWN:
+                case Win32.WM_SYSKEYDOWN:
+                    if (CanFocus && PreProcessCmdKey(ref m, (Keys) unchecked(m.WParam) | ModifierKeys))
+                    {
+                        return true;
+                    }
+                    break;
+
+                case Win32.WM_LBUTTONDOWN:
+                case Win32.WM_RBUTTONDOWN:
+                case Win32.WM_MBUTTONDOWN:
+                    if (currentKeys.IsSimple)
+                    {
+                        // Cancel any extended shortcut in progress
+                        lockStatusLabel = false;
+                        StatusLabelText = null;
+                        currentKeys = ShortcutKeys.None;
+                    }
+                    break;
+
+                case Win32.WM_MOUSEWHEEL:
+                    int x = 0xFFFF & unchecked((int) m.LParam);
+                    int y = 0xFFFF & unchecked((int) m.LParam) >> 16;
+                    IntPtr hWnd = Win32.WindowFromPoint(new Point(x, y));
+                    if (hWnd != IntPtr.Zero)
+                    {
+                        if (Control.FromHandle(hWnd) != null)
                         {
+                            Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
                             return true;
                         }
-                        break;
-
-                    case 0x201: // WM_LBUTTONDOWN
-                    case 0x204: // WM_RBUTTONDOWN
-                    case 0x207: // WM_MBUTTONDOWN
-                        if (lockStatusLabel)
+                        ITabbedDocument doc = Globals.CurrentDocument;
+                        if (doc != null && doc.IsEditable && (hWnd == doc.SplitSci1.HandleSci || hWnd == doc.SplitSci2.HandleSci))
                         {
-                            // Cancel any extended shortcut in progress
-                            lockStatusLabel = false;
-                            StatusLabelText = null;
-                            currentKeys = ShortcutKeys.None;
+                            Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
+                            return true;
                         }
-                        break;
-                    case 0x20A: // WM_MOUSEWHEEL
-                        Int32 x = unchecked((short) (long) m.LParam);
-                        Int32 y = unchecked((short) ((long) m.LParam >> 16));
-                        IntPtr hWnd = Win32.WindowFromPoint(new Point(x, y));
-                        if (hWnd != IntPtr.Zero)
-                        {
-                            if (Control.FromHandle(hWnd) != null)
-                            {
-                                Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
-                                return true;
-                            }
-                            ITabbedDocument doc = Globals.CurrentDocument;
-                            if (doc != null && doc.IsEditable && (hWnd == doc.SplitSci1.HandleSci || hWnd == doc.SplitSci2.HandleSci))
-                            {
-                                Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
-                                return true;
-                            }
-                        }
-                        break;
-                }
+                    }
+                    break;
             }
             return false;
         }
@@ -1685,7 +1683,7 @@ namespace FlashDevelop
             /*
              * Update the current keys
              */
-            ShortcutKeysManager.UpdateShortcutKeys(ref currentKeys, keyData);
+            currentKeys = ShortcutKeysManager.UpdateShortcutKeys(currentKeys, keyData);
 
             /*
              * Process shortcut
@@ -1759,7 +1757,7 @@ namespace FlashDevelop
                 return true;
             }
 
-            switch (GetUndefinedShortcutType(keyData))
+            switch (GetUnhandledKeyType(ref m, keyData))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
                     StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKeys);
@@ -1772,12 +1770,13 @@ namespace FlashDevelop
                     currentKeys = ShortcutKeys.None;
                     return true;
 
-                case 3: // Mnemonic shortcut - already processed
+                case 3: // AltGr character input
+                case 4: // Mnemonic shortcut
                     currentKeys = ShortcutKeys.None;
                     return true;
 
-                case 4: // Not a shortcut
-                case 5: // AltGr character input
+                case 5: // Menu key (F10)
+                case 6: // Not a shortcut
                 default:
                     currentKeys = ShortcutKeys.None;
                     return false;
@@ -1796,15 +1795,16 @@ namespace FlashDevelop
         }
 
         /// <summary>
-        /// Gets the type of the undefined key input.
-        /// <para/>0 - Input is a valid first key for an extended shortcut.
-        /// <para/>1 - Input is not a valid first key for an extended shortcut.
-        /// <para/>2 - Extended shortcut is disabled.
-        /// <para/>3 - Input is a mnemonic shortcut and is handled.
-        /// <para/>4 - Input is not a valid shortcut.
-        /// <para/>5 - Input is a character input with AltGr.
+        /// Gets the type of the unhandled key input.
+        /// <para/>0 - Input is a valid shortcut and a valid first key for an extended shortcut.
+        /// <para/>1 - Input is a valid shortcut but not a valid first key for an extended shortcut.
+        /// <para/>2 - Input is a valid shortcut but the extended shortcut feature is disabled.
+        /// <para/>3 - Input is a character input with AltGr (Ctrl+Alt) and is handled.
+        /// <para/>4 - Input is a mnemonic shortcut and is handled.
+        /// <para/>5 - Input is a menu key.
+        /// <para/>6 - Input is not a valid shortcut.
         /// </summary>
-        private int GetUndefinedShortcutType(Keys keyData, bool suppressMnemonic = false)
+        private int GetUnhandledKeyType(ref Message m, Keys keyData)
         {
             switch (keyData & Keys.Modifiers)
             {
@@ -1813,31 +1813,47 @@ namespace FlashDevelop
                     var keyCode = keyData & Keys.KeyCode;
                     if (Keys.F1 <= keyCode && keyCode <= Keys.F24)
                     {
+                        if (m.Msg == Win32.WM_SYSKEYDOWN && keyCode == Keys.F10)
+                        {
+                            return 5;
+                        }
                         return 1;
                     }
-                    return 4;
+                    return 6;
                 case Keys.Alt:
-                    if (!ShortcutManager.AltFirstKeys.Contains(keyData) && !suppressMnemonic && ProcessMnemonic((char) keyData))
+                    if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData) && ProcessMnemonic((char) keyData))
                     {
-                        return 3;
+                        return 4;
                     }
                     break;
                 case Keys.Control | Keys.Alt:
-                    if (ShortcutKeysManager.IsCharacterKeys(keyData, false, true, true))
-                    {
-                        return 5;
-                    }
-                    break;
                 case Keys.Control | Keys.Alt | Keys.Shift:
-                    if (ShortcutKeysManager.IsCharacterKeys(keyData, true, true, true))
+                    byte[] lpKeyState = new byte[256];
+                    if (Win32.GetKeyboardState(lpKeyState))
                     {
-                        return 5;
+                        var pwszBuff = new StringBuilder(8);
+                        int length = Win32.ToUnicode((uint) m.WParam, (uint) m.LParam >> 16, lpKeyState, pwszBuff, pwszBuff.Capacity, 0);
+                        if (length == -1)
+                        {
+                            int msg = m.Msg == Win32.WM_SYSKEYDOWN ? Win32.WM_SYSDEADCHAR : Win32.WM_DEADCHAR;
+                            Win32.PostMessage(m.HWnd, msg, (UIntPtr) pwszBuff[0], m.LParam);
+                            return 3;
+                        }
+                        if (length > 0)
+                        {
+                            int msg = m.Msg == Win32.WM_SYSKEYDOWN ? Win32.WM_SYSCHAR : Win32.WM_CHAR;
+                            for (int i = 0; i < length; i++)
+                            {
+                                Win32.PostMessage(m.HWnd, msg, (UIntPtr) pwszBuff[i], m.LParam);
+                            }
+                            return 3;
+                        } 
                     }
                     break;
             }
             return appSettings.DisableExtendedShortcutKeys ? 2 : 0;
         }
-        
+
         /// <summary>
         /// Notifies the plugins for the SyntaxChange event
         /// </summary>
@@ -2302,79 +2318,136 @@ namespace FlashDevelop
         {
             ShortcutManager.UpdateShortcutKeyDisplayString(item);
         }
-        
+
         /// <summary>
-        /// A utility method for handling extended shortcuts where the context prevents the default mechanism (e.g. in a dialog form).
-        /// Returns <code>true</code> if the current key press is processed; <code>false</code> otherwise.
-        /// <para/>
-        /// This method alters the value of <code>previousKeys</code>, therefore its value should not be used in context after calling this method.
-        /// <para/>
-        /// When calling from <see cref="Control.ProcessCmdKey(ref Message, Keys)"/>, make sure to return <code>true</code> if this method returns <code>true</code>.
+        /// Processes extended shortcuts on a modal window (e.g. dialog form).
+        /// Returns <see langword="true"/> if the key was processed; <see langword="false"/> otherwise.
         /// </summary>
-        /// <param name="previousKeys">The reference to the stored previous <see cref="ShortcutKeys"/> value.</param>
-        /// <param name="input">The <see cref="Keys"/> value specifying the current keyboard input.</param>
-        /// <param name="shortcutId">The shortcut ID to process, or <see cref="string.Empty"/> if this method returns <code>false</code>.</param>
-        public bool HandleShortcutManually(ref ShortcutKeys previousKeys, Keys input, out string shortcutId)
+        /// <param name="handler">The modal window which is processing the keys.</param>
+        /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
+        /// <param name="keyData">One of the <see cref="Keys"/> values that represents the key to process.</param>
+        public bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, [Optional] Keys keyData)
         {
-            var keyCode = input & Keys.KeyCode;
-            switch (keyCode)
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            if (keyData == Keys.None)
+            {
+                keyData = (Keys) unchecked(m.WParam) | ModifierKeys;
+            }
+
+            /*
+             * Don't process ControlKey, ShiftKey or Menu
+             */
+            switch (keyData & Keys.KeyCode)
             {
                 case Keys.None:
                 case Keys.ControlKey:
                 case Keys.ShiftKey:
                 case Keys.Menu:
-                    shortcutId = string.Empty;
                     return false;
             }
-            if (appSettings.DisableExtendedShortcutKeys)
+
+            /*
+             * Update the current keys
+             */
+            currentKeys = ShortcutKeysManager.UpdateShortcutKeys(currentKeys, keyData);
+
+            /*
+             * Process shortcut
+             */
+            var item = ShortcutManager.GetRegisteredItem(currentKeys);
+            var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item?.Id, currentKeys);
+            handler.HandleShortcutKeysEvent(e);
+
+            /*
+             * Shortcut has been handled
+             */
+            if (e.Handled)
             {
-                previousKeys = input;
+                if (currentKeys.IsExtended)
+                {
+                    lockStatusLabel = false;
+                    StatusLabelText = null;
+                }
+                else
+                {
+                    currentKeys = ShortcutKeys.None;
+                }
+                return true;
+            }
+
+            /*
+             * Shortcut exists but not handled
+             */
+            if (ShortcutManager.AllShortcuts.Contains(currentKeys))
+            {
+                if (currentKeys.IsExtended)
+                {
+                    lockStatusLabel = false;
+                    StatusLabelText = null;
+                }
+                else
+                {
+                    currentKeys = ShortcutKeys.None;
+                }
+                return true;
+            }
+
+            /*
+             * Shortcut does not exist
+             */
+            if (currentKeys.IsExtended)
+            {
+                lockStatusLabel = false;
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
+                return true;
+            }
+
+            int unhandledKeyType;
+            if ((keyData & Keys.Modifiers) == Keys.Alt)
+            {
+                if (!ShortcutManager.AltFirstKeys.Contains(keyData) && handler.PerformProcessMnemonic((char) keyData))
+                {
+                    unhandledKeyType = 4;
+                }
+                else
+                {
+                    m.Msg = Win32.WM_KEYDOWN; // Prevent 'case 4' mnemonic shortcut from being processed on MainForm
+                    unhandledKeyType = GetUnhandledKeyType(ref m, keyData);
+                }
             }
             else
             {
-                ShortcutKeysManager.UpdateShortcutKeys(ref previousKeys, input);
+                unhandledKeyType = GetUnhandledKeyType(ref m, keyData);
             }
-            shortcutId = GetShortcutId(previousKeys);
-            if (shortcutId == null)
+
+            switch (unhandledKeyType)
             {
-                if (ShortcutManager.AllShortcuts.Contains(previousKeys))
-                {
-                    if (previousKeys.IsExtended)
-                    {
-                        StatusLabelText = null;
-                    }
-                    else
-                    {
-                        previousKeys = ShortcutKeys.None;
-                    }
+                case 0: // Shortcut is a valid first key for an extended shortcut
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKeys);
+                    lockStatusLabel = true;
                     return true;
-                }
-                if (previousKeys.IsExtended)
-                {
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), previousKeys);
+
+                case 1: // Shortcut is not a valid first key
+                case 2: // Extended shortcut is disabled
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
+                    currentKeys = ShortcutKeys.None;
                     return true;
-                }
-                switch (GetUndefinedShortcutType(input, true))
-                {
-                    case 0: // Shortcut is a valid first key for an extended shortcut
-                        StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), previousKeys);
-                        return true;
 
-                    case 1: // Shortcut is not a valid first key
-                    case 2: // Extended shortcut is disabled
-                        StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), previousKeys);
-                        previousKeys = ShortcutKeys.None;
-                        return true;
+                case 3: // AltGr character input
+                case 4: // Mnemonic shortcut
+                    currentKeys = ShortcutKeys.None;
+                    return true;
 
-                    case 4: // Not a shortcut
-                    case 5: // AltGr character input
-                        previousKeys = ShortcutKeys.None;
-                        return false;
-                }
+                case 5: // Menu key (F10)
+                case 6: // Not a shortcut
+                default:
+                    currentKeys = ShortcutKeys.None;
+                    return false;
             }
-            StatusLabelText = null;
-            previousKeys = ShortcutKeys.None;
-            return true;
         }
 
         /// <summary>

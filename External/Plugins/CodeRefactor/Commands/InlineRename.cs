@@ -6,7 +6,6 @@ using CodeRefactor.Provider;
 using PluginCore;
 using PluginCore.Controls;
 using PluginCore.FRService;
-using PluginCore.Managers;
 using ScintillaNet;
 using ScintillaNet.Enums;
 using Keys = System.Windows.Forms.Keys;
@@ -16,7 +15,7 @@ namespace CodeRefactor.Commands
     /// <summary>
     /// An asynchronously working command that enables users to rename variables in line with code.
     /// </summary>
-    public class InlineRename : IDisposable, IMessageFilter
+    public class InlineRename : IDisposable, IMessageFilter, IModalWindowShortcutHandler
     {
         private const int MaxHistoryCount = 256;
         private const int Indicator = 0;
@@ -60,7 +59,6 @@ namespace CodeRefactor.Commands
         private ReferenceInfo[] refs;
 
         private DelayedExecution delayedExecution;
-        private ShortcutKeys currentKeys;
         private List<string> history;
         private int historyIndex;
 
@@ -142,7 +140,6 @@ namespace CodeRefactor.Commands
             end = position;
             currentDoc = PluginBase.MainForm.CurrentDocument;
             delayedExecution = new DelayedExecution();
-            currentKeys = ShortcutKeys.None;
             history = new List<string>() { oldName };
             historyIndex = 0;
             this.includeComments = includeComments ?? false;
@@ -318,6 +315,7 @@ namespace CodeRefactor.Commands
             PluginBase.MainForm.MenuStrip.Enabled = false;
             PluginBase.MainForm.ToolStrip.Enabled = false;
             PluginBase.MainForm.EditorMenu.Enabled = false;
+            PluginBase.MainForm.TabMenu.Enabled = false;
             UITools.Manager.DisableEvents = true;
         }
 
@@ -426,6 +424,7 @@ namespace CodeRefactor.Commands
             PluginBase.MainForm.MenuStrip.Enabled = true;
             PluginBase.MainForm.ToolStrip.Enabled = true;
             PluginBase.MainForm.EditorMenu.Enabled = true;
+            PluginBase.MainForm.TabMenu.Enabled = true;
             UITools.Manager.DisableEvents = false;
         }
 
@@ -708,10 +707,6 @@ namespace CodeRefactor.Commands
         /// Filters out a message before it is dispatched.
         /// </summary>
         /// <param name="m">The message to be dispatched. You cannot modify this message.</param>
-        /// <returns>
-        /// <code>true</code> to filter the message and stop it from being dispatched;
-        /// <code>false</code> to allow the message to continue to the next filter or control.
-        /// </returns>
         bool IMessageFilter.PreFilterMessage(ref Message m)
         {
             if (PluginBase.MainForm.CurrentDocument != currentDoc)
@@ -724,51 +719,7 @@ namespace CodeRefactor.Commands
             {
                 case 0x0100: //WM_KEYDOWN
                 case 0x0104: //WM_SYSKEYDOWN
-                    var key = (Keys) (int) m.WParam;
-                    var modifier = Control.ModifierKeys;
-                    if (!ShortcutKeysManager.IsValidExtendedShortcutFirst(currentKeys.First))
-                    {
-                        switch (key)
-                        {
-                            case Keys.Escape:
-                                OnCancel();
-                                return true;
-                            case Keys.Enter:
-                                OnApply();
-                                return true;
-                            case Keys.Back:
-                                if (CanBackspace) break;
-                                return true;
-                            case Keys.Left:
-                                if (!AtLeftmost) break;
-                                return true;
-                            case Keys.Delete:
-                                if (CanDelete) break;
-                                return true;
-                            case Keys.Right:
-                                if (!AtRightmost) break;
-                                if (sci.SelTextSize != 0) sci.SetSel(end, end);
-                                return true;
-                            case Keys.PageUp:
-                            case Keys.PageDown:
-                            case Keys.Up:
-                            case Keys.Down:
-                                if (!CanWrite) break;
-                                return true;
-                            case Keys.End:
-                                if (!CanWrite) break;
-                                sci.SetSel((modifier & Keys.Shift) == 0 ? end : sci.SelectionStart, end);
-                                return true;
-                            case Keys.Home:
-                                if (!CanWrite) break;
-                                sci.SetSel((modifier & Keys.Shift) == 0 ? start : sci.SelectionEnd, start);
-                                return true;
-                            case Keys.Tab:
-                                return true;
-                        }
-                    }
-                    if (HandleShortcuts(key | modifier)) return true;
-                    break;
+                    return PluginBase.MainForm.ProcessModalWindowCmdKey(this, ref m);
 
                 case 0x0102: //WM_CHAR
                 case 0x0103: //WM_DEADCHAR
@@ -795,35 +746,104 @@ namespace CodeRefactor.Commands
             return false;
         }
 
-        /// <summary>
-        /// Handles a shortcut.
-        /// </summary>
-        /// <param name="keys">The currently pressed keys.</param>
-        /// <returns>
-        /// <code>true</code> to allow the shortcut to be take the default action;
-        /// <code>false</code> to filter the shortcut and take a customized action.
-        /// </returns>
-        private bool HandleShortcuts(Keys keys)
+        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
         {
-            string shortcutId;
-            if (PluginBase.MainForm.HandleShortcutManually(ref currentKeys, keys, out shortcutId))
+            e.Handled = HandleShortcutKeysEvent(e);
+        }
+
+        private bool HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        {
+            switch (e.Id)
             {
-                switch (shortcutId)
-                {
-                    case "EditMenu.Paste":       PerformPaste(); break;
-                    case "EditMenu.Redo":        PerformRedo(); break;
-                    case "EditMenu.SelectAll":   PerformSelectAll(); break;
-                    case "EditMenu.Undo":        PerformUndo(); break;
-                    case "EditMenu.Copy":        sci.Copy(); break;
-                    case "EditMenu.Cut":         if (sci.SelTextSize > 0) sci.Cut(); break;
-                    case "EditMenu.ToLowercase": sci.UpperCase(); break;
-                    case "EditMenu.ToUppercase": sci.LowerCase(); break;
-                    case "Scintilla.ResetZoom":  sci.ResetZoom(); break;
-                    case "Scintilla.ZoomIn":     sci.ZoomIn(); break;
-                    case "Scintilla.ZoomOut":    sci.ZoomOut(); break;
-                }
-                return true;
+                case null:
+                    return HandleKeys((Keys) e.ShortcutKeys);
+                case "EditMenu.Paste":
+                    PerformPaste();
+                    return true;
+                case "EditMenu.Redo":
+                    PerformRedo();
+                    return true;
+                case "EditMenu.SelectAll":
+                    PerformSelectAll();
+                    return true;
+                case "EditMenu.Undo":
+                    PerformUndo();
+                    return true;
+                case "EditMenu.Copy":
+                    if (sci.SelTextSize > 0) sci.Copy();
+                    return true;
+                case "EditMenu.Cut":
+                    if (sci.SelTextSize > 0) sci.Cut();
+                    return true;
+                case "EditMenu.ToLowercase":
+                    sci.UpperCase();
+                    return true;
+                case "EditMenu.ToUppercase":
+                    sci.LowerCase();
+                    return true;
+                case "Scintilla.ResetZoom":
+                    sci.ResetZoom();
+                    return true;
+                case "Scintilla.ZoomIn":
+                    sci.ZoomIn();
+                    return true;
+                case "Scintilla.ZoomOut":
+                    sci.ZoomOut();
+                    return true;
             }
+
+            return false;
+        }
+
+        private bool HandleKeys(Keys keyData)
+        {
+            var keyCode = keyData & Keys.KeyCode;
+            var modifiers = keyData & Keys.Modifiers;
+            switch (keyCode)
+            {
+                case Keys.Escape:
+                    OnCancel();
+                    return true;
+                case Keys.Enter:
+                    OnApply();
+                    return true;
+                case Keys.Back:
+                    if (CanBackspace) break;
+                    return true;
+                case Keys.Left:
+                    if (!AtLeftmost) break;
+                    if (sci.SelTextSize != 0) sci.SetSel(start, start);
+                    return true;
+                case Keys.Delete:
+                    if (CanDelete) break;
+                    return true;
+                case Keys.Right:
+                    if (!AtRightmost) break;
+                    if (sci.SelTextSize != 0) sci.SetSel(end, end);
+                    return true;
+                case Keys.PageUp:
+                case Keys.PageDown:
+                case Keys.Up:
+                case Keys.Down:
+                    if (!CanWrite) break;
+                    return true;
+                case Keys.End:
+                    if (!CanWrite) break;
+                    sci.SetSel((modifiers & Keys.Shift) == 0 ? end : sci.SelectionStart, end);
+                    return true;
+                case Keys.Home:
+                    if (!CanWrite) break;
+                    sci.SetSel((modifiers & Keys.Shift) == 0 ? start : sci.SelectionEnd, start);
+                    return true;
+                case Keys.Tab:
+                    return true;
+            }
+
+            return false;
+        }
+
+        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        {
             return false;
         }
 

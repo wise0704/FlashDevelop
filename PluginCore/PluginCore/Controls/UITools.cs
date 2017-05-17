@@ -457,8 +457,8 @@ namespace PluginCore.Controls
                                 break;
                             }
                             // Handle special keys
-                            return callTip.CallTipActive && callTip.HandleKeys(sci, key)
-                                | CompletionList.Active && CompletionList.HandleKeys(sci, key);
+                            return (callTip.CallTipActive && callTip.HandleKeys(sci, key))
+                                | (CompletionList.Active && CompletionList.HandleKeys(sci, key));
                     }
                 }
 
