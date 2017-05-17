@@ -148,11 +148,6 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public Dictionary<Keys, string> GetShortcutItemsByKeys()
-        {
-            throw new NotImplementedException();
-        }
-
         public string GetThemeValue(string id)
         {
             if (id == "ScrollBar.UseCustom") return string.Empty;
@@ -256,7 +251,7 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public void RemoveIgnoredKeys(ShortcutKeys keys)
+        public bool RemoveIgnoredKeys(ShortcutKeys keys)
         {
             throw new NotImplementedException();
         }
@@ -266,12 +261,7 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcutItem(string id, ShortcutKeys keys, bool supportsExtended = true)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool HandleShortcutManually(ref ShortcutKeys previousKeys, Keys input, out string shortcutId)
+        public bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, Keys keyData)
         {
             throw new NotImplementedException();
         }
@@ -286,7 +276,27 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcutItem(string id, ToolStripMenuItemEx item)
+        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RegisterShortcut(string id, params ShortcutKeys[] defaultShortcuts)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RegisterShortcut(string id, params ToolStripItem[] toolStripItems)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut, params ToolStripItem[] toolStripItems)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RegisterShortcut(string id, ShortcutKeys[] defaultShortcuts, ToolStripItem[] toolStripItems)
         {
             throw new NotImplementedException();
         }
