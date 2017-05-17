@@ -5999,8 +5999,8 @@
     <comment>Added after 5.0.2</comment>
   </data>
   <data name="FlashDevelop.Label.ShortcutSearch" xml:space="preserve">
-    <value>Search: (Start the filter with * to view custom only, and ? to view conflicts only.)</value>
-    <comment>Added after 5.0.2</comment>
+    <value>Search: (Start the filter with {0} to view modified only, {1} to view custom only, and {2} to view conflicts only.)</value>
+    <comment>Modified after 5.2.0</comment>
   </data>
   <data name="CodeFormatter.Description.AStyle.OptionsCPP" xml:space="preserve">
     <value>Manual options for the CPP language, read more: http://astyle.sourceforge.net/astyle.html</value>
