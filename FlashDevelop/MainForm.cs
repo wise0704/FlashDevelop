@@ -1735,15 +1735,12 @@ namespace FlashDevelop
              */
             if (ShortcutManager.AllShortcuts.Contains(currentKeys))
             {
-                if (currentKeys.IsExtended)
-                {
-                    lockStatusLabel = false;
-                }
-                else
+                lockStatusLabel = false;
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
+                if (!currentKeys.IsExtended)
                 {
                     currentKeys = ShortcutKeys.None;
                 }
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
                 return true;
             }
 
@@ -2384,15 +2381,13 @@ namespace FlashDevelop
              */
             if (ShortcutManager.AllShortcuts.Contains(currentKeys))
             {
-                if (currentKeys.IsExtended)
-                {
-                    lockStatusLabel = false;
-                }
-                else
+                lockStatusLabel = false;
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
+
+                if (!currentKeys.IsExtended)
                 {
                     currentKeys = ShortcutKeys.None;
                 }
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
                 return true;
             }
 

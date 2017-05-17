@@ -205,7 +205,7 @@ namespace MacroManager
                 {
                     ToolStripMenuItem macroItem = new ToolStripMenuItem();
                     macroItem.Click += new EventHandler(this.MacroMenuItemClick);
-                    macroItem.ShortcutKeyDisplayString = macro.ShortcutKeys.ToString();
+                    macroItem.ShortcutKeyDisplayString = macro.ShortcutKeys.IsNone ? null : macro.ShortcutKeys.ToString();
                     macroItem.Text = macro.Label;
                     macroItem.Tag = macro;
                     if (!String.IsNullOrEmpty(macro.Image))
