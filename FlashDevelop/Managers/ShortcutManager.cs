@@ -399,7 +399,7 @@ namespace FlashDevelop.Managers
                 };
                 foreach (var item in items)
                 {
-                    if (item.IsModified)
+                    if (item.IsCustomized)
                     {
                         shortcuts.Add(new Argument(item.Id, SerializeKeys(item.Custom.ToArray())));
                     }
@@ -488,6 +488,6 @@ namespace FlashDevelop.Managers
         string Id { get; }
         ShortcutKeys[] Default { get; }
         List<ShortcutKeys> Custom { get; set; }
-        bool IsModified { get; }
+        bool IsCustomized { get; }
     }
 }

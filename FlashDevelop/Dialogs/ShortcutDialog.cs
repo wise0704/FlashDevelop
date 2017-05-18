@@ -373,8 +373,9 @@ namespace FlashDevelop.Dialogs
             this.imageList.Images.AddRange(new[]
             {
                 Globals.MainForm.FindImage("545", false),
+                Globals.MainForm.FindImage("545|2|3|3", false),
                 Globals.MainForm.FindImage("545|11|3|3", false),
-                Globals.MainForm.FindImage("545|6|3|3", false)
+                Globals.MainForm.FindImage("545|6|3|3", false),
             });
             this.clearButton.Image = Globals.MainForm.FindImage16("153", false);
             this.pictureBox.Image = Globals.MainForm.FindImage16("229", false);
@@ -473,10 +474,10 @@ namespace FlashDevelop.Dialogs
         {
             var selectedItem = this.listView.SelectedItems.Count > 0 ? this.listView.SelectedItems[0] : null;
             string filter = this.filterTextBox.Text;
-            bool viewChanged = false;
+            bool viewModified = false;
             bool viewCustom = false;
             bool viewConflicts = false;
-            ExtractFilterKeywords(ref filter, ref viewChanged, ref viewCustom, ref viewConflicts);
+            ExtractFilterKeywords(ref filter, ref viewModified, ref viewCustom, ref viewConflicts);
             this.listView.BeginUpdate();
             this.listView.Items.Clear();
             for (int i = 0; i < this.shortcutListItems.Length; i++)
@@ -486,8 +487,8 @@ namespace FlashDevelop.Dialogs
                     item.Id.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0 ||
                     item.KeysString.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    if (viewChanged && !item.IsChanged) continue;
-                    if (viewCustom && !item.IsModified) continue;
+                    if (viewModified && !item.IsModified) continue;
+                    if (viewCustom && !item.IsCustomized) continue;
                     if (viewConflicts && !this.conflictsManager.HasConflicts(item)) continue;
 
                     int dotIndex = item.Text.IndexOf('.');
@@ -610,7 +611,7 @@ namespace FlashDevelop.Dialogs
             this.listView.BeginUpdate();
             foreach (ShortcutListItem item in this.listView.Items)
             {
-                if (item.IsModified)
+                if (item.IsCustomized)
                 {
                     this.RevertTo(item, item.Default);
                 }
@@ -702,7 +703,7 @@ namespace FlashDevelop.Dialogs
         {
             for (int i = 0; i < this.shortcutListItems.Length; i++)
             {
-                if (this.shortcutListItems[i].IsChanged)
+                if (this.shortcutListItems[i].IsModified)
                 {
                     this.saveButton.DialogResult = DialogResult.OK;
                     this.saveButton.Text = TextHelper.GetString("Label.Save");
@@ -718,56 +719,60 @@ namespace FlashDevelop.Dialogs
         /// Reads and removes filter keywords from the start of the filter.
         /// The order of the keywords is irrelevant.
         /// </summary>
-        private static void ExtractFilterKeywords(ref string filter, ref bool viewChanged, ref bool viewCustom, ref bool viewConflicts)
+        private static void ExtractFilterKeywords(ref string filter, ref bool viewModified, ref bool viewCustom, ref bool viewConflicts)
         {
-            if (!viewChanged && filter.StartsWith(ViewChangedKey))
+            if (!viewModified && filter.StartsWith(ViewChangedKey))
             {
                 filter = filter.Substring(1);
-                viewChanged = true;
-                ExtractFilterKeywords(ref filter, ref viewChanged, ref viewCustom, ref viewConflicts);
+                viewModified = true;
+                ExtractFilterKeywords(ref filter, ref viewModified, ref viewCustom, ref viewConflicts);
             }
             else if (!viewCustom && filter.StartsWith(ViewCustomKey))
             {
                 filter = filter.Substring(1);
                 viewCustom = true;
-                ExtractFilterKeywords(ref filter, ref viewChanged, ref viewCustom, ref viewConflicts);
+                ExtractFilterKeywords(ref filter, ref viewModified, ref viewCustom, ref viewConflicts);
             }
             else if (!viewConflicts && filter.StartsWith(ViewConflictsKey))
             {
                 filter = filter.Substring(1);
                 viewConflicts = true;
-                ExtractFilterKeywords(ref filter, ref viewChanged, ref viewCustom, ref viewConflicts);
+                ExtractFilterKeywords(ref filter, ref viewModified, ref viewCustom, ref viewConflicts);
             }
         }
 
         /// <summary>
         /// Updates the item display.
-        /// <para/><see cref="FontStyle.Bold"/> - The item is modified.
-        /// <para/><see cref="Color.DarkRed"/> - The item has conflicts.
-        /// <para/><see cref="SystemColors.GrayText"/> - The item has no shortcut keys.
         /// </summary>
         private static void UpdateItemDisplayStatus(ShortcutListItem item, bool hasConflicts)
         {
-            var fontStyle = item.IsModified ? FontStyle.Bold : FontStyle.Regular;
-            item.SubItems[0].Font = new Font(Globals.Settings.DefaultFont, fontStyle);
-            item.SubItems[1].Font = new Font(Globals.Settings.DefaultFont, fontStyle);
+            bool isModified = item.IsModified;
+            bool isCustomized = item.IsCustomized;
+            item.SubItems[0].Font = new Font(Globals.Settings.DefaultFont, (isModified ? FontStyle.Italic : FontStyle.Regular) | (isCustomized ? FontStyle.Bold : FontStyle.Regular));
+            item.SubItems[1].Font = new Font(Globals.Settings.DefaultFont, hasConflicts ? FontStyle.Bold : FontStyle.Regular);
             if (hasConflicts)
             {
-                item.ImageIndex = 2;
+                item.ImageIndex = 3;
                 item.SubItems[0].ForeColor = Color.DarkRed;
-                item.SubItems[1].ForeColor = Color.DarkRed;
+                item.SubItems[1].ForeColor = Color.DarkRed; // No light colour on conflicts
             }
-            else if (item.IsChanged)
+            else if (isModified)
             {
-                item.ImageIndex = 1;
+                item.ImageIndex = 2;
                 item.SubItems[0].ForeColor = Color.DarkGreen;
                 item.SubItems[1].ForeColor = item.Custom.Count > 0 ? Color.DarkGreen : Color.DarkSeaGreen;
+            }
+            else if (isCustomized)
+            {
+                item.ImageIndex = 1;
+                item.SubItems[0].ForeColor = Color.Black;
+                item.SubItems[1].ForeColor = item.Custom.Count > 0 ? Color.Black : Color.Gray;
             }
             else
             {
                 item.ImageIndex = 0;
-                item.SubItems[0].ForeColor = SystemColors.ControlText;
-                item.SubItems[1].ForeColor = item.Custom.Count > 0 ? SystemColors.ControlText : Color.Gray;
+                item.SubItems[0].ForeColor = Color.Black;
+                item.SubItems[1].ForeColor = item.Custom.Count > 0 ? Color.Black : Color.Gray;
             }
         }
 
@@ -938,9 +943,9 @@ namespace FlashDevelop.Dialogs
             if (this.listView.SelectedItems.Count > 0)
             {
                 var item = (ShortcutListItem) this.listView.SelectedItems[0];
-                this.revertChanges.Enabled = item.IsChanged;
+                this.revertChanges.Enabled = item.IsModified;
 
-                if (item.IsModified)
+                if (item.IsCustomized)
                 {
                     this.revertToDefault.Enabled = true;
                     this.revertAllToDefault.Enabled = true;
@@ -960,7 +965,7 @@ namespace FlashDevelop.Dialogs
             this.revertAllToDefault.Enabled = false;
             foreach (ShortcutListItem item in this.listView.Items)
             {
-                if (item.IsModified)
+                if (item.IsCustomized)
                 {
                     this.revertAllToDefault.Enabled = true;
                     break;
@@ -1052,12 +1057,15 @@ namespace FlashDevelop.Dialogs
         /// </summary>
         private void ShortcutDialog_FormClosing(object sender, FormClosingEventArgs e)
         {
-            for (int i = 0; i < this.shortcutListItems.Length; i++)
+            if (this.DialogResult == DialogResult.OK)
             {
-                if (this.conflictsManager.HasConflicts(this.shortcutListItems[i]))
+                for (int i = 0; i < this.shortcutListItems.Length; i++)
                 {
-                    e.Cancel = this.ShowConflictsPresent();
-                    break;
+                    if (this.conflictsManager.HasConflicts(this.shortcutListItems[i]))
+                    {
+                        e.Cancel = this.ShowConflictsPresent();
+                        break;
+                    }
                 }
             }
         }
@@ -1350,7 +1358,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Gets the modification status of the shortcut.
             /// </summary>
-            public bool IsModified
+            public bool IsCustomized
             {
                 get
                 {
@@ -1369,7 +1377,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Gets whether the shortcut has changed from the current keys.
             /// </summary>
-            internal bool IsChanged
+            internal bool IsModified
             {
                 get
                 {
