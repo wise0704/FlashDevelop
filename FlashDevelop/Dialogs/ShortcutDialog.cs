@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using FlashDevelop.Managers;
 using PluginCore;
@@ -24,7 +25,7 @@ namespace FlashDevelop.Dialogs
         private System.Windows.Forms.Button clearButton;
         private System.Windows.Forms.ColumnHeader idHeader;
         private System.Windows.Forms.ColumnHeader keyHeader;
-        private System.Windows.Forms.ListView listView;
+        private FlashDevelop.Dialogs.ShortcutDialog.ListViewEx listView;
         private System.Windows.Forms.ComboBox comboBox;
         private System.Windows.Forms.Button removeButton;
         private System.Windows.Forms.Label pressNewLabel;
@@ -86,7 +87,7 @@ namespace FlashDevelop.Dialogs
             this.clearButton = new System.Windows.Forms.Button();
             this.idHeader = ((System.Windows.Forms.ColumnHeader) (new System.Windows.Forms.ColumnHeader()));
             this.keyHeader = ((System.Windows.Forms.ColumnHeader) (new System.Windows.Forms.ColumnHeader()));
-            this.listView = new System.Windows.Forms.ListView();
+            this.listView = new FlashDevelop.Dialogs.ShortcutDialog.ListViewEx();
             this.imageList = new System.Windows.Forms.ImageList(this.components);
             this.comboBox = new System.Windows.Forms.ComboBox();
             this.removeButton = new System.Windows.Forms.Button();
@@ -153,6 +154,7 @@ namespace FlashDevelop.Dialogs
             this.listView.Location = new System.Drawing.Point(12, 69);
             this.listView.MultiSelect = false;
             this.listView.Name = "listView";
+            this.listView.ShowGroups = true;
             this.listView.Size = new System.Drawing.Size(797, 425);
             this.listView.SmallImageList = this.imageList;
             this.listView.TabIndex = 2;
@@ -487,7 +489,10 @@ namespace FlashDevelop.Dialogs
                     if (viewChanged && !item.IsChanged) continue;
                     if (viewCustom && !item.IsModified) continue;
                     if (viewConflicts && !this.conflictsManager.HasConflicts(item)) continue;
-                    this.listView.Items.Add(item);
+
+                    int dotIndex = item.Text.IndexOf('.');
+                    string groupName = dotIndex >= 0 ? item.Text.Remove(dotIndex) : "";
+                    this.listView.AddToGroup(item, groupName);
                 }
             }
             this.listView.EndUpdate();
@@ -1433,6 +1438,104 @@ namespace FlashDevelop.Dialogs
 
         #endregion
 
+        #region ListView Native Methods
+
+        /// <summary>
+        /// Provides collapsible groups.
+        /// </summary>
+        private sealed class ListViewEx : ListView
+        {
+            private const int LVGF_STATE = 0x00000004;
+            private const int LVGS_COLLAPSIBLE = 0x00000008;
+            private const int LVM_SETGROUPINFO = 0x00001093;
+
+            /// <summary>
+            /// LVGROUP structure
+            /// </summary>
+            [StructLayout(LayoutKind.Sequential)]
+            private struct LVGROUP
+            {
+                internal int cbSize;
+                internal int mask;
+                [MarshalAs(UnmanagedType.LPWStr)]
+                internal string pszHeader;
+                internal int cchHeader;
+                [MarshalAs(UnmanagedType.LPWStr)]
+                internal string pszFooter;
+                internal int cchFooter;
+                internal int iGroupId;
+                internal int stateMask;
+                internal int state;
+                internal int uAlign;
+            }
+
+            /// <summary>
+            /// Adds an item to the list view with the specified group name.
+            /// </summary>
+            internal void AddToGroup(ListViewItem item, string groupName)
+            {
+                if (this.Groups[groupName] == null)
+                {
+                    var group = new ListViewGroup(groupName, groupName);
+                    this.Groups.Add(group);
+                    this.SetGroupCollapsible(group);
+                }
+
+                this.Groups[groupName].Items.Add(item);
+                this.Items.Add(item);
+            }
+
+            /// <summary>
+            /// Uses the native list view API to enable collapsible groups.
+            /// </summary>
+            private void SetGroupCollapsible(ListViewGroup group)
+            {
+                if (Win32.ShouldUseWin32())
+                {
+                    var ptr = IntPtr.Zero;
+
+                    try
+                    {
+                        LVGROUP lvgroup;
+                        lvgroup.cbSize = Marshal.SizeOf(typeof(LVGROUP));
+                        lvgroup.mask = LVGF_STATE;
+                        lvgroup.pszHeader = default(string);
+                        lvgroup.cchHeader = default(int);
+                        lvgroup.pszFooter = default(string);
+                        lvgroup.cchFooter = default(int);
+                        lvgroup.iGroupId = (int) typeof(ListViewGroup).InvokeMember("ID", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null, group, null);
+                        lvgroup.stateMask = default(int);
+                        lvgroup.state = LVGS_COLLAPSIBLE;
+                        lvgroup.uAlign = default(int);
+
+                        ptr = Marshal.AllocHGlobal(lvgroup.cbSize);
+                        Marshal.StructureToPtr(lvgroup, ptr, false);
+                        Win32.SendMessage(this.Handle, LVM_SETGROUPINFO, (IntPtr) lvgroup.iGroupId, ptr);
+                    }
+                    finally
+                    {
+                        if (ptr != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(ptr);
+                        }
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Override WindowProc to call DefWindowProc, enabling mouse clicks to collapse/expand groups.
+            /// </summary>
+            protected override void WndProc(ref Message m)
+            {
+                if (m.Msg == Win32.WM_LBUTTONUP)
+                {
+                    this.DefWndProc(ref m);
+                }
+                base.WndProc(ref m);
+            }
+        }
+
+        #endregion
     }
 
 }

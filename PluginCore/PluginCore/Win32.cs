@@ -126,6 +126,7 @@ namespace PluginCore
         public const Int32 TV_FIRST = 0x1100;
         public const Int32 WM_NCLBUTTONDOWN = 0x00A1;
         public const Int32 WM_LBUTTONDOWN = 0x0201;
+        public const Int32 WM_LBUTTONUP = 0x0202;
         public const Int32 WM_RBUTTONDOWN = 0x0204;
         public const Int32 WM_MBUTTONDOWN = 0x0207;
         public const Int32 VK_SHIFT = 0x10;
@@ -170,10 +171,10 @@ namespace PluginCore
         public static extern void SetWindowPos(IntPtr hwnd, IntPtr hwndInsertAfter, Int32 x, Int32 y, Int32 width, Int32 height, UInt32 flags);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr SendMessage(IntPtr hWnd, Int32 msg, IntPtr wp, IntPtr lp);
+        public static extern IntPtr SendMessage(IntPtr hWnd, Int32 msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
-        public static extern Int32 SendMessage(IntPtr handle, Int32 messg, Int32 wparam, Int32 lparam);
+        public static extern Int32 SendMessage(IntPtr hWnd, Int32 msg, Int32 wParam, Int32 lParam);
 
         [DllImport("user32.dll")]
         public static extern IntPtr WindowFromPoint(Point pt);
