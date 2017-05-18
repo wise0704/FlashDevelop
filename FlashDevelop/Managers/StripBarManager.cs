@@ -45,7 +45,7 @@ namespace FlashDevelop.Managers
                     found.Add(Items[i]);
                 }
             }
-            
+
             var item = ShortcutManager.GetRegisteredItem(name);
             if (item != null)
             {
@@ -98,7 +98,7 @@ namespace FlashDevelop.Managers
                 switch (node.Name)
                 {
                     case "menu":
-                        GenerateRuntimeXmlData(node);
+                        GenerateRuntimeGeneratedXmlData(node);
                         var menu = GetMenu(node);
                         items.Add(menu); // Add item first to get the correct id
                         CreateKeyId(menu); // Create id first to get the correct children id's
@@ -159,7 +159,7 @@ namespace FlashDevelop.Managers
             string tag = XmlHelper.GetAttribute(node, "tag");
             item.Tag = new ItemData(label, null, tag, flags);
             item.Text = GetLocalizedString(label);
-            if (name != null) item.Name = name; // Use the given name
+            if (name != null) item.Name = GetValidName(name); // Use the given name
             else item.Name = GetNameFromLabel(label); // Assign from id
             if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
             if (image != null) item.Image = Globals.MainForm.FindImage(image);
@@ -185,7 +185,7 @@ namespace FlashDevelop.Managers
             item.Tag = new ItemData(label, keyId, tag, flags);
             if (image != null) item.ToolTipText = TextHelper.RemoveMnemonicsAndEllipsis(GetLocalizedString(label));
             else item.Text = TextHelper.RemoveMnemonicsAndEllipsis(GetLocalizedString(label)); // Use text instead...
-            if (name != null) item.Name = name; // Use the given name
+            if (name != null) item.Name = GetValidName(name); // Use the given name
             else item.Name = GetNameFromLabel(label); // Assign from id
             if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
             if (image != null) item.Image = Globals.MainForm.FindImage(image);
@@ -212,7 +212,7 @@ namespace FlashDevelop.Managers
             string tag = XmlHelper.GetAttribute(node, "tag");
             item.Tag = new ItemData(label, keyId, tag, flags);
             item.Text = GetLocalizedString(label);
-            if (name != null) item.Name = name; // Use the given name
+            if (name != null) item.Name = GetValidName(name); // Use the given name
             else item.Name = GetNameFromLabel(label); // Assign from id
             if (enabled != null) item.Enabled = Convert.ToBoolean(enabled);
             if (image != null) item.Image = Globals.MainForm.FindImage(image);
@@ -234,7 +234,7 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Generates XML data at runtime.
         /// </summary>
-        private static void GenerateRuntimeXmlData(XmlNode node)
+        private static void GenerateRuntimeGeneratedXmlData(XmlNode node)
         {
             switch (XmlHelper.GetAttribute(node, "name"))
             {
@@ -250,12 +250,11 @@ namespace FlashDevelop.Managers
         private static string GetSyntaxMenuXml()
         {
             string syntaxXml = "";
-            string xmlFormat = "<button label=\"{0}\" click=\"ChangeSyntax\" tag=\"{1}\" image=\"559\" flags=\"Enable:IsEditable+Check:IsEditable|IsActiveSyntax\" />";
             string[] syntaxFiles = Directory.GetFiles(Path.Combine(PathHelper.SettingDir, "Languages"), "*.xml");
             for (int i = 0; i < syntaxFiles.Length; i++)
             {
                 string fileName = Path.GetFileNameWithoutExtension(syntaxFiles[i]);
-                syntaxXml += string.Format(xmlFormat, fileName, fileName.ToLower());
+                syntaxXml += $"<button label=\"{fileName}\" click=\"{nameof(MainForm.ChangeSyntax)}\" tag=\"{fileName.ToLower()}\" image=\"559\" flags=\"Enable:IsEditable+Check:IsEditable|IsActiveSyntax\" />";
             }
             return syntaxXml;
         }
@@ -300,7 +299,15 @@ namespace FlashDevelop.Managers
             {
                 return text.Substring(6);
             }
-            return text;
+            return GetValidName(text);
+        }
+
+        /// <summary>
+        /// Removes mnemonics, ellipses and spaces from the string.
+        /// </summary>
+        private static string GetValidName(string text)
+        {
+            return TextHelper.RemoveMnemonicsAndEllipsis(text).Replace('.', '_').Replace(' ', '_');
         }
 
         /// <summary>
