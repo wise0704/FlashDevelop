@@ -1669,7 +1669,7 @@ namespace FlashDevelop
         private bool PreProcessCmdKey(ref Message m, Keys keyData)
         {
             /*
-             * Don't process ControlKey, ShiftKey or Menu
+             * Don't process CTRL, SHIFT or ALT keys.
              */
             switch (keyData & Keys.KeyCode)
             {
@@ -1681,25 +1681,32 @@ namespace FlashDevelop
             }
 
             /*
-             * Update the current keys
+             * Update the current key.
              */
             currentKeys += keyData;
+            var item = ShortcutManager.GetRegisteredItem(currentKeys);
 
             /*
-             * Process shortcut
+             * Dispatch events.
              */
-            var item = ShortcutManager.GetRegisteredItem(currentKeys);
-            var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item?.Id, currentKeys);
-            EventManager.DispatchEvent(this, e);
-            if (!e.Handled && currentKeys.IsSimple)
+            bool handled = false;
+            if (item != null)
             {
-                e.Handled = 
-                #pragma warning disable CS0612 // Type or member is obsolete
-                    DispatchKeyEvent(keyData)
-                #pragma warning restore CS0612 // Type or member is obsolete
-                     || TabbingManager.ProcessCmdKey(ref m, keyData);
+                var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item.Id, currentKeys);
+                EventManager.DispatchEvent(this, e);
+                handled = e.Handled;
             }
-            if (!e.Handled && item != null)
+            if (!handled && currentKeys.IsSimple)
+            {
+                var e = new KeyEvent(EventType.Keys, keyData);
+                EventManager.DispatchEvent(this, e);
+                handled = e.Handled || TabbingManager.ProcessCmdKey(ref m, keyData);
+            }
+
+            /*
+             * Perform click on the first associated tool strip menu item.
+             */
+            if (!handled && item != null)
             {
                 for (int i = 0; i < item.Items.Length; i++)
                 {
@@ -1707,16 +1714,16 @@ namespace FlashDevelop
                     if (menuItem != null && menuItem.Enabled && menuItem.Available && !menuItem.HasDropDownItems)
                     {
                         menuItem.PerformClick();
-                        e.Handled = true;
+                        handled = true;
                         break;
                     }
                 }
             }
 
             /*
-             * Shortcut has been handled
+             * Shortcut has been handled.
              */
-            if (e.Handled)
+            if (handled)
             {
                 if (currentKeys.IsExtended)
                 {
@@ -1731,13 +1738,13 @@ namespace FlashDevelop
             }
 
             /*
-             * Shortcut exists but not handled
+             * Shortcut exists but not handled.
              */
-            if (ShortcutManager.AllShortcuts.Contains(currentKeys)
+            if (item != null
                 && ShortcutKeysManager.IsValidShortcut(currentKeys)) // Hacky, but required until contextual shortcut is implemented... 
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, item.Id);
                 if (!currentKeys.IsExtended)
                 {
                     currentKeys = ShortcutKeys.None;
@@ -1746,7 +1753,7 @@ namespace FlashDevelop
             }
 
             /*
-             * Shortcut does not exist
+             * Shortcut does not exist.
              */
             if (currentKeys.IsExtended)
             {
@@ -1754,7 +1761,6 @@ namespace FlashDevelop
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
                 return true;
             }
-
             switch (GetUnhandledKeyType(ref m, keyData))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
@@ -1779,17 +1785,6 @@ namespace FlashDevelop
                     currentKeys = ShortcutKeys.None;
                     return false;
             }
-        }
-
-        /// <summary>
-        /// Dispatches the obsolete <see cref="EventType.Keys"/> event.
-        /// </summary>
-        [Obsolete] // Needs to be marked obsolete to avoid error messages.
-        private bool DispatchKeyEvent(Keys keyData)
-        {
-            var e = new KeyEvent(EventType.Keys, keyData);
-            EventManager.DispatchEvent(this, e);
-            return e.Handled;
         }
 
         /// <summary>

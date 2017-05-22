@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Forms;
 
@@ -70,71 +71,131 @@ namespace PluginCore
     }
 
     /// <summary>
-    /// Events with Key data
+    /// Provides data for the <see cref="EventType.Keys"/> event.
     /// </summary>
-    [Obsolete("This class has been deprecated.", true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public class KeyEvent : NotifyEvent
     {
-        private Keys value;
-        private Boolean processKey;
-
-        /// <summary>
-        /// Gets the <see cref="Keys"/> value associated with this <see cref="KeyEvent"/>.
-        /// </summary>
-        public Keys Value
-        {
-            get { return this.value; }
-            set { this.value = value; }
-        }
-
-        /// <summary>
-        /// Gets or sets whether to process the keys associated with this <see cref="KeyEvent"/>.
-        /// </summary>
-        public Boolean ProcessKey
-        {
-            get { return this.processKey; }
-            set { this.processKey = value; }
-        }
+        private Keys keyData;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyEvent"/> class.
         /// </summary>
-        public KeyEvent(EventType type, Keys value) : base(type)
+        public KeyEvent(EventType type, Keys keyData) : base(type)
         {
-            this.value = value;
-            this.processKey = false;
+            this.keyData = keyData;
+        }
+
+        #region Deprecated
+
+        /// <summary>
+        /// [deprecated] Use the <see cref="KeyData"/> property instead.
+        /// </summary>
+        [Obsolete("This property has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Keys Value
+        {
+            get { return this.KeyData; }
+            set { }
+        }
+
+        /// <summary>
+        /// [deprecated] Use the <see cref="NotifyEvent.Handled"/> property instead.
+        /// </summary>
+        [Obsolete("This property has been deprecated.", true)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool ProcessKey
+        {
+            get { return this.Handled; }
+            set { this.Handled = value; }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Gets the key data for the event.
+        /// </summary>
+        public Keys KeyData
+        {
+            get { return this.keyData; }
+        }
+
+        /// <summary>
+        /// Gets the keyboard code for the event.
+        /// </summary>
+        public Keys KeyCode
+        {
+            get { return this.keyData & Keys.KeyCode; }
+        }
+
+        /// <summary>
+        /// Gets the keyboard value for the event.
+        /// </summary>
+        public int KeyValue
+        {
+            get { return (int) (this.keyData & Keys.KeyCode); }
+        }
+
+        /// <summary>
+        /// Gets the modifier flags for the event.
+        /// The flags indicate which combination of CTRL, SHIFT, and ALT keys was pressed.
+        /// </summary>
+        public Keys Modifiers
+        {
+            get { return this.keyData & Keys.Modifiers; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the CTRL key was pressed.
+        /// </summary>
+        public bool Control
+        {
+            get { return (this.keyData & Keys.Control) == Keys.Control; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the ALT key was pressed.
+        /// </summary>
+        public bool Alt
+        {
+            get { return (this.keyData & Keys.Alt) == Keys.Alt; }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the SHIFT key was pressed.
+        /// </summary>
+        public bool Shift
+        {
+            get { return (this.keyData & Keys.Shift) == Keys.Shift; }
         }
     }
 
     /// <summary>
-    /// Represents events with shortcut keys.
+    /// Provides data for the <see cref="EventType.ShortcutKeys"/> event.
     /// </summary>
     public class ShortcutKeysEvent : NotifyEvent
     {
-        private string id;
+        private string command;
         private ShortcutKeys shortcutKeys;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ShortcutKeysEvent"/> class.
+        /// Initializes a new instance of the <see cref="ShortcutKeysEvent"/> class.
         /// </summary>
-        public ShortcutKeysEvent(EventType type, string id, ShortcutKeys shortcutKeys) : base(type)
+        public ShortcutKeysEvent(EventType type, string command, ShortcutKeys shortcutKeys) : base(type)
         {
-            this.id = id;
+            this.command = command;
             this.shortcutKeys = shortcutKeys;
         }
 
         /// <summary>
-        /// Gets the shortcut ID associated with this <see cref="ShortcutKeysEvent"/> object.
-        /// If this property is <see langword="null"/>, the associated shortcut key is not a registered shortcut.
+        /// Gets the shortcut command for the event.
         /// </summary>
         public string Id
         {
-            get { return this.id; }
+            get { return this.command; }
         }
 
         /// <summary>
-        /// Gets the shortcut keys associated with this <see cref="ShortcutKeysEvent"/> object.
+        /// Gets the shortcut keys for the event.
         /// </summary>
         public ShortcutKeys ShortcutKeys
         {
@@ -143,24 +204,24 @@ namespace PluginCore
     }
 
     /// <summary>
-    /// Represents events with shortcut update event data.
+    /// Provides data for the <see cref="EventType.ShortcutUpdate"/> event.
     /// </summary>
     public class ShortcutUpdateEvent : NotifyEvent
     {
         private string command;
-        private ShortcutKeys[] shortcutKeys;
+        private ReadOnlyCollection<ShortcutKeys> shortcutKeys;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ShortcutUpdateEvent"/> class.
+        /// Initializes a new instance of the <see cref="ShortcutUpdateEvent"/> class.
         /// </summary>
-        public ShortcutUpdateEvent(EventType type, string command, ShortcutKeys[] shortcutKeys) : base(type)
+        public ShortcutUpdateEvent(EventType type, string command, ReadOnlyCollection<ShortcutKeys> shortcutKeys) : base(type)
         {
             this.command = command;
             this.shortcutKeys = shortcutKeys;
         }
 
         /// <summary>
-        /// Gets the shortcut command string associated with this <see cref="ShortcutUpdateEvent"/> object.
+        /// Gets the shortcut command for the event.
         /// </summary>
         public string Command
         {
@@ -168,9 +229,9 @@ namespace PluginCore
         }
 
         /// <summary>
-        /// Gets the array of shortcut keys associated with this <see cref="ShortcutUpdateEvent"/> object.
+        /// Gets the read-only collection of shortcut keys for the event.
         /// </summary>
-        public ShortcutKeys[] ShortcutKeys
+        public ReadOnlyCollection<ShortcutKeys> ShortcutKeys
         {
             get { return this.shortcutKeys; }
         }

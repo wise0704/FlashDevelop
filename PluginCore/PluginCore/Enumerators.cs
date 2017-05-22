@@ -40,7 +40,6 @@ namespace PluginCore
         Shortcut       = 0x0000000040000000, // DataEvent (id, keys)
         Command        = 0x0000000080000000, // DataEvent (command)
         Trace          = 0x0000000100000000, // NotifyEvent
-        [Obsolete("This enum value has been deprecated.", true)]
         Keys           = 0x0000000200000000, // KeyEvent (keys)
         Completion     = 0x0000000400000000, // NotifyEvent
         AppChanges     = 0x0000000800000000, // NotifyEvent

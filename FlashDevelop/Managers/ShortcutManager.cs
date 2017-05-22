@@ -192,7 +192,7 @@ namespace FlashDevelop.Managers
                     UpdateShortcutKeyDisplayString(item.Items[i], keys);
                 }
 
-                var e = new ShortcutUpdateEvent(EventType.ShortcutUpdate, item.Id, item.Custom);
+                var e = new ShortcutUpdateEvent(EventType.ShortcutUpdate, item.Id, Array.AsReadOnly(item.Custom));
                 EventManager.DispatchEvent(Globals.MainForm, e);
             }
         }
