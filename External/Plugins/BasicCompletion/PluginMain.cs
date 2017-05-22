@@ -127,10 +127,10 @@ namespace BasicCompletion
             if (document == null || !document.IsEditable) return;
             switch (e.Type)
             {
-                case EventType.ShortcutKeys:
+                case EventType.ShortcutKey:
                     if (this.isSupported)
                     {
-                        switch (((ShortcutKeysEvent) e).Id)
+                        switch (((ShortcutKeyEvent) e).Command)
                         {
                             case "Completion.ListMembers":
                                 String lang = document.SciControl.ConfigurationLanguage;
@@ -277,7 +277,7 @@ namespace BasicCompletion
         {
             UITools.Manager.OnCharAdded += new UITools.CharAddedHandler(this.SciControlCharAdded);
             UITools.Manager.OnTextChanged += new UITools.TextChangedHandler(this.SciControlTextChanged);
-            EventType eventTypes = EventType.ShortcutKeys | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Command | EventType.UIStarted | EventType.UIClosing;
+            EventType eventTypes = EventType.ShortcutKey | EventType.FileSave | EventType.ApplySettings | EventType.SyntaxChange | EventType.FileSwitch | EventType.Command | EventType.UIStarted | EventType.UIClosing;
             EventManager.AddEventHandler(this, EventType.Completion, HandlingPriority.Low);
             EventManager.AddEventHandler(this, eventTypes);
 

@@ -94,7 +94,7 @@ namespace ProjectManager
 
         const EventType eventMask = EventType.UIStarted | EventType.UIClosing | EventType.FileOpening
             | EventType.FileOpen | EventType.FileSave | EventType.FileSwitch | EventType.ProcessStart | EventType.ProcessEnd
-            | EventType.ProcessArgs | EventType.Command | EventType.ShortcutKeys | EventType.ApplySettings;
+            | EventType.ProcessArgs | EventType.Command | EventType.Keys | EventType.ShortcutKey | EventType.ApplySettings;
 
         #region Load/Save Settings
 
@@ -541,8 +541,12 @@ namespace ProjectManager
                     }
                     break;
 
-                case EventType.ShortcutKeys:
-                    e.Handled = HandleKeyEvent((ShortcutKeysEvent) e);
+                case EventType.ShortcutKey:
+                    e.Handled = HandleShortcutKeyEvent((ShortcutKeyEvent) e);
+                    break;
+
+                case EventType.Keys:
+                    e.Handled = HandleKeyEvent((KeyEvent) e);
                     break;
             }
         }
@@ -556,11 +560,11 @@ namespace ProjectManager
             }
         }
 
-        private bool HandleKeyEvent(ShortcutKeysEvent e)
+        private bool HandleShortcutKeyEvent(ShortcutKeyEvent e)
         {
             if (activeProject == null) return false;
 
-            switch (e.Id)
+            switch (e.Command)
             {
                 case "Project.ConfigurationSelector":
                     pluginUI.menus.ConfigurationSelector.Focus();
@@ -574,12 +578,19 @@ namespace ProjectManager
                 case "ProjectTree.LocateActiveFile":
                     TreeSyncToCurrentFile();
                     return true;
+                default:
+                    return false;
             }
+        }
+
+        private bool HandleKeyEvent(KeyEvent e)
+        {
+            if (activeProject == null) return false;
 
             // Handle tree-level simple shortcuts like copy/paste/del
             if (Tree.Focused && !pluginUI.IsEditingLabel)
             {
-                switch ((Keys) e.ShortcutKeys)
+                switch (e.KeyData)
                 {
                     case Keys.Control | Keys.C:
                         if (pluginUI.Menu.Contains(pluginUI.Menu.Copy)) TreeCopyItems();

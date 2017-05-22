@@ -170,17 +170,17 @@ namespace PluginCore
     }
 
     /// <summary>
-    /// Provides data for the <see cref="EventType.ShortcutKeys"/> event.
+    /// Provides data for the <see cref="EventType.ShortcutKey"/> event.
     /// </summary>
-    public class ShortcutKeysEvent : NotifyEvent
+    public class ShortcutKeyEvent : NotifyEvent
     {
         private string command;
-        private ShortcutKeys shortcutKeys;
+        private ShortcutKey shortcutKeys;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShortcutKeysEvent"/> class.
+        /// Initializes a new instance of the <see cref="ShortcutKeyEvent"/> class.
         /// </summary>
-        public ShortcutKeysEvent(EventType type, string command, ShortcutKeys shortcutKeys) : base(type)
+        public ShortcutKeyEvent(EventType type, string command, ShortcutKey shortcutKeys) : base(type)
         {
             this.command = command;
             this.shortcutKeys = shortcutKeys;
@@ -189,7 +189,7 @@ namespace PluginCore
         /// <summary>
         /// Gets the shortcut command for the event.
         /// </summary>
-        public string Id
+        public string Command
         {
             get { return this.command; }
         }
@@ -197,7 +197,7 @@ namespace PluginCore
         /// <summary>
         /// Gets the shortcut keys for the event.
         /// </summary>
-        public ShortcutKeys ShortcutKeys
+        public ShortcutKey ShortcutKeys
         {
             get { return this.shortcutKeys; }
         }
@@ -209,12 +209,12 @@ namespace PluginCore
     public class ShortcutUpdateEvent : NotifyEvent
     {
         private string command;
-        private ReadOnlyCollection<ShortcutKeys> shortcutKeys;
+        private ReadOnlyCollection<ShortcutKey> shortcutKeys;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ShortcutUpdateEvent"/> class.
         /// </summary>
-        public ShortcutUpdateEvent(EventType type, string command, ReadOnlyCollection<ShortcutKeys> shortcutKeys) : base(type)
+        public ShortcutUpdateEvent(EventType type, string command, ReadOnlyCollection<ShortcutKey> shortcutKeys) : base(type)
         {
             this.command = command;
             this.shortcutKeys = shortcutKeys;
@@ -231,7 +231,7 @@ namespace PluginCore
         /// <summary>
         /// Gets the read-only collection of shortcut keys for the event.
         /// </summary>
-        public ReadOnlyCollection<ShortcutKeys> ShortcutKeys
+        public ReadOnlyCollection<ShortcutKey> ShortcutKeys
         {
             get { return this.shortcutKeys; }
         }

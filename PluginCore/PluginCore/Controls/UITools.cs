@@ -109,7 +109,8 @@ namespace PluginCore.Controls
             // Events
             //
             PluginBase.MainForm.DockPanel.ActivePaneChanged += new EventHandler(DockPanel_ActivePaneChanged);
-            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.ShortcutKeys);
+            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.High);
+            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.Keys);
         }
 
         #endregion
@@ -149,11 +150,15 @@ namespace PluginCore.Controls
                         return; // ignore notifications
                     break;
 
-                case EventType.ShortcutKeys:
-                    var shortcutKeysEvent = (ShortcutKeysEvent) e;
+                case EventType.ShortcutKey:
+                    var ske = (ShortcutKeyEvent) e;
                     var sci = PluginBase.MainForm.CurrentDocument.SciControl;
-                    e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut(shortcutKeysEvent)
-                        || HandleShortcut(shortcutKeysEvent);
+                    e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut(ske)
+                        || HandleShortcut(ske);
+                    return;
+
+                case EventType.Keys:
+                    e.Handled = HandleKeys(((KeyEvent) e).KeyData);
                     return;
             }
             // most of the time, an event should hide the list
@@ -361,7 +366,7 @@ namespace PluginCore.Controls
             if (OnCharAdded != null) OnCharAdded(sci, value);   
         }
 
-        private bool HandleShortcut(ShortcutKeysEvent e)
+        private bool HandleShortcut(ShortcutKeyEvent e)
         {
             // UITools is currently broadcasting a shortcut, ignore!
             if (ignoreKeys || DisableEvents)
@@ -369,7 +374,7 @@ namespace PluginCore.Controls
                 return false;
             }
 
-            switch (e.Id)
+            switch (e.Command)
             {
                 case "Completion.ListMembers":
                 case "Completion.ParameterInfo":
@@ -383,7 +388,7 @@ namespace PluginCore.Controls
 
                     // Offer to handle the shortcut
                     ignoreKeys = true;
-                    var newEvent = new ShortcutKeysEvent(EventType.ShortcutKeys, e.Id, e.ShortcutKeys);
+                    var newEvent = new ShortcutKeyEvent(EventType.ShortcutKey, e.Command, e.ShortcutKeys);
                     EventManager.DispatchEvent(this, newEvent);
                     ignoreKeys = false;
                     if (!newEvent.Handled)
@@ -398,7 +403,7 @@ namespace PluginCore.Controls
                     return true;
 
                 default:
-                    return HandleKeys((Keys) e.ShortcutKeys);
+                    return false;
             }
         }
 
@@ -463,7 +468,7 @@ namespace PluginCore.Controls
 
                 // Hide - reach here with the 'break' statement
                 UnlockControl();
-                CompletionList.Hide('\u001B');
+                CompletionList.Hide((char) Keys.Escape);
                 codeTip.Hide();
                 callTip.Hide();
             }

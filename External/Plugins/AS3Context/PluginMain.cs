@@ -178,10 +178,10 @@ namespace AS3Context
                         }
                         break;
 
-                    case EventType.ShortcutKeys:
+                    case EventType.ShortcutKey:
                         if (inMXML)
                         {
-                            if (((ShortcutKeysEvent) e).Id == "Search.GotoDeclaration")
+                            if (((ShortcutKeyEvent) e).Command == "Search.GotoDeclaration")
                             {
                                 if (MxmlComplete.GotoDeclaration())
                                 {
@@ -419,7 +419,7 @@ namespace AS3Context
         {
             EventManager.AddEventHandler(this, EventType.UIStarted | EventType.ProcessArgs | EventType.FileSwitch | EventType.FileSave);
             EventManager.AddEventHandler(this, EventType.Command, HandlingPriority.High);
-            EventManager.AddEventHandler(this, EventType.Command | EventType.ShortcutKeys | EventType.ProcessArgs, HandlingPriority.Low);
+            EventManager.AddEventHandler(this, EventType.Command | EventType.ShortcutKey | EventType.ProcessArgs, HandlingPriority.Low);
         }
 
         /// <summary>

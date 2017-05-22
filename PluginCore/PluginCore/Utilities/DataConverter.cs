@@ -35,7 +35,7 @@ namespace PluginCore.Utilities
         /// </summary>
         public static String KeysToString(Keys keys)
         {
-            return ShortcutKeysConverter.ConvertToString(keys);
+            return ShortcutKeyConverter.ConvertToString(keys);
         }
 
         /// <summary>

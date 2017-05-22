@@ -7,23 +7,23 @@ using System.Windows.Forms;
 namespace PluginCore.Helpers
 {
     /// <summary>
-    /// Provides a <see cref="TypeConverter"/> to convert <see cref="ShortcutKeys"/> objects to and from other representations.
+    /// Provides a <see cref="TypeConverter"/> to convert <see cref="ShortcutKey"/> objects to and from other representations.
     /// </summary>
-    public class ShortcutKeysConverter : TypeConverter
+    public class ShortcutKeyConverter : TypeConverter
     {
         private const string Alt = "Alt+";
         private const string Ctrl = "Ctrl+";
         private const string Shift = "Shift+";
 
-        private static Dictionary<Keys, string> names;
-        private static Dictionary<string, Keys> keys;
+        private static Dictionary<Keys, string> nameTable;
+        private static Dictionary<string, Keys> keyTable;
 
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShortcutKeysConverter"/> class.
+        /// Initializes a new instance of the <see cref="ShortcutKeyConverter"/> class.
         /// </summary>
-        public ShortcutKeysConverter()
+        public ShortcutKeyConverter()
         {
 
         }
@@ -66,23 +66,23 @@ namespace PluginCore.Helpers
             }
             if (value is Keys)
             {
-                return (ShortcutKeys) (Keys) value;
+                return (ShortcutKey) (Keys) value;
             }
             if (value is Keys[])
             {
                 var array = (Keys[]) value;
                 switch (array.Length)
                 {
-                    case 0: return new ShortcutKeys();
-                    case 1: return new ShortcutKeys(array[0]);
-                    case 2: return new ShortcutKeys(array[0], array[1]);
+                    case 0: return new ShortcutKey();
+                    case 1: return new ShortcutKey(array[0]);
+                    case 2: return new ShortcutKey(array[0], array[1]);
                     default:
                         throw new FormatException("Length of the specified array is out of range.");
                 }
             }
             if (value == null)
             {
-                return ShortcutKeys.None;
+                return ShortcutKey.None;
             }
             return base.ConvertFrom(context, culture, value);
         }
@@ -100,9 +100,9 @@ namespace PluginCore.Helpers
             {
                 throw new ArgumentNullException(nameof(destinationType));
             }
-            if (value is ShortcutKeys)
+            if (value is ShortcutKey)
             {
-                var keys = (ShortcutKeys) value;
+                var keys = (ShortcutKey) value;
                 if (destinationType == typeof(string))
                 {
                     return ConvertToString(keys);
@@ -140,16 +140,16 @@ namespace PluginCore.Helpers
         #region Public Methods
 
         /// <summary>
-        /// Converts a <see cref="string"/> to <see cref="ShortcutKeys"/>.
+        /// Converts a <see cref="string"/> to <see cref="ShortcutKey"/>.
         /// </summary>
         /// <param name="value">A <see cref="string"/> to convert.</param>
-        public new static ShortcutKeys ConvertFromString(string value)
+        public new static ShortcutKey ConvertFromString(string value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException(nameof(value));
             }
-            if (keys == null)
+            if (keyTable == null)
             {
                 Initialize();
             }
@@ -157,12 +157,12 @@ namespace PluginCore.Helpers
         }
 
         /// <summary>
-        /// Converts a <see cref="ShortcutKeys"/> value to <see cref="string"/>.
+        /// Converts a <see cref="ShortcutKey"/> value to <see cref="string"/>.
         /// </summary>
-        /// <param name="keys">A <see cref="ShortcutKeys"/> value to convert.</param>
-        public static string ConvertToString(ShortcutKeys keys)
+        /// <param name="keys">A <see cref="ShortcutKey"/> value to convert.</param>
+        public static string ConvertToString(ShortcutKey keys)
         {
-            if (names == null)
+            if (nameTable == null)
             {
                 Initialize();
             }
@@ -179,7 +179,7 @@ namespace PluginCore.Helpers
         /// <param name="keys">A <see cref="Keys"/> value to convert.</param>
         public static string ConvertToString(Keys keys)
         {
-            if (names == null)
+            if (nameTable == null)
             {
                 Initialize();
             }
@@ -187,21 +187,21 @@ namespace PluginCore.Helpers
         }
 
         /// <summary>
-        /// Converts a <see cref="string"/> to <see cref="ShortcutKeys"/>. A return value indicates whether the conversion succeeded.
+        /// Converts a <see cref="string"/> to <see cref="ShortcutKey"/>. A return value indicates whether the conversion succeeded.
         /// </summary>
         /// <param name="value">A <see cref="string"/> to convert.</param>
         /// <param name="result">
-        /// When this method returns, contains the <see cref="ShortcutKeys"/> value equivalent of the value represented in the specified string, if the conversion succeeded, or <see cref="ShortcutKeys.None"/> if the conversion failed.
+        /// When this method returns, contains the <see cref="ShortcutKey"/> value equivalent of the value represented in the specified string, if the conversion succeeded, or <see cref="ShortcutKey.None"/> if the conversion failed.
         /// The conversion fails if the specified string is <see langword="null"/> or <see cref="string.Empty"/>, or is not of the correct format.
         /// This parameter is passed uninitialized; any value originally supplied in result will be overwritten.</param>
-        public static bool TryConvertFromString(string value, out ShortcutKeys result)
+        public static bool TryConvertFromString(string value, out ShortcutKey result)
         {
             if (string.IsNullOrEmpty(value))
             {
-                result = ShortcutKeys.None;
+                result = ShortcutKey.None;
                 return false;
             }
-            if (keys == null)
+            if (keyTable == null)
             {
                 Initialize();
             }
@@ -214,8 +214,8 @@ namespace PluginCore.Helpers
 
         private static void Initialize()
         {
-            names = new Dictionary<Keys, string>();
-            keys = new Dictionary<string, Keys>();
+            nameTable = new Dictionary<Keys, string>();
+            keyTable = new Dictionary<string, Keys>();
             Add(Keys.Enter, "Enter"); // Keys.Return
             Add(Keys.Pause, "Break");
             Add(Keys.CapsLock, "CapsLock"); // Keys.Capital
@@ -266,13 +266,13 @@ namespace PluginCore.Helpers
             Add(Keys.Alt, "Alt");
         }
 
-        private static void Add(Keys key, string name)
+        private static void Add(Keys keys, string name)
         {
-            names.Add(key, name);
-            keys.Add(name, key);
+            nameTable.Add(keys, name);
+            keyTable.Add(name, keys);
         }
 
-        private static ShortcutKeys ConvertFromStringInternal(string value)
+        private static ShortcutKey ConvertFromStringInternal(string value)
         {
             int index = 0;
             bool extended = false;
@@ -311,7 +311,7 @@ namespace PluginCore.Helpers
                         {
                             if (extended)
                             {
-                                throw new FormatException($"{nameof(ShortcutKeys)} cannot have more than two parts.");
+                                throw new FormatException($"{nameof(ShortcutKey)} cannot have more than two parts.");
                             }
                             else
                             {
@@ -341,7 +341,7 @@ namespace PluginCore.Helpers
                 first |= GetKey(value.Substring(index, length - index));
             }
 
-            return new ShortcutKeys(first, second);
+            return new ShortcutKey(first, second);
         }
 
         private static string ConvertToStringInternal(Keys keys)
@@ -380,7 +380,7 @@ namespace PluginCore.Helpers
             return GetName(keys);
         }
 
-        private static bool TryConvertFromStringInternal(string value, out ShortcutKeys shortcutKeys)
+        private static bool TryConvertFromStringInternal(string value, out ShortcutKey keys)
         {
             int index = 0;
             bool extended = false;
@@ -400,7 +400,7 @@ namespace PluginCore.Helpers
                             {
                                 if (!TryGetKey(value.Substring(index, i - index), out result))
                                 {
-                                    shortcutKeys = ShortcutKeys.None;
+                                    keys = ShortcutKey.None;
                                     return false;
                                 }
                                 second |= result;
@@ -409,7 +409,7 @@ namespace PluginCore.Helpers
                             {
                                 if (!TryGetKey(value.Substring(index, i - index), out result))
                                 {
-                                    shortcutKeys = ShortcutKeys.None;
+                                    keys = ShortcutKey.None;
                                     return false;
                                 }
                                 first |= result;
@@ -418,7 +418,7 @@ namespace PluginCore.Helpers
                             {
                                 if (++i == length)
                                 {
-                                    shortcutKeys = ShortcutKeys.None;
+                                    keys = ShortcutKey.None;
                                     return false;
                                 }
                             }
@@ -431,14 +431,14 @@ namespace PluginCore.Helpers
                         {
                             if (extended)
                             {
-                                shortcutKeys = ShortcutKeys.None;
+                                keys = ShortcutKey.None;
                                 return false;
                             }
                             else
                             {
                                 if (!TryGetKey(value.Substring(index, i - index), out result))
                                 {
-                                    shortcutKeys = ShortcutKeys.None;
+                                    keys = ShortcutKey.None;
                                     return false;
                                 }
                                 first |= result;
@@ -447,7 +447,7 @@ namespace PluginCore.Helpers
                             {
                                 if (++i == length)
                                 {
-                                    shortcutKeys = ShortcutKeys.None;
+                                    keys = ShortcutKey.None;
                                     return false;
                                 }
                             }
@@ -461,7 +461,7 @@ namespace PluginCore.Helpers
 
             if (!TryGetKey(value.Substring(index, length - index), out result))
             {
-                shortcutKeys = ShortcutKeys.None;
+                keys = ShortcutKey.None;
                 return false;
             }
 
@@ -476,18 +476,18 @@ namespace PluginCore.Helpers
 
             if (first == 0 && second != 0)
             {
-                shortcutKeys = ShortcutKeys.None;
+                keys = ShortcutKey.None;
                 return false;
             }
 
-            shortcutKeys = new ShortcutKeys(first, second);
+            keys = new ShortcutKey(first, second);
             return true;
         }
 
         private static Keys GetKey(string name)
         {
             Keys key;
-            if (keys.TryGetValue(name.Trim(), out key))
+            if (keyTable.TryGetValue(name.Trim(), out key))
             {
                 return key;
             }
@@ -498,19 +498,19 @@ namespace PluginCore.Helpers
             }
             catch (Exception e)
             {
-                throw new FormatException($"'{name}' is not a named constant defined for {nameof(ShortcutKeys)}.", e);
+                throw new FormatException($"'{name}' is not a named constant defined for {nameof(ShortcutKey)}.", e);
             }
         }
 
         private static string GetName(Keys keys)
         {
             string name;
-            return names.TryGetValue(keys, out name) ? name : keys.ToString();
+            return nameTable.TryGetValue(keys, out name) ? name : keys.ToString();
         }
 
         private static bool TryGetKey(string name, out Keys result)
         {
-            if (keys.TryGetValue(name.Trim(), out result))
+            if (keyTable.TryGetValue(name.Trim(), out result))
             {
                 return true;
             }

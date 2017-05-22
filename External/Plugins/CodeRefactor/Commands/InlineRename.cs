@@ -725,60 +725,50 @@ namespace CodeRefactor.Commands
                 case 0x0103: //WM_DEADCHAR
                     if (CanWrite && IsValidChar((int) m.WParam)) break;
                     return true;
-
-                //case 0x0200: //WM_MOUSEMOVE
-                //case 0x0201: //WM_LBUTTONDOWN
-                //case 0x0202: //WM_LBUTTONUP
-                //case 0x0203: //WM_LBUTTONDBCLICK
-                //case 0x0204: //WM_RBUTTONDOWN
-                //case 0x0205: //WM_RBUTTONUP
-                //case 0x0206: //WM_RBUTTONDBCLICK
-                //case 0x0207: //WM_MBUTTONDOWN
-                //case 0x0208: //WM_MBUTTONUP
-                //case 0x0209: //WM_MBUTTONDBCLICK
-                //    if (sci.ClientRectangle.Contains(sci.PointToClient(Control.MousePosition))) break;
-                //    return true;
-
-                //case 0x007B: //WM_CONTEXTMENU
-                //    return true;
             }
 
             return false;
         }
 
-        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
         {
-            e.Handled = HandleShortcutKeysEvent(e);
+            switch (e.Type)
+            {
+                case EventType.ShortcutKey:
+                    e.Handled = HandleShortcutKeyEvent((ShortcutKeyEvent) e);
+                    break;
+                case EventType.Keys:
+                    e.Handled = HandleKeyEvent((KeyEvent) e);
+                    break;
+            }
         }
 
-        private bool HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        private bool HandleShortcutKeyEvent(ShortcutKeyEvent e)
         {
-            switch (e.Id)
+            switch (e.Command)
             {
-                case null:
-                    return HandleKeys((Keys) e.ShortcutKeys);
-                case "EditMenu.Paste":
+                case "Edit.Paste":
                     PerformPaste();
                     return true;
-                case "EditMenu.Redo":
+                case "Edit.Redo":
                     PerformRedo();
                     return true;
-                case "EditMenu.SelectAll":
+                case "Edit.SelectAll":
                     PerformSelectAll();
                     return true;
-                case "EditMenu.Undo":
+                case "Edit.Undo":
                     PerformUndo();
                     return true;
-                case "EditMenu.Copy":
+                case "Edit.Copy":
                     if (sci.SelTextSize > 0) sci.Copy();
                     return true;
-                case "EditMenu.Cut":
+                case "Edit.Cut":
                     if (sci.SelTextSize > 0) sci.Cut();
                     return true;
-                case "EditMenu.ToLowercase":
+                case "Edit.ToLowercase":
                     sci.UpperCase();
                     return true;
-                case "EditMenu.ToUppercase":
+                case "Edit.ToUppercase":
                     sci.LowerCase();
                     return true;
                 case "Scintilla.ResetZoom":
@@ -790,16 +780,64 @@ namespace CodeRefactor.Commands
                 case "Scintilla.ZoomOut":
                     sci.ZoomOut();
                     return true;
+                case "Scintilla.DeleteBack":
+                    if (CanBackspace) sci.DeleteBack();
+                    return true;
+                case "Scintilla.Clear":
+                    if (CanDelete) sci.Clear();
+                    return true;
+                case "Scintilla.CharLeft":
+                    if (!AtLeftmost) sci.CharLeft();
+                    else if (sci.SelTextSize > 0) sci.SetSel(start, start);
+                    return true;
+                case "Scintilla.CharLeftExtend":
+                    if (!AtLeftmost) sci.CharLeftExtend();
+                    return true;
+                case "Scintilla.CharRight":
+                    if (!AtRightmost) sci.CharRight();
+                    else if (sci.SelTextSize > 0) sci.SetSel(end, end);
+                    return true;
+                case "Scintilla.CharRightExtend":
+                    if (!AtRightmost) sci.CharRightExtend();
+                    return true;
+                case "Scintilla.WordLeft":
+                    if (!AtLeftmost) sci.WordLeft();
+                    return true;
+                case "Scintilla.WordLeftExtend":
+                    if (!AtLeftmost) sci.WordLeftEndExtend();
+                    return true;
+                case "Scintilla.WordRight":
+                    if (!AtRightmost) sci.WordRight();
+                    return true;
+                case "Scintilla.WordRightExtend":
+                    if (!AtRightmost) sci.WordRightEndExtend();
+                    return true;
+                case "Scintilla.LineScrollDown":
+                    sci.LineScrollDown();
+                    return true;
+                case "Scintilla.LineScrollUp":
+                    sci.LineScrollUp();
+                    return true;
+                case "Scintilla.VCHome":
+                    if (CanWrite) sci.VCHome();
+                    return true;
+                case "Scintilla.VCHomeExtend":
+                    if (CanWrite) sci.VCHomeExtend();
+                    return true;
+                case "Scintilla.LineEnd":
+                    if (CanWrite) sci.LineEnd();
+                    return true;
+                case "Scintilla.LineEndExtend":
+                    if (CanWrite) sci.LineEndExtend();
+                    return true;
+                default:
+                    return false;
             }
-
-            return false;
         }
 
-        private bool HandleKeys(Keys keyData)
+        private bool HandleKeyEvent(KeyEvent e)
         {
-            var keyCode = keyData & Keys.KeyCode;
-            var modifiers = keyData & Keys.Modifiers;
-            switch (keyCode)
+            switch (e.KeyCode)
             {
                 case Keys.Escape:
                     OnCancel();
@@ -807,39 +845,9 @@ namespace CodeRefactor.Commands
                 case Keys.Enter:
                     OnApply();
                     return true;
-                case Keys.Back:
-                    if (CanBackspace) break;
-                    return true;
-                case Keys.Left:
-                    if (!AtLeftmost) break;
-                    if (sci.SelTextSize != 0) sci.SetSel(start, start);
-                    return true;
-                case Keys.Delete:
-                    if (CanDelete) break;
-                    return true;
-                case Keys.Right:
-                    if (!AtRightmost) break;
-                    if (sci.SelTextSize != 0) sci.SetSel(end, end);
-                    return true;
-                case Keys.PageUp:
-                case Keys.PageDown:
-                case Keys.Up:
-                case Keys.Down:
-                    if (!CanWrite) break;
-                    return true;
-                case Keys.End:
-                    if (!CanWrite) break;
-                    sci.SetSel((modifiers & Keys.Shift) == 0 ? end : sci.SelectionStart, end);
-                    return true;
-                case Keys.Home:
-                    if (!CanWrite) break;
-                    sci.SetSel((modifiers & Keys.Shift) == 0 ? start : sci.SelectionEnd, start);
-                    return true;
-                case Keys.Tab:
-                    return true;
+                default:
+                    return false;
             }
-
-            return false;
         }
 
         bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)

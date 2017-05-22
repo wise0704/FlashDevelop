@@ -139,9 +139,9 @@ namespace MacroManager
                 }
                 this.RunAutoRunMacros();
             }
-            else if (e.Type == EventType.ShortcutKeys)
+            else if (e.Type == EventType.ShortcutKey)
             {
-                var ske = (ShortcutKeysEvent) e;
+                var ske = (ShortcutKeyEvent) e;
                 foreach (Macro macro in this.settingObject.UserMacros)
                 {
                     if (macro.ShortcutKeys == ske.ShortcutKeys)
@@ -178,7 +178,7 @@ namespace MacroManager
             if (!Directory.Exists(dataPath)) Directory.CreateDirectory(dataPath);
             this.settingFilename = Path.Combine(dataPath, "Settings.fdb");
             EventManager.AddEventHandler(this, EventType.UIStarted);
-            EventManager.AddEventHandler(this, EventType.ShortcutKeys, HandlingPriority.Low); // Handle macro shortcuts with low priority
+            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.Low); // Handle macro shortcuts with low priority
         }
 
         /// <summary>
@@ -272,12 +272,12 @@ namespace MacroManager
             }
             if (this.settingObject.UserMacros.Count == 0)
             {
-                Macro execScript = new Macro("&Execute Script", new String[1] { "ExecuteScript|Development;$(OpenFile)" }, String.Empty, ShortcutKeys.None);
-                Macro execCommand = new Macro("E&xecute Command", new String[1] { "#$$(Command=RunProcess)|$$(Arguments=cmd.exe)" }, String.Empty, ShortcutKeys.None);
-                Macro execfCommand = new Macro("Execu&te Current File", new String[1] { "RunProcess|$(CurFile)" }, String.Empty, ShortcutKeys.None);
-                Macro runSelected = new Macro("Execute &Selected Text", new String[1] { "RunProcess|$(SelText)" }, String.Empty, ShortcutKeys.None);
-                Macro browseSelected = new Macro("&Browse Current File", new String[1] { "Browse|$(CurFile)" }, String.Empty, ShortcutKeys.None);
-                Macro copyTextAsRtf = new Macro("&Copy Text As RTF", new String[1] { "ScintillaCommand|CopyRTF" }, String.Empty, ShortcutKeys.None);
+                Macro execScript = new Macro("&Execute Script", new String[1] { "ExecuteScript|Development;$(OpenFile)" }, String.Empty, ShortcutKey.None);
+                Macro execCommand = new Macro("E&xecute Command", new String[1] { "#$$(Command=RunProcess)|$$(Arguments=cmd.exe)" }, String.Empty, ShortcutKey.None);
+                Macro execfCommand = new Macro("Execu&te Current File", new String[1] { "RunProcess|$(CurFile)" }, String.Empty, ShortcutKey.None);
+                Macro runSelected = new Macro("Execute &Selected Text", new String[1] { "RunProcess|$(SelText)" }, String.Empty, ShortcutKey.None);
+                Macro browseSelected = new Macro("&Browse Current File", new String[1] { "Browse|$(CurFile)" }, String.Empty, ShortcutKey.None);
+                Macro copyTextAsRtf = new Macro("&Copy Text As RTF", new String[1] { "ScintillaCommand|CopyRTF" }, String.Empty, ShortcutKey.None);
                 this.settingObject.UserMacros.Add(execScript);
                 this.settingObject.UserMacros.Add(execCommand);
                 this.settingObject.UserMacros.Add(execfCommand);
@@ -383,7 +383,7 @@ namespace MacroManager
         private String label;
         private String image;
         private String[] entries;
-        private ShortcutKeys shortcut;
+        private ShortcutKey shortcut;
         private Boolean showInToolbar;
         private Boolean autoRun;
 
@@ -392,36 +392,36 @@ namespace MacroManager
             this.label = String.Empty;
             this.image = String.Empty;
             this.entries = new String[0];
-            this.shortcut = ShortcutKeys.None;
+            this.shortcut = ShortcutKey.None;
             this.showInToolbar = false;
             this.autoRun = false;
         }
         /// <summary>
-        /// [deprecated] Use the <see cref="Macro(string, string[], string, ShortcutKeys)"/> constructor instead.
+        /// [deprecated] Use the <see cref="Macro(string, string[], string, ShortcutKey)"/> constructor instead.
         /// </summary>
         [Obsolete("This constructor has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         public Macro(String label, String[] entries, String image, Keys shortcut)
-            : this(label, entries, image, (ShortcutKeys) shortcut)
+            : this(label, entries, image, (ShortcutKey) shortcut)
         {
 
         }
-        public Macro(String label, String[] entries, String image, ShortcutKeys shortcut)
+        public Macro(String label, String[] entries, String image, ShortcutKey shortcut)
             : this(label, entries, image, shortcut, false, false)
         {
             
         }
         /// <summary>
-        /// [deprecated] Use the <see cref="Macro(string, string[], string, ShortcutKeys, bool, bool) "/> constructor instead.
+        /// [deprecated] Use the <see cref="Macro(string, string[], string, ShortcutKey, bool, bool) "/> constructor instead.
         /// </summary>
         [Obsolete("This constructor has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         public Macro(String label, String[] entries, String image, Keys shortcut, Boolean autoRun, Boolean showInToolbar)
-            : this(label, entries, image, (ShortcutKeys) shortcut, autoRun, showInToolbar)
+            : this(label, entries, image, (ShortcutKey) shortcut, autoRun, showInToolbar)
         {
 
         }
-        public Macro(String label, String[] entries, String image, ShortcutKeys shortcut, Boolean autoRun, Boolean showInToolbar) 
+        public Macro(String label, String[] entries, String image, ShortcutKey shortcut, Boolean autoRun, Boolean showInToolbar) 
         {
             this.label = label;
             this.image = image;
@@ -440,7 +440,7 @@ namespace MacroManager
 
             try
             {
-                this.shortcut = (ShortcutKeys) info.GetValue("shortcut", typeof(ShortcutKeys));
+                this.shortcut = (ShortcutKey) info.GetValue("shortcut", typeof(ShortcutKey));
             }
             catch (InvalidCastException)
             {
@@ -517,8 +517,8 @@ namespace MacroManager
         /// Gets and sets the shortcut
         /// </summary>
         [LocalizedDescription("MacroManager.Description.Shortcut")]
-        [DefaultValue(typeof(ShortcutKeys), "None")]
-        public ShortcutKeys ShortcutKeys
+        [DefaultValue(typeof(ShortcutKey), "None")]
+        public ShortcutKey ShortcutKeys
         {
             get { return this.shortcut; }
             set { this.shortcut = value; }
@@ -537,7 +537,7 @@ namespace MacroManager
             info.AddValue("label", label);
             info.AddValue("image", image);
             info.AddValue("entries", entries, typeof(String[]));
-            info.AddValue("shortcut", shortcut, typeof(ShortcutKeys));
+            info.AddValue("shortcut", shortcut, typeof(ShortcutKey));
             info.AddValue("showInToolbar", showInToolbar);
             info.AddValue("autoRun", autoRun);
         }

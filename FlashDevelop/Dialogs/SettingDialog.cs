@@ -368,18 +368,21 @@ namespace FlashDevelop.Dialogs
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
         {
-            switch (e.Id)
+            if (e.Type == EventType.ShortcutKey)
             {
-                case "View.CollapseAll":
-                    this.itemPropertyGrid.CollapseAllGridItems();
-                    e.Handled = true;
-                    break;
-                case "View.ExpandAll":
-                    this.itemPropertyGrid.ExpandAllGridItems();
-                    e.Handled = true;
-                    break;
+                switch (((ShortcutKeyEvent) e).Command)
+                {
+                    case "View.CollapseAll":
+                        this.itemPropertyGrid.CollapseAllGridItems();
+                        e.Handled = true;
+                        break;
+                    case "View.ExpandAll":
+                        this.itemPropertyGrid.ExpandAllGridItems();
+                        e.Handled = true;
+                        break;
+                }
             }
         }
 

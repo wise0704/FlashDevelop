@@ -44,7 +44,7 @@ namespace FlashDevelop.Dialogs
 
         private ConflictsManager conflictsManager;
         private ShortcutListItem[] shortcutListItems;
-        private ShortcutKeys inputKeys;
+        private ShortcutKey inputKeys;
 
         private ShortcutDialog()
         {
@@ -484,7 +484,7 @@ namespace FlashDevelop.Dialogs
             {
                 var item = this.shortcutListItems[i];
                 if (filter.Length == 0 ||
-                    item.Id.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    item.Command.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0 ||
                     item.KeysString.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     if (viewModified && !item.IsModified) continue;
@@ -520,7 +520,7 @@ namespace FlashDevelop.Dialogs
         /// <summary>
         /// Assign the new shortcut.
         /// </summary>
-        private bool AssignNewShortcut(ShortcutListItem item, ShortcutKeys shortcut)
+        private bool AssignNewShortcut(ShortcutListItem item, ShortcutKey shortcut)
         {
             if (item.Custom.Contains(shortcut))
             {
@@ -558,7 +558,7 @@ namespace FlashDevelop.Dialogs
                     }
                     else
                     {
-                        filter = ViewConflictsKey + ShortcutKeysConverter.ConvertToString(shortcut.First);
+                        filter = ViewConflictsKey + ShortcutKeyConverter.ConvertToString(shortcut.First);
                     }
                     this.FilterListView(filter);
                     this.filterTextBox.SelectAll();
@@ -572,7 +572,7 @@ namespace FlashDevelop.Dialogs
         /// Remove shortcut from the selected item.
         /// </summary>
         /// <param name="item"></param>
-        private void RemoveShortcut(ShortcutListItem item, int shortcutIndex, ShortcutKeys shortcut)
+        private void RemoveShortcut(ShortcutListItem item, int shortcutIndex, ShortcutKey shortcut)
         {
             this.listView.BeginUpdate();
             item.Custom.RemoveAt(shortcutIndex);
@@ -584,7 +584,7 @@ namespace FlashDevelop.Dialogs
         /// <summary>
         /// Reverts the selected items shortcut to default.
         /// </summary>
-        private void RevertTo(ShortcutListItem item, ShortcutKeys[] shortcuts)
+        private void RevertTo(ShortcutListItem item, ShortcutKey[] shortcuts)
         {
             this.listView.BeginUpdate();
             while (item.Custom.Count > 0)
@@ -692,7 +692,7 @@ namespace FlashDevelop.Dialogs
                 this.removeButton.Enabled = false;
             }
             this.shortcutTextBox.Clear();
-            this.inputKeys = ShortcutKeys.None;
+            this.inputKeys = ShortcutKey.None;
             this.addButton.Enabled = false;
         }
 
@@ -920,7 +920,7 @@ namespace FlashDevelop.Dialogs
             }
             else
             {
-                this.inputKeys = ShortcutKeys.None;
+                this.inputKeys = ShortcutKey.None;
             }
             this.shortcutTextBox.Select();
         }
@@ -930,7 +930,7 @@ namespace FlashDevelop.Dialogs
         /// </summary>
         private void RemoveButton_Click(object sender, EventArgs e)
         {
-            this.RemoveShortcut((ShortcutListItem) this.listView.SelectedItems[0], this.comboBox.SelectedIndex, (ShortcutKeys) this.comboBox.SelectedItem);
+            this.RemoveShortcut((ShortcutListItem) this.listView.SelectedItems[0], this.comboBox.SelectedIndex, (ShortcutKey) this.comboBox.SelectedItem);
             this.UpdateCurrentItemDetails();
             this.UpdateSaveButton();
         }
@@ -1127,7 +1127,7 @@ namespace FlashDevelop.Dialogs
             /// Adds the specified item with the shortcut keys and update conflict status.
             /// Returns <c>1</c> if direct conflicts, <c>2</c> if indirect conflicts, or <c>0</c> if no conflicts.
             /// </summary>
-            internal int Add(ShortcutListItem item, ShortcutKeys keys, bool suppressUpdate = false)
+            internal int Add(ShortcutListItem item, ShortcutKey keys, bool suppressUpdate = false)
             {
                 Dictionary<Keys, List<ShortcutListItem>> first;
                 List<ShortcutListItem> second;
@@ -1196,7 +1196,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Checks whether there is an item that will conflict with the specified keys.
             /// </summary>
-            internal bool Contains(ShortcutKeys keys)
+            internal bool Contains(ShortcutKey keys)
             {
                 Dictionary<Keys, List<ShortcutListItem>> first;
                 if (this.list.TryGetValue(keys.First, out first))
@@ -1246,7 +1246,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Removes the specified item with the shortcut keys. Conflict status is not updated.
             /// </summary>
-            internal void Remove(ShortcutListItem item, ShortcutKeys keys)
+            internal void Remove(ShortcutListItem item, ShortcutKey keys)
             {
                 var first = this.list[keys.First];
                 var second = first[keys.Second];
@@ -1305,7 +1305,7 @@ namespace FlashDevelop.Dialogs
         private sealed class ShortcutListItem : ListViewItem, IShortcutItem
         {
             private ShortcutItem item;
-            private List<ShortcutKeys> custom;
+            private List<ShortcutKey> custom;
 
             /// <summary>
             /// Creates a new instance of <see cref="ShortcutListItem"/> with an associated <see cref="ShortcutItem"/>.
@@ -1313,8 +1313,8 @@ namespace FlashDevelop.Dialogs
             internal ShortcutListItem(ShortcutItem shortcutItem)
             {
                 this.item = shortcutItem;
-                this.custom = new List<ShortcutKeys>(this.Item.Custom);
-                this.Name = this.Text = this.Id;
+                this.custom = new List<ShortcutKey>(this.Item.Custom);
+                this.Name = this.Text = this.Command;
                 this.SubItems.Add(this.KeysString);
             }
 
@@ -1329,15 +1329,15 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Gets the ID of the associated <see cref="ShortcutItem"/>.
             /// </summary>
-            public string Id
+            public string Command
             {
-                get { return this.Item.Id; }
+                get { return this.Item.Command; }
             }
 
             /// <summary>
             /// Gets the default shortcut keys.
             /// </summary>
-            public ShortcutKeys[] Default
+            public ShortcutKey[] Default
             {
                 get { return this.Item.Default; }
             }
@@ -1345,7 +1345,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Gets or sets the custom shortcut keys.
             /// </summary>
-            public List<ShortcutKeys> Custom
+            public List<ShortcutKey> Custom
             {
                 get { return this.custom; }
                 set
@@ -1369,7 +1369,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Gets the current shortcut keys.
             /// </summary>
-            internal ShortcutKeys[] Current
+            internal ShortcutKey[] Current
             {
                 get { return this.item.Custom; }
             }
@@ -1394,7 +1394,7 @@ namespace FlashDevelop.Dialogs
                 {
                     if (this.Custom.Count == 0)
                     {
-                        return ShortcutKeys.None.ToString();
+                        return ShortcutKey.None.ToString();
                     }
                     else
                     {
@@ -1411,7 +1411,7 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Performs a sequential equality check between an array and a list.
             /// </summary>
-            private static bool SequenceEqual(ShortcutKeys[] array, List<ShortcutKeys> list)
+            private static bool SequenceEqual(ShortcutKey[] array, List<ShortcutKey> list)
             {
                 if (array.Length != list.Count)
                 {

@@ -44,7 +44,7 @@ namespace PluginCore
         Completion     = 0x0000000400000000, // NotifyEvent
         AppChanges     = 0x0000000800000000, // NotifyEvent
         ApplyTheme     = 0x0000001000000000, // NotifyEvent
-        ShortcutKeys   = 0x0000002000000000, // ShortcutKeysEvent
+        ShortcutKey    = 0x0000002000000000, // ShortcutKeysEvent
         ShortcutUpdate = 0x0000004000000000, // ShortcutUpdateEvent
     }
 

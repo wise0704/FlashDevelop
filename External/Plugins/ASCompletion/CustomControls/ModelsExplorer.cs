@@ -502,25 +502,8 @@ namespace ASCompletion
                 case Keys.Control | Keys.J:
                     UpdateTree();
                     return true;
-
-                case Keys.Escape:
-                    if (panelCtrl.DockState == DockState.Float) panelCtrl.Hide();
-                    if (PluginBase.MainForm.CurrentDocument.IsEditable)
-                        PluginBase.MainForm.CurrentDocument.SciControl.Focus();
-                    break;
             }
             return false;
-        }
-
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            if (keyData == Keys.Escape)
-            {
-                OnShortcut(keyData);
-                return true;
-            }
-
-            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         private void ModelsExplorer_KeyDown(object sender, KeyEventArgs e)

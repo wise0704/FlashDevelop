@@ -329,16 +329,16 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Gets a shortcut keys from a string
         /// </summary>
-        private static ShortcutKeys GetKeys(string data)
+        private static ShortcutKey GetKeys(string data)
         {
             try
             {
-                return ShortcutKeys.Parse(GetKeyText(data));
+                return ShortcutKey.Parse(GetKeyText(data));
             }
             catch (Exception ex)
             {
                 ErrorManager.ShowError(ex);
-                return ShortcutKeys.None;
+                return ShortcutKey.None;
             }
         }
 

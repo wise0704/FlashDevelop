@@ -117,8 +117,8 @@ namespace XMLCompletion
                     if (XMLComplete.Active) e.Handled = true;
                     return;
 
-                case EventType.ShortcutKeys:
-                    e.Handled = XMLComplete.OnShortcut((ShortcutKeysEvent) e);
+                case EventType.ShortcutKey:
+                    e.Handled = XMLComplete.OnShortcut((ShortcutKeyEvent) e);
                     break;
 
                 case EventType.Command:
@@ -154,7 +154,7 @@ namespace XMLCompletion
         /// </summary> 
         public void AddEventHandlers()
         {
-            EventType eventType = EventType.FileSwitch | EventType.SyntaxChange | EventType.ShortcutKeys | EventType.Command | EventType.Completion;
+            EventType eventType = EventType.FileSwitch | EventType.SyntaxChange | EventType.ShortcutKey | EventType.Command | EventType.Completion;
             EventManager.AddEventHandler(this, eventType);
 
             PluginBase.MainForm.RegisterShortcut("Completion.ListMembers", Keys.Control | Keys.Space);

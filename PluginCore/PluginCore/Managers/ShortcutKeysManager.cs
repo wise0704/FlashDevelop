@@ -41,7 +41,7 @@ namespace PluginCore.Managers
         /// Retrieves a value indicating whether a defined shortcut key is valid.
         /// </summary>
         /// <param name="shortcut">The shortcut key to test for validity.</param>
-        public static bool IsValidShortcut(ShortcutKeys shortcut)
+        public static bool IsValidShortcut(ShortcutKey shortcut)
         {
             if (shortcut.IsExtended)
             {
@@ -161,8 +161,8 @@ namespace PluginCore.Managers
         /// Processes a command key.
         /// </summary>
         /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
-        /// <param name="keyData">A <see cref="ShortcutKeys"/> value that represents the key to process.</param>
-        private static bool ProcessCmdKey(ref Message m, ShortcutKeys keyData)
+        /// <param name="keyData">A <see cref="ShortcutKey"/> value that represents the key to process.</param>
+        private static bool ProcessCmdKey(ref Message m, ShortcutKey keyData)
         {
             if (IsValidShortcut(keyData))
             {
@@ -171,7 +171,7 @@ namespace PluginCore.Managers
             return false;
         }
 
-        private static bool ProcessShortcut(ref Message m, ShortcutKeys shortcut)
+        private static bool ProcessShortcut(ref Message m, ShortcutKey shortcut)
         {
             if (!IsThreadUsingToolStrips())
             {

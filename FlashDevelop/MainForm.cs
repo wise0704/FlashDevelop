@@ -146,7 +146,7 @@ namespace FlashDevelop
         private Boolean refreshConfig = false;
         private Boolean closingAll = false;
         private Boolean lockStatusLabel = false;
-        private ShortcutKeys currentKeys;
+        private ShortcutKey currentKey;
 
         /* Singleton */
         public static Boolean Silent;
@@ -1631,12 +1631,12 @@ namespace FlashDevelop
                 case Win32.WM_LBUTTONDOWN:
                 case Win32.WM_RBUTTONDOWN:
                 case Win32.WM_MBUTTONDOWN:
-                    if (currentKeys.IsSimple)
+                    if (currentKey.IsSimple)
                     {
                         // Cancel any extended shortcut in progress
                         lockStatusLabel = false;
                         StatusLabelText = null;
-                        currentKeys = ShortcutKeys.None;
+                        currentKey = ShortcutKey.None;
                     }
                     break;
 
@@ -1683,20 +1683,20 @@ namespace FlashDevelop
             /*
              * Update the current key.
              */
-            currentKeys += keyData;
-            var item = ShortcutManager.GetRegisteredItem(currentKeys);
+            currentKey += keyData;
+            var item = ShortcutManager.GetRegisteredItem(currentKey);
 
             /*
              * Dispatch events.
              */
             bool handled = false;
-            if (item != null)
+            //if (item != null) // MacroManager needs to process unregistered shortcut inputs...
             {
-                var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item.Id, currentKeys);
+                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item?.Command, currentKey);
                 EventManager.DispatchEvent(this, e);
                 handled = e.Handled;
             }
-            if (!handled && currentKeys.IsSimple)
+            if (!handled && currentKey.IsSimple)
             {
                 var e = new KeyEvent(EventType.Keys, keyData);
                 EventManager.DispatchEvent(this, e);
@@ -1725,14 +1725,14 @@ namespace FlashDevelop
              */
             if (handled)
             {
-                if (currentKeys.IsExtended)
+                if (currentKey.IsExtended)
                 {
                     lockStatusLabel = false;
                     StatusLabelText = null;
                 }
                 else
                 {
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                 }
                 return true;
             }
@@ -1741,13 +1741,13 @@ namespace FlashDevelop
              * Shortcut exists but not handled.
              */
             if (item != null
-                && ShortcutKeysManager.IsValidShortcut(currentKeys)) // Hacky, but required until contextual shortcut is implemented... 
+                && ShortcutKeysManager.IsValidShortcut(currentKey)) // Hacky, but required until contextual shortcut is implemented... 
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, item.Id);
-                if (!currentKeys.IsExtended)
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
+                if (!currentKey.IsExtended)
                 {
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                 }
                 return true;
             }
@@ -1755,34 +1755,34 @@ namespace FlashDevelop
             /*
              * Shortcut does not exist.
              */
-            if (currentKeys.IsExtended)
+            if (currentKey.IsExtended)
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
                 return true;
             }
             switch (GetUnhandledKeyType(ref m, keyData))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKeys);
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKey);
                     lockStatusLabel = true;
                     return true;
 
                 case 1: // Shortcut is not a valid first key
                 case 2: // Extended shortcut is disabled
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
-                    currentKeys = ShortcutKeys.None;
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
+                    currentKey = ShortcutKey.None;
                     return true;
 
                 case 3: // AltGr character input
                 case 4: // Mnemonic shortcut
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                     return true;
 
                 case 5: // Menu key (F10)
                 case 6: // Not a shortcut
                 default:
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                     return false;
             }
         }
@@ -2154,19 +2154,19 @@ namespace FlashDevelop
         /// <summary>
         /// Gets the specified item's id.
         /// <para/>
-        /// [deprecated] Use the <see cref="GetShortcutId(ShortcutKeys)"/> method instead.
+        /// [deprecated] Use the <see cref="GetShortcutId(ShortcutKey)"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public string GetShortcutItemId(Keys keys) => GetShortcutId((ShortcutKeys) keys);
+        public string GetShortcutItemId(Keys keys) => GetShortcutId((ShortcutKey) keys);
 
         /// <summary>
         /// Gets the specified item's first shortcut keys.
         /// </summary>
-        public ShortcutKeys GetShortcutKeys(string id)
+        public ShortcutKey GetShortcutKeys(string id)
         {
             var item = ShortcutManager.GetRegisteredItem(id);
-            return item != null && item.Custom.Length > 0 ? item.Custom[0] : ShortcutKeys.None;
+            return item != null && item.Custom.Length > 0 ? item.Custom[0] : ShortcutKey.None;
         }
 
         /// <summary>
@@ -2181,17 +2181,17 @@ namespace FlashDevelop
         /// <summary>
         /// Gets the specified item's id.
         /// </summary>
-        public string GetShortcutId(ShortcutKeys keys)
+        public string GetShortcutId(ShortcutKey keys)
         {
-            return ShortcutManager.GetRegisteredItem(keys)?.Id;
+            return ShortcutManager.GetRegisteredItem(keys)?.Command;
         }
 
         /// <summary>
-        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcut(string, ShortcutKeys[])"/>,
+        /// Adds an ignored key. Ignored keys are valid shortcut keys that are not defined with <see cref="RegisterShortcut(string, ShortcutKey[])"/>,
         /// but should not prompt an "undefined shortcut keys" message. Instead these keys should have their default behaviors.
         /// These are constant shortcuts which cannot be modified using the shortcut dialog.
         /// </summary>
-        public void AddIgnoredKeys(ShortcutKeys keys)
+        public void AddIgnoredKeys(ShortcutKey keys)
         {
             ShortcutManager.IgnoredKeys.Add(keys);
         }
@@ -2199,7 +2199,7 @@ namespace FlashDevelop
         /// <summary>
         /// Returns a <see cref="bool"/> value indicating whether the specified key is ignored.
         /// </summary>
-        public bool ContainsIgnoredKeys(ShortcutKeys keys)
+        public bool ContainsIgnoredKeys(ShortcutKey keys)
         {
             return ShortcutManager.IgnoredKeys.Contains(keys);
         }
@@ -2207,7 +2207,7 @@ namespace FlashDevelop
         /// <summary>
         /// Removes the specified key from ignored keys.
         /// </summary>
-        public bool RemoveIgnoredKeys(ShortcutKeys keys)
+        public bool RemoveIgnoredKeys(ShortcutKey keys)
         {
             return ShortcutManager.IgnoredKeys.Remove(keys);
         }
@@ -2223,11 +2223,11 @@ namespace FlashDevelop
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
         /// <para/>
-        /// [deprecated] Use the <see cref="RegisterShortcut(string, ShortcutKeys[])"/> method instead.
+        /// [deprecated] Use the <see cref="RegisterShortcut(string, ShortcutKey[])"/> method instead.
         /// </summary>
         [Obsolete("This method has been deprecated.", true)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public void RegisterShortcutItem(string id, Keys keys) => RegisterShortcut(id, (ShortcutKeys) keys);
+        public void RegisterShortcutItem(string id, Keys keys) => RegisterShortcut(id, (ShortcutKey) keys);
 
         /// <summary>
         /// Registers a new menu item with the shortcut manager.
@@ -2250,9 +2250,9 @@ namespace FlashDevelop
         /// <summary>
         /// Registers the specified shortcut ID, and sets the default keys to the specified key.
         /// If the shortcut ID is already registered, the specified key is concatenated to the existing default keys.
-        /// A <see cref="ShortcutKeys.None"/> value is ignored.
+        /// A <see cref="ShortcutKey.None"/> value is ignored.
         /// </summary>
-        public void RegisterShortcut(string id, [Optional] ShortcutKeys defaultShortcut)
+        public void RegisterShortcut(string id, [Optional] ShortcutKey defaultShortcut)
         {
             ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, null);
         }
@@ -2260,9 +2260,9 @@ namespace FlashDevelop
         /// <summary>
         /// Registers the specified shortcut ID, and sets the default keys to the specified keys.
         /// If the shortcut ID is already registered, the specified keys are concatenated to the existing default keys.
-        /// <see cref="ShortcutKeys.None"/> values are ignored.
+        /// <see cref="ShortcutKey.None"/> values are ignored.
         /// </summary>
-        public void RegisterShortcut(string id, params ShortcutKeys[] defaultShortcuts)
+        public void RegisterShortcut(string id, params ShortcutKey[] defaultShortcuts)
         {
             ShortcutManager.RegisterShortcut(id, defaultShortcuts, null);
         }
@@ -2271,7 +2271,7 @@ namespace FlashDevelop
         /// Registers the specified shortcut ID, and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will be used to set the default keys.
-        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
         /// If the shortcut ID is already registered, the specified tool strip items and their shortcut keys are concatenated to the existing items and default keys.
         /// </summary>
         public void RegisterShortcut(string id, params ToolStripItem[] toolStripItems)
@@ -2283,10 +2283,10 @@ namespace FlashDevelop
         /// Registers the specified shortcut ID, sets the default keys to the specified key and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
-        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
         /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
         /// </summary>
-        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut, params ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string id, ShortcutKey defaultShortcut, params ToolStripItem[] toolStripItems)
         {
             ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, toolStripItems);
         }
@@ -2295,10 +2295,10 @@ namespace FlashDevelop
         /// Registers the specified shortcut ID, sets the default keys to the specified keys and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
-        /// <see cref="Keys.None"/>, <see cref="ShortcutKeys.None"/> and <see langword="null"/> values are ignored.
+        /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
         /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
         /// </summary>
-        public void RegisterShortcut(string id, ShortcutKeys[] defaultShortcuts, ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string id, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
         {
             ShortcutManager.RegisterShortcut(id, defaultShortcuts, toolStripItems);
         }
@@ -2332,7 +2332,7 @@ namespace FlashDevelop
             }
 
             /*
-             * Don't process ControlKey, ShiftKey or Menu
+             * Don't process CTRL, SHIFT or ALT keys.
              */
             switch (keyData & Keys.KeyCode)
             {
@@ -2344,59 +2344,68 @@ namespace FlashDevelop
             }
 
             /*
-             * Update the current keys
+             * Update the current keys.
              */
-            currentKeys += keyData;
+            currentKey += keyData;
+            var item = ShortcutManager.GetRegisteredItem(currentKey);
 
             /*
-             * Process shortcut
+             * Process shortcut.
              */
-            var item = ShortcutManager.GetRegisteredItem(currentKeys);
-            var e = new ShortcutKeysEvent(EventType.ShortcutKeys, item?.Id, currentKeys);
-            handler.HandleShortcutKeysEvent(e);
-
-            /*
-             * Shortcut has been handled
-             */
-            if (e.Handled)
+            bool handled = false;
+            if (item != null)
             {
-                if (currentKeys.IsExtended)
+                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item.Command, currentKey);
+                handler.HandleEvent(e);
+                handled = e.Handled;
+            }
+            if (!handled && currentKey.IsSimple)
+            {
+                var e = new KeyEvent(EventType.Keys, keyData);
+                handler.HandleEvent(e);
+                handled = e.Handled;
+            }
+
+            /*
+             * Shortcut has been handled.
+             */
+            if (handled)
+            {
+                if (currentKey.IsExtended)
                 {
                     lockStatusLabel = false;
                     StatusLabelText = null;
                 }
                 else
                 {
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                 }
                 return true;
             }
 
             /*
-             * Shortcut exists but not handled
+             * Shortcut exists but not handled.
              */
-            if (ShortcutManager.AllShortcuts.Contains(currentKeys))
+            if (item != null && ShortcutKeysManager.IsValidShortcut(currentKey))
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKeys, e.Id);
-
-                if (!currentKeys.IsExtended)
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
+                if (!currentKey.IsExtended)
                 {
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                 }
                 return true;
             }
 
             /*
-             * Shortcut does not exist
+             * Shortcut does not exist.
              */
-            if (currentKeys.IsExtended)
+            if (currentKey.IsExtended)
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
+                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
                 return true;
             }
-
             int unhandledKeyType;
             if ((keyData & Keys.Modifiers) == Keys.Alt)
             {
@@ -2414,29 +2423,28 @@ namespace FlashDevelop
             {
                 unhandledKeyType = GetUnhandledKeyType(ref m, keyData);
             }
-
             switch (unhandledKeyType)
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKeys);
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKey);
                     lockStatusLabel = true;
                     return true;
 
                 case 1: // Shortcut is not a valid first key
                 case 2: // Extended shortcut is disabled
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKeys);
-                    currentKeys = ShortcutKeys.None;
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
+                    currentKey = ShortcutKey.None;
                     return true;
 
                 case 3: // AltGr character input
                 case 4: // Mnemonic shortcut
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                     return true;
 
                 case 5: // Menu key (F10)
                 case 6: // Not a shortcut
                 default:
-                    currentKeys = ShortcutKeys.None;
+                    currentKey = ShortcutKey.None;
                     return false;
             }
         }

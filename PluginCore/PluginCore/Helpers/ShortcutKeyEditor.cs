@@ -7,19 +7,19 @@ using PluginCore.Controls;
 namespace PluginCore.Helpers
 {
     /// <summary>
-    /// Provides a user interface for editing <see cref="ShortcutKeys"/> at design time.
+    /// Provides a user interface for editing a <see cref="ShortcutKey"/> value at design time.
     /// </summary>
-    public class ShortcutKeysEditor : UITypeEditor
+    public class ShortcutKeyEditor : UITypeEditor
     {
         /// <summary>
-        /// Edits the <see cref="ShortcutKeys"/> value using the modal editor.
+        /// Edits the <see cref="ShortcutKey"/> value using the modal editor.
         /// </summary>
-        /// <param name="value">The <see cref="ShortcutKeys"/> to edit.</param>
-        /// <param name="allowNone">Whether to allow <see cref="ShortcutKeys.None"/> to be set.</param>
+        /// <param name="value">The <see cref="ShortcutKey"/> to edit.</param>
+        /// <param name="allowNone">Whether to allow <see cref="ShortcutKey.None"/> to be set.</param>
         /// <param name="supportExtended">Whether extended shortcut is supported.</param>
-        public ShortcutKeys EditValue(ShortcutKeys value, bool allowNone, bool supportExtended)
+        public ShortcutKey EditValue(ShortcutKey value, bool allowNone, bool supportExtended)
         {
-            var dialog = new ShortcutKeysEditorDialog(value, allowNone, supportExtended);
+            var dialog = new ShortcutKeyEditorDialog(value, allowNone, supportExtended);
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 value = dialog.NewKeys;
@@ -35,7 +35,7 @@ namespace PluginCore.Helpers
         /// <param name="value">The <see cref="object"/> to edit.</param>
         public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
-            return EditValue((ShortcutKeys) value, true, !PluginBase.Settings.DisableExtendedShortcutKeys);
+            return EditValue((ShortcutKey) value, true, !PluginBase.Settings.DisableExtendedShortcutKeys);
         }
 
         /// <summary>

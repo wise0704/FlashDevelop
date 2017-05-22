@@ -338,10 +338,6 @@ namespace OutputPanel
                     case Keys.Shift | Keys.F3:
                         this.FindNextMatch(false);
                         return true;
-                    case Keys.Escape:
-                        ITabbedDocument doc = PluginBase.MainForm.CurrentDocument;
-                        if (doc != null && doc.IsEditable) doc.SciControl.Focus();
-                        break;
                     case Keys.Control | Keys.F:
                         findTextBox.Focus();
                         return true;

@@ -241,17 +241,17 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public void AddIgnoredKeys(ShortcutKeys keys)
+        public void AddIgnoredKeys(ShortcutKey keys)
         {
             throw new NotImplementedException();
         }
 
-        public bool ContainsIgnoredKeys(ShortcutKeys keys)
+        public bool ContainsIgnoredKeys(ShortcutKey keys)
         {
             throw new NotImplementedException();
         }
 
-        public bool RemoveIgnoredKeys(ShortcutKeys keys)
+        public bool RemoveIgnoredKeys(ShortcutKey keys)
         {
             throw new NotImplementedException();
         }
@@ -266,22 +266,22 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public ShortcutKeys GetShortcutKeys(string id)
+        public ShortcutKey GetShortcutKeys(string id)
         {
             throw new NotImplementedException();
         }
 
-        public string GetShortcutId(ShortcutKeys keys)
+        public string GetShortcutId(ShortcutKey keys)
         {
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut)
+        public void RegisterShortcut(string id, ShortcutKey defaultShortcut)
         {
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcut(string id, params ShortcutKeys[] defaultShortcuts)
+        public void RegisterShortcut(string id, params ShortcutKey[] defaultShortcuts)
         {
             throw new NotImplementedException();
         }
@@ -291,12 +291,12 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcut(string id, ShortcutKeys defaultShortcut, params ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string id, ShortcutKey defaultShortcut, params ToolStripItem[] toolStripItems)
         {
             throw new NotImplementedException();
         }
 
-        public void RegisterShortcut(string id, ShortcutKeys[] defaultShortcuts, ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string id, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
         {
             throw new NotImplementedException();
         }

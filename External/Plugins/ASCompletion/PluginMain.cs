@@ -181,11 +181,17 @@ namespace ASCompletion
                         return;
 
                     // key combinations
-                    case EventType.ShortcutKeys:
+                    case EventType.ShortcutKey:
                         if (doc.IsEditable)
                         {
-                            var ske = (ShortcutKeysEvent) e;
-                            e.Handled = ASComplete.OnShortcut(ske.Id, sci) || ASComplete.OnShortcut((Keys) ske.ShortcutKeys, sci);
+                            e.Handled = ASComplete.OnShortcut(((ShortcutKeyEvent) e).Command, sci);
+                        }
+                        return;
+
+                    case EventType.Keys:
+                        if (doc.IsEditable)
+                        {
+                            e.Handled = ASComplete.OnShortcut(((KeyEvent) e).KeyData, sci);
                         }
                         return;
 
@@ -758,7 +764,8 @@ namespace ASCompletion
                 EventType.ProcessEnd |
                 EventType.Command |
                 EventType.Completion |
-                EventType.ShortcutKeys);
+                EventType.Keys |
+                EventType.ShortcutKey);
             EventManager.AddEventHandler(this, EventType.UIStarted, HandlingPriority.Low);
             
             // cursor position changes tracking

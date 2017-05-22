@@ -138,8 +138,8 @@ namespace OutputPanel
                     }
                     break;
 
-                case EventType.ShortcutKeys:
-                    e.Handled = this.pluginUI.OnShortcut((Keys) (e as ShortcutKeysEvent).ShortcutKeys);
+                case EventType.Keys:
+                    e.Handled = this.pluginUI.OnShortcut(((KeyEvent) e).KeyData);
                     break;
 
                 case EventType.ApplySettings:
@@ -203,7 +203,7 @@ namespace OutputPanel
         /// </summary>
         public void AddEventHandlers()
         {
-            EventType eventMask = EventType.ProcessStart | EventType.ProcessEnd | EventType.Trace | EventType.ApplySettings | EventType.ShortcutKeys | EventType.UIStarted
+            EventType eventMask = EventType.ProcessStart | EventType.ProcessEnd | EventType.Trace | EventType.ApplySettings | EventType.Keys | EventType.UIStarted
                 | EventType.Command;
             EventManager.AddEventHandler(this, eventMask);
         }

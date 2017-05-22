@@ -155,32 +155,38 @@ namespace ResultsPanel
                     ResultsPanelHelper.OnFileOpen((TextEvent) e);
                     break;
 
-                case EventType.ShortcutKeys:
-                    var ske = (ShortcutKeysEvent) e;
-                    switch (ske.Id)
+                case EventType.ShortcutKey:
+                    switch (((ShortcutKeyEvent) e).Command)
                     {
                         case "ResultsPanel.ShowNextResult":
                             ResultsPanelHelper.ActiveUI.NextEntry();
-                            ske.Handled = true;
+                            e.Handled = true;
                             break;
                         case "ResultsPanel.ShowPrevResult":
                             ResultsPanelHelper.ActiveUI.PreviousEntry();
-                            ske.Handled = true;
+                            e.Handled = true;
                             break;
                         case "ResultsPanel.ClearResults":
                             ResultsPanelHelper.ActiveUI.ClearOutput();
-                            ske.Handled = true;
+                            e.Handled = true;
                             break;
                         case "ResultsPanel.ClearIgnoredEntries":
                             ResultsPanelHelper.ActiveUI.ClearIgnoredEntries();
-                            ske.Handled = true;
-                            break;
-                        default:
-                            if (ske.ShortcutKeys == PanelContextMenu.CopyEntryKeys) ske.Handled = ResultsPanelHelper.ActiveUI.CopyTextShortcut();
-                            else if (ske.ShortcutKeys == PanelContextMenu.IgnoreEntryKeys) ske.Handled = ResultsPanelHelper.ActiveUI.IgnoreEntryShortcut();
+                            e.Handled = true;
                             break;
                     }
+                    break;
 
+                case EventType.Keys:
+                    switch (((KeyEvent) e).KeyData)
+                    {
+                        case PanelContextMenu.CopyEntryKeys:
+                            e.Handled = ResultsPanelHelper.ActiveUI.CopyTextShortcut();
+                            break;
+                        case PanelContextMenu.IgnoreEntryKeys:
+                            e.Handled = ResultsPanelHelper.ActiveUI.IgnoreEntryShortcut();
+                            break;
+                    }
                     break;
             }
         }
@@ -229,7 +235,7 @@ namespace ResultsPanel
         public void AddEventHandlers()
         {
             EventType eventMask = EventType.ProcessEnd | EventType.ProcessStart | EventType.FileOpen | EventType.Command
-                | EventType.Trace | EventType.ShortcutKeys | EventType.ApplySettings | EventType.ApplyTheme;
+                | EventType.Trace | EventType.Keys | EventType.ShortcutKey | EventType.ApplySettings | EventType.ApplyTheme;
             EventManager.AddEventHandler(this, eventMask);
         }
 

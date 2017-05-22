@@ -5,18 +5,18 @@ using PluginCore.Managers;
 
 namespace PluginCore.Controls
 {
-    internal class ShortcutKeysEditorDialog : Form
+    internal class ShortcutKeyEditorDialog : Form
     {
         private bool allowNone;
         private bool supportExtended;
         private bool shouldReset;
-        private ShortcutKeys newKeys;
+        private ShortcutKey newKeys;
         private System.Windows.Forms.Button applyBtn;
         private System.Windows.Forms.Button cancelBtn;
         private System.Windows.Forms.Button resetBtn;
         private System.Windows.Forms.Label shortcutTxt;
 
-        internal ShortcutKeysEditorDialog(ShortcutKeys defaultKeys, bool allowNone, bool supportExtended)
+        internal ShortcutKeyEditorDialog(ShortcutKey defaultKeys, bool allowNone, bool supportExtended)
         {
             this.newKeys = defaultKeys;
             this.allowNone = allowNone;
@@ -87,7 +87,7 @@ namespace PluginCore.Controls
             this.shortcutTxt.TabIndex = 3;
             this.shortcutTxt.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // ShortcutModificationDialog
+            // ShortcutKeyEditorDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -98,7 +98,7 @@ namespace PluginCore.Controls
             this.Controls.Add(this.applyBtn);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.KeyPreview = true;
-            this.Name = "ShortcutModificationDialog";
+            this.Name = "ShortcutKeyEditorDialog";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Press new shortcut keys:";
             this.ResumeLayout(false);
@@ -107,14 +107,14 @@ namespace PluginCore.Controls
 
         #endregion
 
-        internal ShortcutKeys NewKeys
+        internal ShortcutKey NewKeys
         {
             get { return newKeys; }
         }
 
         private void InitializeLocalization()
         {
-            Text = TextHelper.GetString("FlashDevelop.Info.PressNewShortcut");
+            Text = " " + TextHelper.GetString("FlashDevelop.Info.PressNewShortcut");
             applyBtn.Text = TextHelper.GetStringWithoutMnemonics("FlashDevelop.Label.Apply");
             cancelBtn.Text = TextHelper.GetStringWithoutMnemonics("FlashDevelop.Label.Cancel");
             resetBtn.Text = TextHelper.GetStringWithoutMnemonics("FlashDevelop.Label.Reset");
@@ -142,7 +142,7 @@ namespace PluginCore.Controls
 
         private void ResetBtn_Click(object sender, System.EventArgs e)
         {
-            newKeys = ShortcutKeys.None;
+            newKeys = ShortcutKey.None;
             UpdateDisplay();
             shortcutTxt.Focus();
         }

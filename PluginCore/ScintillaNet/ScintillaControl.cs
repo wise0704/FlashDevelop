@@ -5430,7 +5430,7 @@ namespace ScintillaNet
 
         private static void AddShortcut(char charCode, Keys modifiers, string command)
         {
-            AddShortcut(ShortcutKeys.Parse(charCode.ToString()), modifiers, command);
+            AddShortcut(ShortcutKey.Parse(charCode.ToString()), modifiers, command);
         }
 
         private static void AddShortcut(Keys keyCode, Keys modifiers, string command)
@@ -5445,11 +5445,11 @@ namespace ScintillaNet
         /// <summary>
         /// Handles shortcut event.
         /// </summary>
-        internal bool HandleShortcut(ShortcutKeysEvent e)
+        internal bool HandleShortcut(ShortcutKeyEvent e)
         {
-            if (e.Id != null && e.Id.StartsWithOrdinal("Scintilla."))
+            if (e.Command != null && e.Command.StartsWithOrdinal("Scintilla."))
             {
-                var method = typeof(ScintillaControl).GetMethod(e.Id.Substring(10), new Type[0]);
+                var method = typeof(ScintillaControl).GetMethod(e.Command.Substring(10), new Type[0]);
                 if (method != null)
                 {
                     method.Invoke(this, null);

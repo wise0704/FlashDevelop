@@ -650,10 +650,10 @@ namespace XMLCompletion
             return false;
         }
 
-        public static Boolean OnShortcut(ShortcutKeysEvent e)
+        public static Boolean OnShortcut(ShortcutKeyEvent e)
         {
             if (cType == XMLType.Invalid) return false;
-            if (e.Id == "Completion.ListMembers")
+            if (e.Command == "Completion.ListMembers")
             {
                 ITabbedDocument document = PluginBase.MainForm.CurrentDocument;
                 if (!document.IsEditable) return false;

@@ -152,62 +152,64 @@ namespace ProjectManager.Helpers
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        void IModalWindowShortcutHandler.HandleShortcutKeysEvent(ShortcutKeysEvent e)
+        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
         {
-            if (this.lineBox.Focused)
+            if (e.Type != EventType.ShortcutKey || !this.lineBox.Focused)
             {
-                switch (e.Id)
-                {
-                    case "EditMenu.Copy":
+                return;
+            }
+            var ske = (ShortcutKeyEvent) e;
+            switch (ske.Command)
+            {
+                case "Edit.Copy":
+                    this.lineBox.Copy();
+                    e.Handled = true;
+                    break;
+                case "Edit.CopyLine":
+                    {
+                        int start = this.lineBox.SelectionStart;
+                        int length = this.lineBox.SelectionLength;
+                        this.lineBox.SelectAll();
                         this.lineBox.Copy();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.CopyLine":
-                        {
-                            int start = this.lineBox.SelectionStart;
-                            int length = this.lineBox.SelectionLength;
-                            this.lineBox.SelectAll();
-                            this.lineBox.Copy();
-                            this.lineBox.Select(start, length);
-                        }
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.Cut":
-                        this.lineBox.Cut();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.CutLine":
-                        this.lineBox.SelectAll();
-                        this.lineBox.Cut();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.DeleteLine":
-                        this.lineBox.Clear();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.Paste":
-                        this.lineBox.Paste();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.SelectAll":
-                        this.lineBox.SelectAll();
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.ToLowercase":
-                    case "EditMenu.ToUppercase":
-                        {
-                            int start = this.lineBox.SelectionStart;
-                            int length = this.lineBox.SelectionLength;
-                            this.lineBox.SelectedText = e.Id == "EditMenu.ToLowercase" ? this.lineBox.SelectedText.ToLower() : this.lineBox.SelectedText.ToUpper();
-                            this.lineBox.Select(start, length);
-                        }
-                        e.Handled = true;
-                        break;
-                    case "EditMenu.Undo":
-                        this.lineBox.Undo();
-                        e.Handled = true;
-                        break;
-                }
+                        this.lineBox.Select(start, length);
+                    }
+                    e.Handled = true;
+                    break;
+                case "Edit.Cut":
+                    this.lineBox.Cut();
+                    e.Handled = true;
+                    break;
+                case "Edit.CutLine":
+                    this.lineBox.SelectAll();
+                    this.lineBox.Cut();
+                    e.Handled = true;
+                    break;
+                case "Edit.DeleteLine":
+                    this.lineBox.Clear();
+                    e.Handled = true;
+                    break;
+                case "Edit.Paste":
+                    this.lineBox.Paste();
+                    e.Handled = true;
+                    break;
+                case "Edit.SelectAll":
+                    this.lineBox.SelectAll();
+                    e.Handled = true;
+                    break;
+                case "Edit.ToLowercase":
+                case "Edit.ToUppercase":
+                    {
+                        int start = this.lineBox.SelectionStart;
+                        int length = this.lineBox.SelectionLength;
+                        this.lineBox.SelectedText = ske.Command == "Edit.ToLowercase" ? this.lineBox.SelectedText.ToLower() : this.lineBox.SelectedText.ToUpper();
+                        this.lineBox.Select(start, length);
+                    }
+                    e.Handled = true;
+                    break;
+                case "Edit.Undo":
+                    this.lineBox.Undo();
+                    e.Handled = true;
+                    break;
             }
         }
 

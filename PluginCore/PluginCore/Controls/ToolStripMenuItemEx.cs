@@ -12,7 +12,7 @@ namespace PluginCore.Controls
     {
         private static readonly int PropShortcutKeys;
         private ToolStrip lastOwner;
-        private ShortcutKeys shortcutKeys;
+        private ShortcutKey shortcutKeys;
         private object properties;
 
         #region Constructors
@@ -62,8 +62,8 @@ namespace PluginCore.Controls
         /// <param name="text">The text to display on the menu item.</param>
         /// <param name="image">The <see cref="Image"/> to display on the control.</param>
         /// <param name="onClick">An event handler that raises the <see cref="Control.Click"/> event when the control is clicked.</param>
-        /// <param name="shortcutKeys">A <see cref="global::PluginCore.ShortcutKeys"/> value that represents the shortcut key for the <see cref="ToolStripMenuItemEx"/>.</param>
-        public ToolStripMenuItemEx(string text, Image image, EventHandler onClick, ShortcutKeys shortcutKeys) : base(text, image, onClick) { ShortcutKeys = shortcutKeys; }
+        /// <param name="shortcutKeys">A <see cref="global::PluginCore.ShortcutKey"/> value that represents the shortcut key for the <see cref="ToolStripMenuItemEx"/>.</param>
+        public ToolStripMenuItemEx(string text, Image image, EventHandler onClick, ShortcutKey shortcutKeys) : base(text, image, onClick) { ShortcutKeys = shortcutKeys; }
         /// <summary>
         /// Initializes a new instance of the <see cref="ToolStripMenuItemEx"/> class with the specified name that displays the specified text and image that does the specified action when the <see cref="ToolStripMenuItemEx"/> is clicked.
         /// </summary>
@@ -92,7 +92,7 @@ namespace PluginCore.Controls
         /// <summary>
         /// Gets or sets the shortcut keys associated with the <see cref="ToolStripMenuItemEx"/>.
         /// </summary>
-        public new ShortcutKeys ShortcutKeys
+        public new ShortcutKey ShortcutKeys
         {
             get
             {
@@ -131,7 +131,7 @@ namespace PluginCore.Controls
 
         #region Methods
 
-        internal bool ProcessCmdKeyInternal(ref Message m, ShortcutKeys keyData)
+        internal bool ProcessCmdKeyInternal(ref Message m, ShortcutKey keyData)
         {
             if (Enabled && shortcutKeys == keyData && !HasDropDownItems)
             {

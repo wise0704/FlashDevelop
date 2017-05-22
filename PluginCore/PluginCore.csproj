@@ -324,7 +324,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="PluginCore\Controls\ShellContextMenu.cs" />
-    <Compile Include="PluginCore\Controls\ShortcutKeysEditorDialog.cs">
+    <Compile Include="PluginCore\Controls\ShortcutKeyEditorDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="PluginCore\Controls\SmartForm.cs">
@@ -344,8 +344,8 @@
     <Compile Include="PluginCore\Helpers\JvmConfigHelper.cs" />
     <Compile Include="PluginCore\Helpers\ProcessHelper.cs" />
     <Compile Include="PluginCore\Helpers\ResourceHelper.cs" />
-    <Compile Include="PluginCore\Helpers\ShortcutKeysConverter.cs" />
-    <Compile Include="PluginCore\Helpers\ShortcutKeysEditor.cs" />
+    <Compile Include="PluginCore\Helpers\ShortcutKeyConverter.cs" />
+    <Compile Include="PluginCore\Helpers\ShortcutKeyEditor.cs" />
     <Compile Include="PluginCore\Helpers\SnippetHelper.cs" />
     <Compile Include="PluginCore\Helpers\DrawHelper.cs" />
     <Compile Include="PluginCore\DataClasses.cs" />
@@ -360,7 +360,7 @@
     <Compile Include="PluginCore\Managers\ImageListManager.cs" />
     <Compile Include="PluginCore\Managers\ShortcutKeysManager.cs" />
     <Compile Include="PluginCore\PlatformData.cs" />
-    <Compile Include="PluginCore\ShortcutKeys.cs" />
+    <Compile Include="PluginCore\ShortcutKey.cs" />
     <Compile Include="PluginCore\Utilities\CryptoClasses.cs" />
     <Compile Include="PluginCore\Utilities\ExtensionClasses.cs" />
     <Compile Include="PluginCore\Utilities\ImageKonverter.cs" />
