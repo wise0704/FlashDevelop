@@ -1622,7 +1622,7 @@ namespace FlashDevelop
             {
                 case Win32.WM_KEYDOWN:
                 case Win32.WM_SYSKEYDOWN:
-                    if (CanFocus && PreProcessCmdKey(ref m, (Keys) unchecked(m.WParam) | ModifierKeys))
+                    if (CanFocus && PreProcessCmdKey(ref m, unchecked((Keys) m.WParam) | ModifierKeys))
                     {
                         return true;
                     }
@@ -1721,6 +1721,23 @@ namespace FlashDevelop
             }
 
             /*
+             * Let controls pre-process the message.
+             */
+            bool messageNeeded = false;
+            if (!handled)
+            {
+                switch (PreProcessControlMessage(ref m))
+                {
+                    case PreProcessControlState.MessageProcessed:
+                        handled = true;
+                        break;
+                    case PreProcessControlState.MessageNeeded:
+                        messageNeeded = true;
+                        break;
+                }
+            }
+
+            /*
              * Shortcut has been handled.
              */
             if (handled)
@@ -1740,8 +1757,7 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (item != null
-                && ShortcutKeysManager.IsValidShortcut(currentKey)) // Hacky, but required until contextual shortcut is implemented... 
+            if (item != null && !messageNeeded)
             {
                 lockStatusLabel = false;
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
