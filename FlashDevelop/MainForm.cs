@@ -1757,7 +1757,7 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (item != null && !messageNeeded)
+            if (!messageNeeded && ShortcutManager.AllShortcuts.Contains(currentKey))
             {
                 lockStatusLabel = false;
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
@@ -2264,59 +2264,59 @@ namespace FlashDevelop
         public void RegisterSecondaryItem(string id, ToolStripItem item) => RegisterShortcut(id, item);
 
         /// <summary>
-        /// Registers the specified shortcut ID, and sets the default keys to the specified key.
-        /// If the shortcut ID is already registered, the specified key is concatenated to the existing default keys.
+        /// Registers the specified shortcut command, and sets the default keys to the specified key.
+        /// If the shortcut command is already registered, the specified key is concatenated to the existing default keys.
         /// A <see cref="ShortcutKey.None"/> value is ignored.
         /// </summary>
-        public void RegisterShortcut(string id, [Optional] ShortcutKey defaultShortcut)
+        public void RegisterShortcut(string command, [Optional] ShortcutKey defaultShortcut)
         {
-            ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, null);
+            ShortcutManager.RegisterShortcut(command, new[] { defaultShortcut }, null);
         }
 
         /// <summary>
-        /// Registers the specified shortcut ID, and sets the default keys to the specified keys.
-        /// If the shortcut ID is already registered, the specified keys are concatenated to the existing default keys.
+        /// Registers the specified shortcut command, and sets the default keys to the specified keys.
+        /// If the shortcut command is already registered, the specified keys are concatenated to the existing default keys.
         /// <see cref="ShortcutKey.None"/> values are ignored.
         /// </summary>
-        public void RegisterShortcut(string id, params ShortcutKey[] defaultShortcuts)
+        public void RegisterShortcut(string command, params ShortcutKey[] defaultShortcuts)
         {
-            ShortcutManager.RegisterShortcut(id, defaultShortcuts, null);
+            ShortcutManager.RegisterShortcut(command, defaultShortcuts, null);
         }
 
         /// <summary>
-        /// Registers the specified shortcut ID, and sets the associated <see cref="ToolStripItem"/> objects.
+        /// Registers the specified shortcut command, and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will be used to set the default keys.
         /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
-        /// If the shortcut ID is already registered, the specified tool strip items and their shortcut keys are concatenated to the existing items and default keys.
+        /// If the shortcut command is already registered, the specified tool strip items and their shortcut keys are concatenated to the existing items and default keys.
         /// </summary>
-        public void RegisterShortcut(string id, params ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string command, params ToolStripItem[] toolStripItems)
         {
-            ShortcutManager.RegisterShortcut(id, null, toolStripItems);
+            ShortcutManager.RegisterShortcut(command, null, toolStripItems);
         }
 
         /// <summary>
-        /// Registers the specified shortcut ID, sets the default keys to the specified key and sets the associated <see cref="ToolStripItem"/> objects.
+        /// Registers the specified shortcut command, sets the default keys to the specified key and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
         /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
-        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// If the shortcut command is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
         /// </summary>
-        public void RegisterShortcut(string id, ShortcutKey defaultShortcut, params ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string command, ShortcutKey defaultShortcut, params ToolStripItem[] toolStripItems)
         {
-            ShortcutManager.RegisterShortcut(id, new[] { defaultShortcut }, toolStripItems);
+            ShortcutManager.RegisterShortcut(command, new[] { defaultShortcut }, toolStripItems);
         }
 
         /// <summary>
-        /// Registers the specified shortcut ID, sets the default keys to the specified keys and sets the associated <see cref="ToolStripItem"/> objects.
+        /// Registers the specified shortcut command, sets the default keys to the specified keys and sets the associated <see cref="ToolStripItem"/> objects.
         /// If <paramref name="toolStripItems"/> contains any <see cref="ToolStripMenuItem"/> or <see cref="ToolStripMenuItemEx"/> objects,
         /// their <see cref="ToolStripMenuItem.ShortcutKeys"/> and <see cref="ToolStripMenuItemEx.ShortcutKeys"/> properties will also be used to set the default keys.
         /// <see cref="Keys.None"/>, <see cref="ShortcutKey.None"/> and <see langword="null"/> values are ignored.
-        /// If the shortcut ID is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
+        /// If the shortcut command is already registered, the specified keys and tool strip items are concatenated to the existing default keys and items.
         /// </summary>
-        public void RegisterShortcut(string id, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
+        public void RegisterShortcut(string command, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
         {
-            ShortcutManager.RegisterShortcut(id, defaultShortcuts, toolStripItems);
+            ShortcutManager.RegisterShortcut(command, defaultShortcuts, toolStripItems);
         }
 
         /// <summary>
@@ -2344,7 +2344,7 @@ namespace FlashDevelop
 
             if (keyData == Keys.None)
             {
-                keyData = (Keys) unchecked(m.WParam) | ModifierKeys;
+                keyData = unchecked((Keys) m.WParam) | ModifierKeys;
             }
 
             /*
@@ -2369,9 +2369,9 @@ namespace FlashDevelop
              * Process shortcut.
              */
             bool handled = false;
-            if (item != null)
+            //if (item != null)
             {
-                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item.Command, currentKey);
+                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item?.Command, currentKey);
                 handler.HandleEvent(e);
                 handled = e.Handled;
             }
@@ -2402,7 +2402,7 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (item != null && ShortcutKeysManager.IsValidShortcut(currentKey))
+            if (ShortcutManager.AllShortcuts.Contains(currentKey) && ShortcutKeysManager.IsValidShortcut(currentKey))
             {
                 lockStatusLabel = false;
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);

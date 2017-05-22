@@ -70,18 +70,18 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Registers a shortcut.
         /// </summary>
-        internal static void RegisterShortcut(string id, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
+        internal static void RegisterShortcut(string command, ShortcutKey[] defaultShortcuts, ToolStripItem[] toolStripItems)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(command))
             {
-                throw new ArgumentNullException(nameof(id));
+                throw new ArgumentNullException(nameof(command));
             }
 
             ShortcutItem item;
-            if (!registeredItems.TryGetValue(id, out item))
+            if (!registeredItems.TryGetValue(command, out item))
             {
-                item = new ShortcutItem(id, new ShortcutKey[0], new ToolStripItem[0]);
-                registeredItems.Add(id, item);
+                item = new ShortcutItem(command, new ShortcutKey[0], new ToolStripItem[0]);
+                registeredItems.Add(command, item);
             }
 
             var shortcutsUnion = new HashSet<ShortcutKey>(item.Default);
@@ -110,14 +110,14 @@ namespace FlashDevelop.Managers
                         }
                         else if (toolStripItem.Tag is ItemData)
                         {
-                            if (((ItemData) toolStripItem.Tag).KeyId != id)
+                            if (((ItemData) toolStripItem.Tag).KeyId != command)
                             {
-                                throw new ArgumentException($"The shortcut ID of the specified {nameof(ToolStripItem)} object is different from the specified shortcut ID '{id}': {((ItemData) toolStripItem.Tag).KeyId}");
+                                throw new ArgumentException($"The shortcut ID of the specified {nameof(ToolStripItem)} object is different from the specified shortcut ID '{command}': {((ItemData) toolStripItem.Tag).KeyId}");
                             }
                         }
                         else
                         {
-                            toolStripItem.Tag = new ItemData(null, id, null, null);
+                            toolStripItem.Tag = new ItemData(null, command, null, null);
                         }
                     }
                 }
