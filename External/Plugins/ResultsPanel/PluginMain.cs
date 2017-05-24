@@ -3,7 +3,6 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using PluginCore;
-using PluginCore.Controls;
 using PluginCore.Helpers;
 using PluginCore.Localization;
 using PluginCore.Managers;
@@ -99,8 +98,8 @@ namespace ResultsPanel
             this.InitBasics();
             this.LoadSettings();
             this.AddEventHandlers();
-            this.CreatePluginPanel();
             this.CreateMenuItem();
+            this.CreatePluginPanel();
         }
 
         /// <summary>
@@ -255,7 +254,7 @@ namespace ResultsPanel
         /// </summary>
         public void CreateMenuItem()
         {
-            viewItemMainPanel = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginImage) { Tag = pluginUI.GroupData };
+            viewItemMainPanel = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginImage) { Tag = null };
             viewItemSeparator = new ToolStripSeparator();
 
             viewItem = new ToolStripMenuItem(TextHelper.GetString("Label.ViewMenuItem"), pluginImage);
