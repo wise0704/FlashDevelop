@@ -245,20 +245,7 @@ namespace ASCompletion.Completion
         /// </summary>
         public static bool OnShortcut(Keys keys, ScintillaControl sci)
         {
-            if (sci.IsSelectionRectangle)
-            {
-                return false;
-            }
-
-            switch (keys)
-            {
-                case Keys.Back:
-                    HandleAddClosingBraces(sci, sci.CurrentChar, false);
-                    return false;
-
-                default:
-                    return false;
-            }
+            return false;
         }
 
         /// <summary>
@@ -273,6 +260,10 @@ namespace ASCompletion.Completion
 
             switch (id)
             {
+                case "Scintilla.DeleteBack":
+                    HandleAddClosingBraces(sci, sci.CurrentChar, false);
+                    return false;
+
                 case "Completion.ListMembers": // dot complete
                     if (ASContext.HasContext && ASContext.Context.IsFileValid)
                     {

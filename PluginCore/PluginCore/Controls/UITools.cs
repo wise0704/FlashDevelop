@@ -109,8 +109,9 @@ namespace PluginCore.Controls
             // Events
             //
             PluginBase.MainForm.DockPanel.ActivePaneChanged += new EventHandler(DockPanel_ActivePaneChanged);
-            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.High);
+            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.High); // Handle and delegate "Completion.ListMembers" and "Completion.ParameterInfo" at the highest priority.
             EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.Keys);
+            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.Low); // Handle ScintillaControl shortcuts at a low priority.
         }
 
         #endregion
@@ -151,10 +152,19 @@ namespace PluginCore.Controls
                     break;
 
                 case EventType.ShortcutKey:
-                    var ske = (ShortcutKeyEvent) e;
-                    var sci = PluginBase.MainForm.CurrentDocument.SciControl;
-                    e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut(ske)
-                        || HandleShortcut(ske);
+                    if (priority == HandlingPriority.High)
+                    {
+                        // Since HandleShortcut() checks for "Completion.ListMembers" and "Completion.ParameterInfo"
+                        // then dispatches the event, handle this at the highest priority.
+                        // HandleShortcut() returns true for "Completion.ListMembers" and "Completion.ParameterInfo" (i.e. event is already delegated).
+                        e.Handled = HandleShortcut((ShortcutKeyEvent) e);
+                    }
+                    else if (priority == HandlingPriority.Low)
+                    {
+                        // Handle ScintillaControl events at a low priority, so that plugins can take custom actions on it with a normal priority and higher.
+                        var sci = PluginBase.MainForm.CurrentDocument.SciControl;
+                        e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut((ShortcutKeyEvent) e);
+                    }
                     return;
 
                 case EventType.Keys:

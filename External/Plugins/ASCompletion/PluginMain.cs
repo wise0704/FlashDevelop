@@ -188,13 +188,6 @@ namespace ASCompletion
                         }
                         return;
 
-                    case EventType.Keys:
-                        if (doc.IsEditable)
-                        {
-                            e.Handled = ASComplete.OnShortcut(((KeyEvent) e).KeyData, sci);
-                        }
-                        return;
-
                     //
                     // File management
                     //
@@ -764,7 +757,6 @@ namespace ASCompletion
                 EventType.ProcessEnd |
                 EventType.Command |
                 EventType.Completion |
-                EventType.Keys |
                 EventType.ShortcutKey);
             EventManager.AddEventHandler(this, EventType.UIStarted, HandlingPriority.Low);
             
