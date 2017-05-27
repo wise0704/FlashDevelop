@@ -1622,9 +1622,19 @@ namespace FlashDevelop
             {
                 case Win32.WM_KEYDOWN:
                 case Win32.WM_SYSKEYDOWN:
-                    if (CanFocus && PreProcessCmdKey(ref m, unchecked((Keys) m.WParam) | ModifierKeys))
+                    // We're currently in ProcessFilter() in PreTranslateMessage(), after GetMessage() and before TranslateMessage().
+                    // During PreTranslateMessage(), ProcessFilter() is called, after which if false is returned,
+                    // Control.PreProcessControlMessage() is called, which calls Control.PreProcessMessage(), which in turn calls Control.ProcessCmdKey().
+
+                    // Ensure that there aren't any modal forms present.
+                    if (CanFocus)
                     {
-                        return true;
+                        if (PreProcessCmdKey(ref m, unchecked((Keys) m.WParam) | ModifierKeys))
+                        {
+                            return true;
+                        }
+                        // We could directly call TranslateMessage() and DispatchMessage() here ourselves and return true
+                        // to prevent Control.PreProcessControlMessageInternal() from being called again.
                     }
                     break;
 
@@ -1643,15 +1653,15 @@ namespace FlashDevelop
                 case Win32.WM_MOUSEWHEEL:
                     int x = 0xFFFF & unchecked((int) m.LParam);
                     int y = 0xFFFF & unchecked((int) m.LParam) >> 16;
-                    IntPtr hWnd = Win32.WindowFromPoint(new Point(x, y));
+                    var hWnd = Win32.WindowFromPoint(new Point(x, y));
                     if (hWnd != IntPtr.Zero)
                     {
-                        if (Control.FromHandle(hWnd) != null)
+                        if (FromHandle(hWnd) != null)
                         {
                             Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
                             return true;
                         }
-                        ITabbedDocument doc = Globals.CurrentDocument;
+                        var doc = Globals.CurrentDocument;
                         if (doc != null && doc.IsEditable && (hWnd == doc.SplitSci1.HandleSci || hWnd == doc.SplitSci2.HandleSci))
                         {
                             Win32.SendMessage(hWnd, m.Msg, m.WParam, m.LParam);
@@ -1726,6 +1736,9 @@ namespace FlashDevelop
             bool messageNeeded = false;
             if (!handled)
             {
+                // This calls Control.PreProcessControlMessageInternal(), which calls Control.PreProcessMessage(), which in turn calls Control.ProcessCmdKey().
+                // One minor drawback is that if this returns MessageNotNeeded and MainForm.PreFilterMessage() returns false,
+                // Control.PreProcessControlMessageInternal() will be called again in PreTranslateMessage().
                 switch (PreProcessControlMessage(ref m))
                 {
                     case PreProcessControlState.MessageProcessed:
@@ -1837,26 +1850,18 @@ namespace FlashDevelop
                     break;
                 case Keys.Control | Keys.Alt:
                 case Keys.Control | Keys.Alt | Keys.Shift:
-                    byte[] lpKeyState = new byte[256];
-                    if (Win32.GetKeyboardState(lpKeyState))
+                    var msg = new Win32.MSG(m);
+                    Win32.TranslateMessage(ref msg);
+                    if (Win32.PeekMessage(out msg, msg.hwnd, Win32.WM_KEYFIRST, Win32.WM_KEYLAST, Win32.PM_NOREMOVE))
                     {
-                        var pwszBuff = new StringBuilder(8);
-                        int length = Win32.ToUnicode((uint) m.WParam, (uint) m.LParam >> 16, lpKeyState, pwszBuff, pwszBuff.Capacity, 0);
-                        if (length == -1)
+                        switch (msg.message)
                         {
-                            int msg = m.Msg == Win32.WM_SYSKEYDOWN ? Win32.WM_SYSDEADCHAR : Win32.WM_DEADCHAR;
-                            Win32.PostMessage(m.HWnd, msg, (UIntPtr) pwszBuff[0], m.LParam);
-                            return 3;
+                            case Win32.WM_CHAR:
+                            case Win32.WM_DEADCHAR:
+                            case Win32.WM_SYSCHAR:
+                            case Win32.WM_SYSDEADCHAR:
+                                return 3;
                         }
-                        if (length > 0)
-                        {
-                            int msg = m.Msg == Win32.WM_SYSKEYDOWN ? Win32.WM_SYSCHAR : Win32.WM_CHAR;
-                            for (int i = 0; i < length; i++)
-                            {
-                                Win32.PostMessage(m.HWnd, msg, (UIntPtr) pwszBuff[i], m.LParam);
-                            }
-                            return 3;
-                        } 
                     }
                     break;
             }
@@ -2402,7 +2407,8 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (ShortcutManager.AllShortcuts.Contains(currentKey) && ShortcutKeysManager.IsValidShortcut(currentKey))
+            if (ShortcutManager.AllShortcuts.Contains(currentKey)
+                && ShortcutKeysManager.IsValidShortcut(currentKey)) // Preferably use !handler.IsInputKey() instead - define 'bool IsInputKey(Keys)' in IModalWindowShortcutHandler
             {
                 lockStatusLabel = false;
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);

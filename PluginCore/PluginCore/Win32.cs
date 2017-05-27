@@ -102,6 +102,34 @@ namespace PluginCore
             public int nTrackPos;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MSG
+        {
+            public IntPtr hwnd;
+            public uint message;
+            public UIntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public POINT pt;
+
+            public MSG(Message msg)
+            {
+                hwnd = msg.HWnd;
+                message = (uint) msg.Msg;
+                unsafe { wParam = (UIntPtr) (void*) msg.WParam; }
+                lParam = msg.LParam;
+                time = default(uint);
+                pt = default(POINT);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x;
+            public int y;
+        }
+
         #endregion
 
         #region Constants
@@ -141,21 +169,24 @@ namespace PluginCore
         public const Int32 VK_RMENU = 0xA5;
         public const Int32 WM_COPYDATA = 74;
         public const Int32 WM_MOUSEWHEEL = 0x20A;
-        public const Int32 WM_KEYDOWN = 0x100;
-        public const Int32 WM_KEYUP = 0x101;
+        public const Int32 WM_KEYFIRST = 0x0100;
+        public const Int32 WM_KEYDOWN = 0x0100;
+        public const Int32 WM_KEYUP = 0x0101;
         public const Int32 WM_CHAR = 0x0102;
         public const Int32 WM_DEADCHAR = 0x0103;
         public const Int32 WM_SYSKEYDOWN = 0x104;
         public const Int32 WM_SYSKEYUP = 0x0105;
         public const Int32 WM_SYSCHAR = 0x0106;
         public const Int32 WM_SYSDEADCHAR = 0x0107;
+        public const Int32 WM_KEYLAST = 0x0108;
         public const Int32 SIF_RANGE = 0x0001;
         public const Int32 SIF_PAGE = 0x0002;
         public const Int32 SIF_POS = 0x0004;
         public const Int32 SIF_DISABLENOSCROLL = 0x0008;
         public const Int32 SIF_TRACKPOS = 0x0010;
         public const Int32 SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS);
-        public const UInt32 GA_ROOT = 2;
+        public const Int32 GA_ROOT = 2;
+        public const Int32 PM_NOREMOVE = 0x0000;
 
         #endregion
 
@@ -227,17 +258,24 @@ namespace PluginCore
         [DllImport("shell32.dll")]
         public static extern Int32 SHGetFileInfo(String pszPath, UInt32 dwFileAttributes, out SHFILEINFO psfi, UInt32 cbfileInfo, SHGFI uFlags);
 
-        [DllImport("user32.dll", ExactSpelling = true)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern IntPtr GetAncestor([In] HandleRef hwnd, [In] uint flags);
 
-        [DllImport("user32.dll", ExactSpelling = true)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PeekMessage([Out] out MSG lpMsg, [In, Optional] IntPtr hWnd, [In] uint wMsgFilterMin, [In] uint wMsgFilterMax, [In] uint wRemoveMsg);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern bool TranslateMessage([In] ref MSG lpMsg);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PostMessageW([In, Optional] IntPtr hWnd, [In] uint Msg, [In] UIntPtr wParam, [In] IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern int ToUnicode([In] uint wVirtKey, [In] uint wScanCode, [In, Optional, MarshalAs(UnmanagedType.LPArray)] byte[] lpKeyState, [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pwszBuff, [In] int cchBuff, [In] uint wFlags);
 
-        [DllImport("user32.dll", EntryPoint = "PostMessageW", ExactSpelling = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool PostMessage([In, Optional] IntPtr hWnd, [In] int Msg, [In] UIntPtr wParam, [In] IntPtr lParam);
-
-        [DllImport("user32.dll", ExactSpelling = true)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetKeyboardState([Out, MarshalAs(UnmanagedType.LPArray)] byte[] lpKeyState);
 
