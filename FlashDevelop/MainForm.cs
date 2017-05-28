@@ -1694,15 +1694,15 @@ namespace FlashDevelop
              * Update the current key.
              */
             currentKey += keyData;
-            var item = ShortcutManager.GetRegisteredItem(currentKey);
+            var shortcutItem = ShortcutManager.GetRegisteredItem(currentKey);
 
             /*
              * Dispatch events.
              */
             bool handled = false;
-            //if (item != null) // MacroManager needs to process unregistered shortcut inputs...
+            //if (shortcutItem != null) // MacroManager needs to process unregistered shortcut inputs...
             {
-                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item?.Command, currentKey);
+                var e = new ShortcutKeyEvent(EventType.ShortcutKey, shortcutItem?.Command, currentKey);
                 EventManager.DispatchEvent(this, e);
                 handled = e.Handled;
             }
@@ -1711,21 +1711,31 @@ namespace FlashDevelop
                 var e = new KeyEvent(EventType.Keys, keyData);
                 EventManager.DispatchEvent(this, e);
                 handled = e.Handled || TabbingManager.ProcessCmdKey(ref m, keyData);
+                // Hacky... it would be better to make tabbing into a proper shortcut.
+                // That will make it handle the keys during ShortcutKeyEvent, which is before KeyEvent rather than after KeyEvent like currently,
+                // but that's when it should really be handled anyway.
             }
 
             /*
              * Perform click on the first associated tool strip menu item.
              */
-            if (!handled && item != null)
+            if (!handled && shortcutItem != null)
             {
-                for (int i = 0; i < item.Items.Length; i++)
+                for (int i = 0; i < shortcutItem.Items.Length; i++)
                 {
-                    var menuItem = item.Items[i] as ToolStripMenuItem;
-                    if (menuItem != null && menuItem.Enabled && menuItem.Available && !menuItem.HasDropDownItems)
+                    var toolStripMenuItem = shortcutItem.Items[i] as ToolStripMenuItem;
+                    if (toolStripMenuItem != null)
                     {
-                        menuItem.PerformClick();
-                        handled = true;
-                        break;
+                        // We need to emulate ToolStripMenuItem.ProcessCmdKey().
+                        // It checks for 'Enabled && ShortcutKeys == keyData && !HasDropDownItems' then calls 'FireEvent(Click)' and returns true.
+                        // We can ignore ShortcutKeys because it's the registered tool strip item for the current keys, and ShortcutKeys would be set to Keys.None anyway.
+                        // FireEvent() is internal, so we need to call PerformClick(), which checks for 'Enabled && Available'
+                        if (toolStripMenuItem.Enabled && toolStripMenuItem.Available && !toolStripMenuItem.HasDropDownItems)
+                        {
+                            toolStripMenuItem.PerformClick();
+                            handled = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -1773,7 +1783,12 @@ namespace FlashDevelop
             if (!messageNeeded && ShortcutManager.AllShortcuts.Contains(currentKey))
             {
                 lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
+                // ShortcutManager.AllShortcuts contains registered items and ignored keys.
+                // For ignored keys, shortcutItem is null. In that case, suppress the message.
+                if (shortcutItem != null)
+                {
+                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, shortcutItem.Command);
+                }
                 if (!currentKey.IsExtended)
                 {
                     currentKey = ShortcutKey.None;
@@ -1832,6 +1847,8 @@ namespace FlashDevelop
             {
                 case Keys.None:
                 case Keys.Shift:
+                    // Valid first keys for extended shortcuts require CTRL and/or ALT modifiers.
+                    // Function keys are shortcuts by themselves, but they cannot be first keys of extended shortcuts.
                     var keyCode = keyData & Keys.KeyCode;
                     if (Keys.F1 <= keyCode && keyCode <= Keys.F24)
                     {
@@ -1842,14 +1859,21 @@ namespace FlashDevelop
                         return 1;
                     }
                     return 6;
+
                 case Keys.Alt:
+                    // Mnemonics are fixed, and shortcuts are customisable. So shortcuts should disable mnemonics, not the other way around.
+                    // Thus check for extended shortcuts which start with the current keys.
                     if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData) && ProcessMnemonic((char) keyData))
                     {
                         return 4;
                     }
                     break;
+
                 case Keys.Control | Keys.Alt:
                 case Keys.Control | Keys.Alt | Keys.Shift:
+                    // We translate the message ourselves, so that character messages are posted without DispatchMessage() being called.
+                    // This is a much better alternative to using ToUnicode() to check for whether the current keys act as AltGr to produce a character.
+                    // It's probably good to check for 'GetKeyState(VK_RMENU) < 0' to make sure the right ALT key is pressed.
                     var msg = new Win32.MSG(m);
                     Win32.TranslateMessage(ref msg);
                     if (Win32.PeekMessage(out msg, msg.hwnd, Win32.WM_KEYFIRST, Win32.WM_KEYLAST, Win32.PM_NOREMOVE))

@@ -187,7 +187,7 @@ namespace PluginCore
         }
 
         /// <summary>
-        /// Gets the shortcut command for the event.
+        /// Gets the shortcut command for the event. Returns <see langword="null"/> if the associated shortcut key is not registered.
         /// </summary>
         public string Command
         {

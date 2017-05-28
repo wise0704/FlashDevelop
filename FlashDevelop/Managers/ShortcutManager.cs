@@ -112,7 +112,7 @@ namespace FlashDevelop.Managers
                         {
                             if (((ItemData) toolStripItem.Tag).KeyId != command)
                             {
-                                throw new ArgumentException($"The shortcut ID of the specified {nameof(ToolStripItem)} object is different from the specified shortcut ID '{command}': {((ItemData) toolStripItem.Tag).KeyId}");
+                                throw new ArgumentException($"The shortcut command of the specified {nameof(ToolStripItem)} object is different from the specified shortcut command '{command}': {((ItemData) toolStripItem.Tag).KeyId}");
                             }
                         }
                         else
@@ -138,7 +138,7 @@ namespace FlashDevelop.Managers
         internal static ShortcutItem GetRegisteredItem(string id)
         {
             ShortcutItem item;
-            return registeredItems.TryGetValue(id, out item) ? item : null;
+            return id != null && registeredItems.TryGetValue(id, out item) ? item : null;
         }
 
         /// <summary>
@@ -174,6 +174,7 @@ namespace FlashDevelop.Managers
                     }
                     else
                     {
+                        // The item that was registered first "wins" the shortcut keys.
                         TraceManager.Add($"Duplicate shortcut definitions with '{keys}': '{cachedItems[keys].Command}', '{item.Command}'");
                     }
                 }
@@ -186,10 +187,9 @@ namespace FlashDevelop.Managers
 
             foreach (var item in RegisteredItems)
             {
-                var keys = item.Custom.Length > 0 ? item.Custom[0] : ShortcutKey.None;
                 for (int i = 0; i < item.Items.Length; i++)
                 {
-                    UpdateShortcutKeyDisplayString(item.Items[i], keys);
+                    UpdateShortcutKeyDisplayString(item.Items[i], item);
                 }
 
                 var e = new ShortcutUpdateEvent(EventType.ShortcutUpdate, item.Command, Array.AsReadOnly(item.Custom));
@@ -200,37 +200,40 @@ namespace FlashDevelop.Managers
         /// <summary>
         /// Updates the shortcut display string of the specified item, by using its ItemData stored in the Tag property.
         /// </summary>
-        internal static void UpdateShortcutKeyDisplayString(ToolStripItem item)
+        internal static void UpdateShortcutKeyDisplayString(ToolStripItem toolStripitem)
         {
-            if (item?.Tag is ItemData)
+            if (toolStripitem?.Tag is ItemData)
             {
-                var keys = Globals.MainForm.GetShortcutKeys(((ItemData) item.Tag).KeyId);
-                UpdateShortcutKeyDisplayString(item, keys);
+                var item = GetRegisteredItem(((ItemData) toolStripitem.Tag).KeyId);
+                if (item != null)
+                {
+                    UpdateShortcutKeyDisplayString(toolStripitem, item);
+                }
             }
         }
 
         /// <summary>
-        /// Updates the shortcut display string of the specified item to the specified shortcut keys.
+        /// Updates the shortcut display string of the specified item to the specified shortcut key.
         /// </summary>
-        private static void UpdateShortcutKeyDisplayString(ToolStripItem item, ShortcutKey keys)
+        private static void UpdateShortcutKeyDisplayString(ToolStripItem toolStripItem, ShortcutItem item)
         {
-            bool showShortcutKeys = !keys.IsNone && Globals.Settings.ViewShortcuts;
+            bool showShortcutKeys = item.Custom.Length > 0 && Globals.Settings.ViewShortcuts;
 
-            if (item is ToolStripMenuItem)
+            if (toolStripItem is ToolStripMenuItem)
             {
-                ((ToolStripMenuItem) item).ShortcutKeyDisplayString = showShortcutKeys ? keys.ToString() : null;
+                ((ToolStripMenuItem) toolStripItem).ShortcutKeyDisplayString = showShortcutKeys ? item.Custom[0].ToString() : null;
             }
             else
             {
-                string displayString = showShortcutKeys ? " (" + keys + ")" : null;
-                int index = item.ToolTipText.LastIndexOfOrdinal(" (");
+                string displayString = showShortcutKeys ? " (" + item.Custom[0] + ")" : null;
+                int index = toolStripItem.ToolTipText.LastIndexOfOrdinal(" (");
                 if (index >= 0)
                 {
-                    item.ToolTipText = item.ToolTipText.Remove(index) + displayString;
+                    toolStripItem.ToolTipText = toolStripItem.ToolTipText.Remove(index) + displayString;
                 }
                 else
                 {
-                    item.ToolTipText += displayString;
+                    toolStripItem.ToolTipText += displayString;
                 }
             }
         }
