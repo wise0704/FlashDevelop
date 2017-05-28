@@ -5418,7 +5418,7 @@ namespace ScintillaNet
           //AddShortcut(SCK_RETURN,   SCI_SHIFT,      nameof(NewLine));
             AddShortcut(SCK_ADD,      SCI_CTRL,       nameof(ZoomIn));
             AddShortcut(SCK_SUBTRACT, SCI_CTRL,       nameof(ZoomOut));
-            AddShortcut(SCK_DIVIDE,   SCI_CTRL,       nameof(ResetZoom)); // SCI_SETZOOM ?
+            AddShortcut(SCK_DIVIDE,   SCI_CTRL,       nameof(ResetZoom)); // => SCI_SETZOOM
           //AddShortcut('L',          SCI_CTRL,       nameof(LineCut)); // Edit.CutLine
           //AddShortcut('L',          SCI_CSHIFT,     nameof(LineDelete)); // Edit.DeleteLine
           //AddShortcut('T',          SCI_CSHIFT,     nameof(LineCopy)); // Edit.CopyLine
@@ -5430,7 +5430,7 @@ namespace ScintillaNet
 
         private static void AddShortcut(char charCode, Keys modifiers, string command)
         {
-            AddShortcut(ShortcutKey.Parse(charCode.ToString()), modifiers, command);
+            AddShortcut((Keys) ShortcutKey.Parse(charCode.ToString()), modifiers, command);
         }
 
         private static void AddShortcut(Keys keyCode, Keys modifiers, string command)

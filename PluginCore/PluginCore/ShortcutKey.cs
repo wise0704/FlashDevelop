@@ -154,7 +154,7 @@ namespace PluginCore
             return left + (Keys) right;
         }
 
-        public static implicit operator Keys(ShortcutKey value)
+        public static explicit operator Keys(ShortcutKey value)
         {
             return value.IsExtended ? Keys.None : value.m_first;
         }
@@ -164,7 +164,7 @@ namespace PluginCore
             return new ShortcutKey(value);
         }
 
-        public static implicit operator Shortcut(ShortcutKey value)
+        public static explicit operator Shortcut(ShortcutKey value)
         {
             return value.IsExtended ? Shortcut.None : (Shortcut) value.m_first;
         }

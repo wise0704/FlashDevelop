@@ -509,7 +509,7 @@ namespace MacroManager
         [EditorBrowsable(EditorBrowsableState.Never)]
         public Keys Shortcut
         {
-            get { return this.ShortcutKeys; }
+            get { return (Keys) this.ShortcutKeys; }
             set { this.ShortcutKeys = value; }
         }
 
