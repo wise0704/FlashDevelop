@@ -225,14 +225,6 @@ namespace PluginCore
         /// </summary>
         void ApplySecondaryShortcut(ToolStripItem item);
         /// <summary>
-        /// Processes extended shortcuts on a modal window (e.g. dialog form).
-        /// Returns <see langword="true"/> if the key was processed; <see langword="false"/> otherwise.
-        /// </summary>
-        /// <param name="handler">The modal window which is processing the keys.</param>
-        /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
-        /// <param name="keyData">One of the <see cref="Keys"/> values that represents the key to process.</param>
-        bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, [Optional] Keys keyData);
-        /// <summary>
         /// Create the specified new document from the given template.
         /// </summary>
         void FileFromTemplate(String templatePath, String newFilePath);
@@ -676,22 +668,20 @@ namespace PluginCore
     }
 
     /// <summary>
-    /// Represents a modal window that handles the key input with the extended shortcut mechanism.
-    /// <para/>
-    /// A class implementing this interface should override <see cref="Form.ProcessCmdKey(ref Message, Keys)"/>,
-    /// and call <see cref="IMainForm.ProcessModalWindowCmdKey(IModalWindowShortcutHandler, ref Message, Keys)"/>.
+    /// Represents a modal <see cref="Form"/> that handles the key input with the extended shortcut mechanism.
     /// </summary>
-    public interface IModalWindowShortcutHandler
+    public interface IShortcutHandlerForm
     {
         /// <summary>
         /// Handles a key event.
         /// </summary>
+        /// <param name="sender">The source of the event.</param>
         /// <param name="e">An event object containing the shortcut keys event data.</param>
-        void HandleEvent(NotifyEvent e);
+        void HandleEvent(object sender, NotifyEvent e);
         /// <summary>
         /// Calls <see cref="Form.ProcessMnemonic(char)"/>.
         /// </summary>
         /// <param name="charCode">The character to process.</param>
-        bool PerformProcessMnemonic(char charCode);
+        bool ProcessMnemonic(char charCode);
     }
 }

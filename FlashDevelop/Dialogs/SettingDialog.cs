@@ -13,7 +13,7 @@ using PluginCore.Managers;
 
 namespace FlashDevelop.Dialogs
 {
-    public class SettingDialog : SmartForm, IModalWindowShortcutHandler
+    public class SettingDialog : SmartForm, IShortcutHandlerForm
     {
         private System.String helpUrl;
         private System.Windows.Forms.ListView itemListView;
@@ -359,16 +359,7 @@ namespace FlashDevelop.Dialogs
             this.SelectCorrectItem(itemName);
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            if (Globals.MainForm.ProcessModalWindowCmdKey(this, ref msg, keyData))
-            {
-                return true;
-            }
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
-
-        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
+        void IShortcutHandlerForm.HandleEvent(object sender, NotifyEvent e)
         {
             if (e.Type == EventType.ShortcutKey)
             {
@@ -386,7 +377,7 @@ namespace FlashDevelop.Dialogs
             }
         }
 
-        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
         {
             return ProcessMnemonic(charCode);
         }

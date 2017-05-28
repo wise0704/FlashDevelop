@@ -15,7 +15,7 @@ namespace CodeRefactor.Commands
     /// <summary>
     /// An asynchronously working command that enables users to rename variables in line with code.
     /// </summary>
-    public class InlineRename : IDisposable, IMessageFilter, IModalWindowShortcutHandler
+    public class InlineRename : IDisposable, IMessageFilter, IShortcutHandlerForm
     {
         private const int MaxHistoryCount = 256;
         private const int Indicator = 0;
@@ -717,10 +717,6 @@ namespace CodeRefactor.Commands
 
             switch (m.Msg)
             {
-                case 0x0100: //WM_KEYDOWN
-                case 0x0104: //WM_SYSKEYDOWN
-                    return PluginBase.MainForm.ProcessModalWindowCmdKey(this, ref m);
-
                 case 0x0102: //WM_CHAR
                 case 0x0103: //WM_DEADCHAR
                     if (CanWrite && IsValidChar((int) m.WParam)) break;
@@ -730,7 +726,7 @@ namespace CodeRefactor.Commands
             return false;
         }
 
-        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
+        void IShortcutHandlerForm.HandleEvent(object sender, NotifyEvent e)
         {
             switch (e.Type)
             {
@@ -850,7 +846,7 @@ namespace CodeRefactor.Commands
             }
         }
 
-        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
         {
             return false;
         }

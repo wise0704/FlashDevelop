@@ -36,7 +36,7 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace FlashDevelop
 {
-    public class MainForm : Form, IMainForm, IMessageFilter
+    public class MainForm : Form, IMainForm, IMessageFilter, IShortcutHandlerForm
     {
         #region Constructor
 
@@ -1629,12 +1629,29 @@ namespace FlashDevelop
                     // Ensure that there aren't any modal forms present.
                     if (CanFocus)
                     {
-                        if (PreProcessCmdKey(ref m, unchecked((Keys) m.WParam) | ModifierKeys))
+                        if (PreFilterControlMessage(this, ref m))
                         {
                             return true;
                         }
                         // We could directly call TranslateMessage() and DispatchMessage() here ourselves and return true
                         // to prevent Control.PreProcessControlMessageInternal() from being called again.
+                        // It will however prevent other message filters from handling this message.
+                    }
+                    else
+                    {
+                        for (int i = Application.OpenForms.Count - 1; i >= 0; i--)
+                        {
+                            var form = Application.OpenForms[i];
+                            if (form.Modal && form is IShortcutHandlerForm)
+                            {
+                                if (PreFilterControlMessage((IShortcutHandlerForm) form, ref m))
+                                {
+                                    return true;
+                                }
+                                // Above comment applies here too.
+                                break;
+                            }
+                        }
                     }
                     break;
 
@@ -1676,8 +1693,18 @@ namespace FlashDevelop
         /// <summary>
         /// Handles the application shortcuts
         /// </summary>
-        private bool PreProcessCmdKey(ref Message m, Keys keyData)
+        private bool PreFilterControlMessage(IShortcutHandlerForm handler, ref Message m)
         {
+            //if (m.Msg != Win32.WM_KEYDOWN && m.Msg != Win32.WM_SYSKEYDOWN)
+            //{
+            //    return false;
+            //}
+
+            /*
+             * Extract the virtual key code combined with the current modifier keys.
+             */
+            var keyData = unchecked((Keys) m.WParam) | ModifierKeys;
+
             /*
              * Don't process CTRL, SHIFT or ALT keys.
              */
@@ -1688,6 +1715,12 @@ namespace FlashDevelop
                 case Keys.ShiftKey:
                 case Keys.Menu:
                     return false;
+
+                // Some keyboard layouts (e.g. Korean Microsoft IME) sets the virtual key value to VK_PROCESSKEY after processing a key input message in certain cases.
+                // This causes extended shortcuts with letter keys as the second part (e.g. Ctrl+A, B) to be treated with ProcessKey (e.g. Ctrl+A, ProcessKey).
+                // It's probably a good idea to recover the original virtual key value with ImmGetVirtualKey().
+                //case Keys.ProcessKey:
+                //    break;
             }
 
             /*
@@ -1703,14 +1736,15 @@ namespace FlashDevelop
             //if (shortcutItem != null) // MacroManager needs to process unregistered shortcut inputs...
             {
                 var e = new ShortcutKeyEvent(EventType.ShortcutKey, shortcutItem?.Command, currentKey);
-                EventManager.DispatchEvent(this, e);
+                handler.HandleEvent(this, e);
                 handled = e.Handled;
             }
             if (!handled && currentKey.IsSimple)
             {
                 var e = new KeyEvent(EventType.Keys, keyData);
-                EventManager.DispatchEvent(this, e);
-                handled = e.Handled || TabbingManager.ProcessCmdKey(ref m, keyData);
+                handler.HandleEvent(this, e);
+                handled = e.Handled ||
+                    handler == this && TabbingManager.ProcessCmdKey(ref m, keyData);
                 // Hacky... it would be better to make tabbing into a proper shortcut.
                 // That will make it handle the keys during ShortcutKeyEvent, which is before KeyEvent rather than after KeyEvent like currently,
                 // but that's when it should really be handled anyway.
@@ -1719,7 +1753,7 @@ namespace FlashDevelop
             /*
              * Perform click on the first associated tool strip menu item.
              */
-            if (!handled && shortcutItem != null)
+            if (!handled && shortcutItem != null && handler == this) // Ensure that tool strip items are used only when the handler is this MainForm.
             {
                 for (int i = 0; i < shortcutItem.Items.Length; i++)
                 {
@@ -1728,7 +1762,7 @@ namespace FlashDevelop
                     {
                         // We need to emulate ToolStripMenuItem.ProcessCmdKey().
                         // It checks for 'Enabled && ShortcutKeys == keyData && !HasDropDownItems' then calls 'FireEvent(Click)' and returns true.
-                        // We can ignore ShortcutKeys because it's the registered tool strip item for the current keys, and ShortcutKeys would be set to Keys.None anyway.
+                        // We can ignore ShortcutKeys because it's the registered tool strip item for the current keys anyway, and ShortcutKeys would be set to Keys.None.
                         // FireEvent() is internal, so we need to call PerformClick(), which checks for 'Enabled && Available'
                         if (toolStripMenuItem.Enabled && toolStripMenuItem.Available && !toolStripMenuItem.HasDropDownItems)
                         {
@@ -1743,7 +1777,6 @@ namespace FlashDevelop
             /*
              * Let controls pre-process the message.
              */
-            bool messageNeeded = false;
             if (!handled)
             {
                 // This calls Control.PreProcessControlMessageInternal(), which calls Control.PreProcessMessage(), which in turn calls Control.ProcessCmdKey().
@@ -1753,9 +1786,6 @@ namespace FlashDevelop
                 {
                     case PreProcessControlState.MessageProcessed:
                         handled = true;
-                        break;
-                    case PreProcessControlState.MessageNeeded:
-                        messageNeeded = true;
                         break;
                 }
             }
@@ -1780,7 +1810,7 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (!messageNeeded && ShortcutManager.AllShortcuts.Contains(currentKey))
+            if (ShortcutManager.AllShortcuts.Contains(currentKey) && ShortcutKeysManager.IsValidShortcut(currentKey))
             {
                 lockStatusLabel = false;
                 // ShortcutManager.AllShortcuts contains registered items and ignored keys.
@@ -1805,7 +1835,7 @@ namespace FlashDevelop
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
                 return true;
             }
-            switch (GetUnhandledKeyType(ref m, keyData))
+            switch (GetUnhandledKeyType(ref m, keyData, handler))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
                     StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKey);
@@ -1832,6 +1862,22 @@ namespace FlashDevelop
         }
 
         /// <summary>
+        /// Dispatches the key event.
+        /// </summary>
+        void IShortcutHandlerForm.HandleEvent(object sender, NotifyEvent e)
+        {
+            EventManager.DispatchEvent(sender, e);
+        }
+
+        /// <summary>
+        /// Calls <see cref="Form.ProcessMnemonic(char)"/>.
+        /// </summary>
+        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
+        {
+            return ProcessMnemonic(charCode);
+        }
+
+        /// <summary>
         /// Gets the type of the unhandled key input.
         /// <para/>0 - Input is a valid shortcut and a valid first key for an extended shortcut.
         /// <para/>1 - Input is a valid shortcut but not a valid first key for an extended shortcut.
@@ -1841,7 +1887,7 @@ namespace FlashDevelop
         /// <para/>5 - Input is a menu key.
         /// <para/>6 - Input is not a valid shortcut.
         /// </summary>
-        private int GetUnhandledKeyType(ref Message m, Keys keyData)
+        private int GetUnhandledKeyType(ref Message m, Keys keyData, IShortcutHandlerForm handler)
         {
             switch (keyData & Keys.Modifiers)
             {
@@ -1863,17 +1909,20 @@ namespace FlashDevelop
                 case Keys.Alt:
                     // Mnemonics are fixed, and shortcuts are customisable. So shortcuts should disable mnemonics, not the other way around.
                     // Thus check for extended shortcuts which start with the current keys.
-                    if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData) && ProcessMnemonic((char) keyData))
+                    if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData))
                     {
-                        return 4;
+                        if (handler.ProcessMnemonic((char) keyData))
+                        {
+                            return 4;
+                        }
                     }
                     break;
 
                 case Keys.Control | Keys.Alt:
                 case Keys.Control | Keys.Alt | Keys.Shift:
-                    // We translate the message ourselves, so that character messages are posted without DispatchMessage() being called.
+                    // We translate the message ourselves, so that we can check here if any character messages are posted, and without DispatchMessage() being called.
                     // This is a much better alternative to using ToUnicode() to check for whether the current keys act as AltGr to produce a character.
-                    // It's probably good to check for 'GetKeyState(VK_RMENU) < 0' to make sure the right ALT key is pressed.
+                    // It's probably also good to check for 'GetKeyState(VK_RMENU) < 0' to make sure the right ALT key is pressed.
                     var msg = new Win32.MSG(m);
                     Win32.TranslateMessage(ref msg);
                     if (Win32.PeekMessage(out msg, msg.hwnd, Win32.WM_KEYFIRST, Win32.WM_KEYLAST, Win32.PM_NOREMOVE))
@@ -2355,144 +2404,6 @@ namespace FlashDevelop
         public void ApplySecondaryShortcut(ToolStripItem item)
         {
             ShortcutManager.UpdateShortcutKeyDisplayString(item);
-        }
-
-        /// <summary>
-        /// Processes extended shortcuts on a modal window (e.g. dialog form).
-        /// Returns <see langword="true"/> if the key was processed; <see langword="false"/> otherwise.
-        /// </summary>
-        /// <param name="handler">The modal window which is processing the keys.</param>
-        /// <param name="m">A <see cref="Message"/>, passed by reference, that represents the window message to process.</param>
-        /// <param name="keyData">One of the <see cref="Keys"/> values that represents the key to process.</param>
-        public bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, [Optional] Keys keyData)
-        {
-            if (handler == null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
-
-            if (keyData == Keys.None)
-            {
-                keyData = unchecked((Keys) m.WParam) | ModifierKeys;
-            }
-
-            /*
-             * Don't process CTRL, SHIFT or ALT keys.
-             */
-            switch (keyData & Keys.KeyCode)
-            {
-                case Keys.None:
-                case Keys.ControlKey:
-                case Keys.ShiftKey:
-                case Keys.Menu:
-                    return false;
-            }
-
-            /*
-             * Update the current keys.
-             */
-            currentKey += keyData;
-            var item = ShortcutManager.GetRegisteredItem(currentKey);
-
-            /*
-             * Process shortcut.
-             */
-            bool handled = false;
-            //if (item != null)
-            {
-                var e = new ShortcutKeyEvent(EventType.ShortcutKey, item?.Command, currentKey);
-                handler.HandleEvent(e);
-                handled = e.Handled;
-            }
-            if (!handled && currentKey.IsSimple)
-            {
-                var e = new KeyEvent(EventType.Keys, keyData);
-                handler.HandleEvent(e);
-                handled = e.Handled;
-            }
-
-            /*
-             * Shortcut has been handled.
-             */
-            if (handled)
-            {
-                if (currentKey.IsExtended)
-                {
-                    lockStatusLabel = false;
-                    StatusLabelText = null;
-                }
-                else
-                {
-                    currentKey = ShortcutKey.None;
-                }
-                return true;
-            }
-
-            /*
-             * Shortcut exists but not handled.
-             */
-            if (ShortcutManager.AllShortcuts.Contains(currentKey)
-                && ShortcutKeysManager.IsValidShortcut(currentKey)) // Preferably use !handler.IsInputKey() instead - define 'bool IsInputKey(Keys)' in IModalWindowShortcutHandler
-            {
-                lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, item.Command);
-                if (!currentKey.IsExtended)
-                {
-                    currentKey = ShortcutKey.None;
-                }
-                return true;
-            }
-
-            /*
-             * Shortcut does not exist.
-             */
-            if (currentKey.IsExtended)
-            {
-                lockStatusLabel = false;
-                StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
-                return true;
-            }
-            int unhandledKeyType;
-            if ((keyData & Keys.Modifiers) == Keys.Alt)
-            {
-                if (!ShortcutManager.AltFirstKeys.Contains(keyData) && handler.PerformProcessMnemonic((char) keyData))
-                {
-                    unhandledKeyType = 4;
-                }
-                else
-                {
-                    m.Msg = Win32.WM_KEYDOWN; // Prevent 'case 4' mnemonic shortcut from being processed on MainForm
-                    unhandledKeyType = GetUnhandledKeyType(ref m, keyData);
-                }
-            }
-            else
-            {
-                unhandledKeyType = GetUnhandledKeyType(ref m, keyData);
-            }
-            switch (unhandledKeyType)
-            {
-                case 0: // Shortcut is a valid first key for an extended shortcut
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKey);
-                    lockStatusLabel = true;
-                    return true;
-
-                case 1: // Shortcut is not a valid first key
-                case 2: // Extended shortcut is disabled
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
-                    currentKey = ShortcutKey.None;
-                    return true;
-
-                case 3: // AltGr character input
-                case 4: // Mnemonic shortcut
-                    currentKey = ShortcutKey.None;
-                    return true;
-
-                case 5: // Menu key (F10)
-                case 6: // Not a shortcut
-                default:
-                    currentKey = ShortcutKey.None;
-                    return false;
-            }
         }
 
         /// <summary>

@@ -325,11 +325,6 @@ namespace FlashDevelop
             throw new NotImplementedException();
         }
 
-        public bool ProcessModalWindowCmdKey(IModalWindowShortcutHandler handler, ref Message m, Keys keyData)
-        {
-            throw new NotImplementedException();
-        }
-
         public ISettings Settings { get; set; }
 
         public ToolStrip ToolStrip

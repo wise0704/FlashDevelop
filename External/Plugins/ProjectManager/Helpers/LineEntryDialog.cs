@@ -8,7 +8,7 @@ namespace ProjectManager.Helpers
     /// <summary>
     /// A simple form where a user can enter a text string.
     /// </summary>
-    public class LineEntryDialog : Form, IModalWindowShortcutHandler
+    public class LineEntryDialog : Form, IShortcutHandlerForm
     {
         private string line;
         
@@ -143,16 +143,7 @@ namespace ProjectManager.Helpers
             this.Close();
         }
 
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            if (PluginBase.MainForm.ProcessModalWindowCmdKey(this, ref msg, keyData))
-            {
-                return true;
-            }
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
-
-        void IModalWindowShortcutHandler.HandleEvent(NotifyEvent e)
+        void IShortcutHandlerForm.HandleEvent(object sender, NotifyEvent e)
         {
             if (e.Type != EventType.ShortcutKey || !this.lineBox.Focused)
             {
@@ -213,7 +204,7 @@ namespace ProjectManager.Helpers
             }
         }
 
-        bool IModalWindowShortcutHandler.PerformProcessMnemonic(char charCode)
+        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
         {
             return ProcessMnemonic(charCode);
         }
