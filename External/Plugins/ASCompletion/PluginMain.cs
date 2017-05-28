@@ -637,7 +637,7 @@ namespace ASCompletion
                 // quick build
                 image = pluginUI.GetIcon(PluginUI.ICON_QUICK_BUILD);
                 item = new ToolStripMenuItem(TextHelper.GetString("Label.QuickBuild"), image, QuickBuild);
-                PluginBase.MainForm.RegisterShortcut("Tools.FlashTools.QuickBuild", Keys.Control | Keys.F8, item);
+                PluginBase.MainForm.RegisterShortcut("Tools.FlashTools.QuickBuild", Shortcut.CtrlF8, item);
                 menu.DropDownItems.Add(item);
                 //menuItems.Add(item);
                 quickBuildItem = item;
@@ -647,7 +647,7 @@ namespace ASCompletion
                 // type explorer
                 image = mainForm.FindImage("202");
                 item = new ToolStripMenuItem(TextHelper.GetString("Label.TypesExplorer"), image, TypesExplorer);
-                PluginBase.MainForm.RegisterShortcut("Tools.FlashTools.TypeExplorer", Keys.Control | Keys.J, item);
+                PluginBase.MainForm.RegisterShortcut("Tools.FlashTools.TypeExplorer", Shortcut.CtrlJ, item);
                 menu.DropDownItems.Add(item);
 
                 // model cleanup
@@ -703,7 +703,7 @@ namespace ASCompletion
                 // goto back from declaration
                 image = mainForm.FindImage("99|1|-3|-3");
                 item = new ToolStripMenuItem(TextHelper.GetString("Label.BackFromDeclaration"), image, BackDeclaration);
-                PluginBase.MainForm.RegisterShortcut("Search.BackFromDeclaration", Keys.Shift | Keys.F4, item);
+                PluginBase.MainForm.RegisterShortcut("Search.BackFromDeclaration", Shortcut.ShiftF4, item);
                 menu.DropDownItems.Add(item);
                 pluginUI.LookupMenuItem = item;
                 item.Enabled = false;

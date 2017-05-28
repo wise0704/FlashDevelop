@@ -43,7 +43,7 @@ namespace ProjectManager.Controls
             GlobalClasspaths = new ToolStripMenuItem(TextHelper.GetString("Label.GlobalClasspaths"));
             GlobalClasspaths.Image = Icons.Classpath.Img;
             toolsMenu.DropDownItems.Insert(toolsMenu.DropDownItems.Count - 4, GlobalClasspaths);
-            PluginBase.MainForm.RegisterShortcut("Tools.GlobalClasspaths", Keys.Control | Keys.F9, GlobalClasspaths);
+            PluginBase.MainForm.RegisterShortcut("Tools.GlobalClasspaths", Shortcut.CtrlF9, GlobalClasspaths);
 
             ProjectMenu = new ProjectMenu();
 
@@ -79,7 +79,7 @@ namespace ProjectManager.Controls
             ConfigurationSelector.FlatStyle = PluginBase.MainForm.Settings.ComboBoxFlatStyle;
             ConfigurationSelector.Font = PluginBase.Settings.DefaultFont;
             toolBar.Items.Add(ConfigurationSelector);
-            PluginBase.MainForm.RegisterShortcut("Project.ConfigurationSelectorToggle", Keys.Control | Keys.F5, ConfigurationSelector);
+            PluginBase.MainForm.RegisterShortcut("Project.ConfigurationSelectorToggle", Shortcut.CtrlF5, ConfigurationSelector);
 
             TargetBuildSelector = new ToolStripComboBoxEx();
             TargetBuildSelector.Name = "TargetBuildSelector";
@@ -90,7 +90,7 @@ namespace ProjectManager.Controls
             TargetBuildSelector.FlatStyle = PluginBase.MainForm.Settings.ComboBoxFlatStyle;
             TargetBuildSelector.Font = PluginBase.Settings.DefaultFont;
             toolBar.Items.Add(TargetBuildSelector);
-            PluginBase.MainForm.RegisterShortcut("Project.TargetBuildSelector", Keys.Control | Keys.F7, TargetBuildSelector);
+            PluginBase.MainForm.RegisterShortcut("Project.TargetBuildSelector", Shortcut.CtrlF7, TargetBuildSelector);
             EnableTargetBuildSelector(false);
         }
 
@@ -222,11 +222,11 @@ namespace ProjectManager.Controls
             PluginBase.MainForm.RegisterShortcut("Project.OpenProject", OpenProject);
             PluginBase.MainForm.RegisterShortcut("Project.ImportProject", ImportProject);
             PluginBase.MainForm.RegisterShortcut("Project.CloseProject", CloseProject);
-            PluginBase.MainForm.RegisterShortcut("Project.OpenResource", Keys.Control | Keys.R, OpenResource);
+            PluginBase.MainForm.RegisterShortcut("Project.OpenResource", Shortcut.CtrlR, OpenResource);
             PluginBase.MainForm.RegisterShortcut("Project.TestMovie", Keys.F5, TestMovie);
             PluginBase.MainForm.RegisterShortcut("Project.RunProject", RunProject);
             PluginBase.MainForm.RegisterShortcut("Project.BuildProject", Keys.F8, BuildProject);
-            PluginBase.MainForm.RegisterShortcut("Project.CleanProject", Keys.Shift | Keys.F8, CleanProject);
+            PluginBase.MainForm.RegisterShortcut("Project.CleanProject", Shortcut.ShiftF8, CleanProject);
             PluginBase.MainForm.RegisterShortcut("Project.Properties", Properties);
 
             base.Text = TextHelper.GetString("Label.Project");

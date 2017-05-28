@@ -315,7 +315,7 @@ namespace CodeRefactor
             PluginBase.MainForm.RegisterShortcut("Refactor.GenerateDelegateMethods", this.refactorMainMenu.DelegateMenuItem, this.refactorContextMenu.DelegateMenuItem);
             PluginBase.MainForm.RegisterShortcut("Refactor.OrganizeImports", this.refactorMainMenu.OrganizeMenuItem, this.refactorContextMenu.OrganizeMenuItem);
             PluginBase.MainForm.RegisterShortcut("Refactor.TruncateImports", this.refactorMainMenu.TruncateMenuItem, this.refactorContextMenu.TruncateMenuItem);
-            PluginBase.MainForm.RegisterShortcut("Refactor.CodeGenerator", Keys.Control | Keys.Shift | Keys.D1, this.refactorMainMenu.CodeGeneratorMenuItem, this.refactorContextMenu.CodeGeneratorMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.CodeGenerator", Shortcut.CtrlShift1, this.refactorMainMenu.CodeGeneratorMenuItem, this.refactorContextMenu.CodeGeneratorMenuItem);
             PluginBase.MainForm.RegisterShortcut("Refactor.BatchProcess", this.refactorMainMenu.BatchMenuItem, this.refactorContextMenu.BatchMenuItem);
         }
 

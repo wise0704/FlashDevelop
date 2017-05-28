@@ -179,7 +179,7 @@ namespace CodeFormatter
         {
             String label = TextHelper.GetString("Label.CodeFormatter");
             this.mainMenuItem = new ToolStripMenuItem(label, null, this.Format);
-            PluginBase.MainForm.RegisterShortcut("Refactor.CodeFormatter", Keys.Control | Keys.Shift | Keys.D2, this.mainMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Refactor.CodeFormatter", Shortcut.CtrlShift2, this.mainMenuItem);
         }
         private void AttachMainMenuItem(ToolStripMenuItem mainMenu)
         {

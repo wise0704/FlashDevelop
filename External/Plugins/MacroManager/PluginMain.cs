@@ -189,7 +189,7 @@ namespace MacroManager
             MenuStrip mainMenu = PluginBase.MainForm.MenuStrip;
             this.macroMenuItem = new ToolStripMenuItem(TextHelper.GetString("Label.Macros"));
             this.editMenuItem = new ToolStripMenuItem(TextHelper.GetString("Label.EditMacros"), null, this.EditMenuItemClick);
-            PluginBase.MainForm.RegisterShortcut("Macros.EditMacros", Keys.Control | Keys.F11, this.editMenuItem);
+            PluginBase.MainForm.RegisterShortcut("Macros.EditMacros", Shortcut.CtrlF11, this.editMenuItem);
             mainMenu.Items.Insert(mainMenu.Items.Count - 2, this.macroMenuItem);
         }
 

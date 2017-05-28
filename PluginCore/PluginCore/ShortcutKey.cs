@@ -21,7 +21,8 @@ namespace PluginCore
         #region Constructors
 
         /// <summary>
-        /// Creates a simple <see cref="ShortcutKey"/> with the specified <see cref="Keys"/> value.
+        /// Initializes a new instance of the <see cref="ShortcutKey"/> structure
+        /// representing a simple shortcut key with the specified <see cref="Keys"/> value.
         /// </summary>
         /// <param name="value">A <see cref="Keys"/> value.</param>
         public ShortcutKey(Keys value)
@@ -31,10 +32,23 @@ namespace PluginCore
         }
 
         /// <summary>
-        /// Creates an extended <see cref="ShortcutKey"/> with the specified <see cref="Keys"/> values.
+        /// Initializes a new instance of the <see cref="ShortcutKey"/> structure
+        /// representing a simple shortcut key with the specified <see cref="Shortcut"/> value.
+        /// </summary>
+        /// <param name="value">A <see cref="Shortcut"/> value.</param>
+        public ShortcutKey(Shortcut value)
+        {
+            m_first = (Keys) value;
+            m_second = Keys.None;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ShortcutKey"/> structure
+        /// representing an extended shortcut key with the specified <see cref="Keys"/> values.
         /// </summary>
         /// <param name="first">The <see cref="Keys"/> value of first part of the shortcut keys combination.</param>
         /// <param name="second">The <see cref="Keys"/> value of the second part of the shortcut keys combination.</param>
+        /// <exception cref="ArgumentException"/>
         public ShortcutKey(Keys first, Keys second)
         {
             if (first == Keys.None && second != Keys.None)
@@ -44,6 +58,23 @@ namespace PluginCore
 
             m_first = first;
             m_second = second;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ShortcutKey"/> structure
+        /// representing an extended shortcut key with the specified <see cref="Shortcut"/> values.
+        /// </summary>
+        /// <param name="first">The <see cref="Shortcut"/> value of first part of the shortcut keys combination.</param>
+        /// <param name="second">The <see cref="Shortcut"/> value of the second part of the shortcut keys combination.</param>
+        public ShortcutKey(Shortcut first, Shortcut second)
+        {
+            if (first == Shortcut.None && second != Shortcut.None)
+            {
+                throw new ArgumentException($"Parameter '{nameof(second)}' must be {nameof(Shortcut)}.{nameof(Shortcut.None)} if '{nameof(first)}' is {nameof(Shortcut)}.{nameof(Shortcut.None)}.", nameof(second));
+            }
+
+            m_first = (Keys) first;
+            m_second = (Keys) second;
         }
 
         #endregion
@@ -80,6 +111,26 @@ namespace PluginCore
             return right.m_first != left || right.m_second != Keys.None;
         }
 
+        public static bool operator ==(ShortcutKey left, Shortcut right)
+        {
+            return left == (Keys) right;
+        }
+
+        public static bool operator !=(ShortcutKey left, Shortcut right)
+        {
+            return left != (Keys) right;
+        }
+
+        public static bool operator ==(Shortcut left, ShortcutKey right)
+        {
+            return right == (Keys) left;
+        }
+
+        public static bool operator !=(Shortcut left, ShortcutKey right)
+        {
+            return right != (Keys) left;
+        }
+
         public static ShortcutKey operator +(ShortcutKey left, Keys right)
         {
             ShortcutKey keys;
@@ -98,12 +149,27 @@ namespace PluginCore
             return keys;
         }
 
+        public static ShortcutKey operator +(ShortcutKey left, Shortcut right)
+        {
+            return left + (Keys) right;
+        }
+
         public static implicit operator Keys(ShortcutKey value)
         {
             return value.IsExtended ? Keys.None : value.m_first;
         }
 
         public static implicit operator ShortcutKey(Keys value)
+        {
+            return new ShortcutKey(value);
+        }
+
+        public static implicit operator Shortcut(ShortcutKey value)
+        {
+            return value.IsExtended ? Shortcut.None : (Shortcut) value.m_first;
+        }
+
+        public static implicit operator ShortcutKey(Shortcut value)
         {
             return new ShortcutKey(value);
         }
@@ -209,7 +275,7 @@ namespace PluginCore
         /// <param name="obj">The <see cref="object"/> to compare with the current <see cref="object"/>.</param>
         public override bool Equals(object obj)
         {
-            return obj is ShortcutKey && this == (ShortcutKey) obj || obj is Keys && this == (Keys) obj;
+            return obj is ShortcutKey && this == (ShortcutKey) obj || obj is Keys && this == (Keys) obj || obj is Shortcut && this == (Shortcut) obj;
         }
 
         /// <summary>
