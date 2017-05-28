@@ -160,9 +160,9 @@ namespace FlashDevelop.Dialogs
             this.listView.TabIndex = 2;
             this.listView.UseCompatibleStateImageBehavior = false;
             this.listView.View = System.Windows.Forms.View.Details;
-            this.listView.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.ListView_ItemSelectionChanged);
             this.listView.ClientSizeChanged += new System.EventHandler(this.ListView_ClientSizeChanged);
             this.listView.DoubleClick += new System.EventHandler(this.ListView_DoubleClick);
+            this.listView.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.ListView_ItemSelectionChanged);
             this.listView.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListView_KeyDown);
             this.listView.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.ListView_KeyPress);
             // 
@@ -210,6 +210,7 @@ namespace FlashDevelop.Dialogs
             this.shortcutTextBox.Enabled = false;
             this.shortcutTextBox.Location = new System.Drawing.Point(12, 554);
             this.shortcutTextBox.Name = "shortcutTextBox";
+            this.shortcutTextBox.ShortcutsEnabled = false;
             this.shortcutTextBox.Size = new System.Drawing.Size(691, 27);
             this.shortcutTextBox.TabIndex = 5;
             // 
@@ -1455,7 +1456,7 @@ namespace FlashDevelop.Dialogs
         {
             private const int LVGF_STATE = 0x00000004;
             private const int LVGS_COLLAPSIBLE = 0x00000008;
-            private const int LVM_SETGROUPINFO = 0x00001093;
+            private const int LVM_SETGROUPINFO = 0x00001000 + 147;
 
             /// <summary>
             /// LVGROUP structure
@@ -1463,8 +1464,8 @@ namespace FlashDevelop.Dialogs
             [StructLayout(LayoutKind.Sequential)]
             private struct LVGROUP
             {
-                internal int cbSize;
-                internal int mask;
+                internal uint cbSize;
+                internal uint mask;
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string pszHeader;
                 internal int cchHeader;
@@ -1472,9 +1473,9 @@ namespace FlashDevelop.Dialogs
                 internal string pszFooter;
                 internal int cchFooter;
                 internal int iGroupId;
-                internal int stateMask;
-                internal int state;
-                internal int uAlign;
+                internal uint stateMask;
+                internal uint state;
+                internal uint uAlign;
             }
 
             /// <summary>
@@ -1486,7 +1487,7 @@ namespace FlashDevelop.Dialogs
                 {
                     var group = new ListViewGroup(groupName, groupName);
                     this.Groups.Add(group);
-                    this.SetGroupCollapsible(group);
+                    SetGroupState(this.Handle, group, LVGS_COLLAPSIBLE);
                 }
 
                 this.Groups[groupName].Items.Add(item);
@@ -1496,36 +1497,26 @@ namespace FlashDevelop.Dialogs
             /// <summary>
             /// Uses the native list view API to enable collapsible groups.
             /// </summary>
-            private void SetGroupCollapsible(ListViewGroup group)
+            private static void SetGroupState(IntPtr hwnd, ListViewGroup group, uint state)
             {
                 if (Win32.ShouldUseWin32())
                 {
-                    var ptr = IntPtr.Zero;
-
+                    var lvgroup = new LVGROUP()
+                    {
+                        cbSize = (uint) Marshal.SizeOf(typeof(LVGROUP)),
+                        mask = LVGF_STATE,
+                        iGroupId = (int) typeof(ListViewGroup).InvokeMember("ID", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null, group, null),
+                        state = state
+                    };
+                    var ptr = Marshal.AllocHGlobal((int) lvgroup.cbSize);
                     try
                     {
-                        LVGROUP lvgroup;
-                        lvgroup.cbSize = Marshal.SizeOf(typeof(LVGROUP));
-                        lvgroup.mask = LVGF_STATE;
-                        lvgroup.pszHeader = default(string);
-                        lvgroup.cchHeader = default(int);
-                        lvgroup.pszFooter = default(string);
-                        lvgroup.cchFooter = default(int);
-                        lvgroup.iGroupId = (int) typeof(ListViewGroup).InvokeMember("ID", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null, group, null);
-                        lvgroup.stateMask = default(int);
-                        lvgroup.state = LVGS_COLLAPSIBLE;
-                        lvgroup.uAlign = default(int);
-
-                        ptr = Marshal.AllocHGlobal(lvgroup.cbSize);
                         Marshal.StructureToPtr(lvgroup, ptr, false);
-                        Win32.SendMessage(this.Handle, LVM_SETGROUPINFO, (IntPtr) lvgroup.iGroupId, ptr);
+                        Win32.SendMessage(hwnd, LVM_SETGROUPINFO, (IntPtr) lvgroup.iGroupId, ptr);
                     }
                     finally
                     {
-                        if (ptr != IntPtr.Zero)
-                        {
-                            Marshal.FreeHGlobal(ptr);
-                        }
+                        Marshal.FreeHGlobal(ptr);
                     }
                 }
             }
