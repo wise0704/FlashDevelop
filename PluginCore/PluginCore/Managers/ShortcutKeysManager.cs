@@ -85,7 +85,7 @@ namespace PluginCore.Managers
         /// Retrieves a value indicating whether a defined shortcut key is a valid simple shortcut, excluding <see cref="Keys.Insert"/> and <see cref="Keys.Delete"/>.
         /// </summary>
         /// <param name="keys">The shortcut key to test for validity.</param>
-        public static bool IsValidSimpleShortcutExclInsertDelete(Keys keys)
+        public static bool IsValidSimpleShortcutExcludeInsDel(Keys keys)
         {
             if (keys == Keys.None)
             {

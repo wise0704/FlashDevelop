@@ -1633,9 +1633,6 @@ namespace FlashDevelop
                         {
                             return true;
                         }
-                        // We could directly call TranslateMessage() and DispatchMessage() here ourselves and return true
-                        // to prevent Control.PreProcessControlMessageInternal() from being called again.
-                        // It will however prevent other message filters from handling this message.
                     }
                     else
                     {
@@ -1648,7 +1645,6 @@ namespace FlashDevelop
                                 {
                                     return true;
                                 }
-                                // Above comment applies here too.
                                 break;
                             }
                         }
@@ -1810,20 +1806,30 @@ namespace FlashDevelop
             /*
              * Shortcut exists but not handled.
              */
-            if (ShortcutManager.AllShortcuts.Contains(currentKey) && ShortcutKeysManager.IsValidShortcut(currentKey))
+            if (ShortcutManager.AllShortcuts.Contains(currentKey))
             {
-                lockStatusLabel = false;
-                // ShortcutManager.AllShortcuts contains registered items and ignored keys.
-                // For ignored keys, shortcutItem is null. In that case, suppress the message.
-                if (shortcutItem != null)
+                // An extended shortcut key created using the + operator is always a valid shortcut.
+                if (currentKey.IsExtended)
                 {
-                    StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, shortcutItem.Command);
+                    lockStatusLabel = false;
+                    // ShortcutManager.AllShortcuts contains registered items and ignored keys.
+                    // For ignored keys, shortcutItem is null. In that case, suppress the message.
+                    if (shortcutItem != null)
+                    {
+                        StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, shortcutItem.Command);
+                    }
+                    return true;
                 }
-                if (!currentKey.IsExtended)
+                // Exclude INSERT and DELETE keys.
+                if (ShortcutKeysManager.IsValidSimpleShortcutExcludeInsDel(currentKey.First))
                 {
+                    if (shortcutItem != null)
+                    {
+                        StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUnavailable"), currentKey, shortcutItem.Command);
+                    }
                     currentKey = ShortcutKey.None;
+                    return true;
                 }
-                return true;
             }
 
             /*
@@ -1857,6 +1863,9 @@ namespace FlashDevelop
                 case 6: // Not a shortcut
                 default:
                     currentKey = ShortcutKey.None;
+                    // We could directly call TranslateMessage() and DispatchMessage() here ourselves and return true
+                    // to prevent Control.PreProcessControlMessageInternal() from being called again.
+                    // It will however prevent other message filters from handling this message.
                     return false;
             }
         }
