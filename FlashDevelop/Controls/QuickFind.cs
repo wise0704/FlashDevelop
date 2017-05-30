@@ -323,7 +323,7 @@ namespace FlashDevelop.Controls
         /// </summary>
         public void FindNextButtonClick(Object sender, EventArgs e)
         {
-            if (this.findTextBox.Text.Trim() != "")
+            if (this.findTextBox.Text.Length > 0)
             {
                 this.FindNext(this.findTextBox.Text, false);
             }
@@ -334,7 +334,7 @@ namespace FlashDevelop.Controls
         /// </summary>
         public void FindPrevButtonClick(Object sender, EventArgs e)
         {
-            if (this.findTextBox.Text.Trim() != "")
+            if (this.findTextBox.Text.Length > 0)
             {
                 this.FindPrev(this.findTextBox.Text, false);
             }
@@ -394,7 +394,7 @@ namespace FlashDevelop.Controls
         private void TypingTimerTick(Object sender, EventArgs e)
         {
             this.typingTimer.Stop();
-            if (this.findTextBox.Text.Trim() != "")
+            if (this.findTextBox.Text.Length > 0)
             {
                 this.FindCorrect(this.findTextBox.Text, this.highlightCheckBox.Checked);
             }
@@ -424,7 +424,7 @@ namespace FlashDevelop.Controls
         /// </summary>
         private void FindTextBoxKeyPress(Object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == (Char)Keys.Return && this.findTextBox.Text.Trim() != "")
+            if (e.KeyChar == (Char)Keys.Return && this.findTextBox.Text.Length > 0)
             {
                 e.Handled = true;
                 if ((ModifierKeys & Keys.Shift) == Keys.Shift) FindPrev(findTextBox.Text, false);
@@ -461,7 +461,7 @@ namespace FlashDevelop.Controls
             ScintillaControl sci = Globals.SciControl;
             if (this.highlightCheckBox.Checked)
             {
-                if (this.findTextBox.Text.Trim() == "") return;
+                if (this.findTextBox.Text.Length == 0) return;
                 List<SearchMatch> matches = this.GetResults(sci, this.findTextBox.Text);
                 if (matches != null && matches.Count != 0)
                 {
@@ -478,7 +478,7 @@ namespace FlashDevelop.Controls
         /// </summary>
         private void FindCorrect(String text, Boolean refreshHighlights)
         {
-            if (text == "") return;
+            if (string.IsNullOrEmpty(text)) return;
             ScintillaControl sci = Globals.SciControl;
             this.findTextBox.BackColor = this.backColor;
             List<SearchMatch> matches = this.GetResults(sci, text);
@@ -877,7 +877,7 @@ namespace FlashDevelop.Controls
 
             protected void OnPressEscapeKey()
             {
-                if (OnKeyEscape != null) OnKeyEscape();
+                OnKeyEscape?.Invoke();
             }
         }
 

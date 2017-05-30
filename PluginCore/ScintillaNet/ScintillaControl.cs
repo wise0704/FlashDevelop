@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using ScintillaNet.Configuration;
+using ScintillaNet.Lexers;
 using PluginCore.FRService;
 using PluginCore.Utilities;
 using PluginCore.Managers;
@@ -1030,7 +1031,7 @@ namespace ScintillaNet
         {
             get
             {
-                return SPerform(2027, 0, 0);
+                return SPerform(2027, 0, 0) - 1; //ignore the terminating null character
             }
         }
 
@@ -3217,10 +3218,10 @@ namespace ScintillaNet
         /// </summary>
         unsafe public string GetCurLine(int length)
         {
-            int sz = SPerform(2027, length, 0);
-            byte[] buffer = new byte[sz + 1];
+            length = Math.Min(length, SPerform(2027, 0, 0) - 1);
+            byte[] buffer = new byte[length + 1];
             fixed (byte* b = buffer) SPerform(2027, length + 1, (uint)b);
-            return Encoding.GetEncoding(this.CodePage).GetString(buffer, 0, sz - 1);
+            return Encoding.GetEncoding(this.CodePage).GetString(buffer, 0, length);
         }
 
         /// <summary>
@@ -3713,13 +3714,42 @@ namespace ScintillaNet
         }
 
         /// <summary>
+        /// Cut the selection to the clipboard as RTF.
+        /// </summary>
+        public void CutRTF()
+        {
+            if (SelTextSize > 0)
+            {
+                CopyRTF();
+                Clear();
+            }
+        }
+
+        /// <summary>
         /// Copy the selection to the clipboard as RTF.
         /// </summary>
         public void CopyRTF()
         {
-            Language language = ScintillaControl.Configuration.GetLanguage(this.configLanguage);
-            String conversion = RTF.GetConversion(language, this, this.SelectionStart, this.SelectionEnd);
-            Clipboard.SetText(conversion, TextDataFormat.Rtf);
+            int start = SelectionStart;
+            int end = SelectionEnd;
+
+            if (start < end)
+            {
+                CopyRTF(start, end);
+        }
+        }
+
+        /// <summary>
+        /// Copy the text in range to the clipboard as RTF.
+        /// </summary>
+        public void CopyRTF(int start, int end)
+        {
+            var dataObject = new DataObject();
+            var language = Configuration.GetLanguage(configLanguage);
+            string rtfText = RTF.GetConversion(language, this, start, end);
+            dataObject.SetText(GetTextRange(start, end));
+            dataObject.SetText(rtfText, TextDataFormat.Rtf);
+            Clipboard.SetDataObject(dataObject);
         }
 
         /// <summary>
@@ -5980,28 +6010,45 @@ namespace ScintillaNet
                             int curLine = CurrentLine;
                             int tempLine = curLine;
                             int previousIndent;
-                            string tempText;
+                            string tempText3; //line text without newline
+                            string tempText2; //line text trim end
+                            string tempText; //line text without comment and trim end
                             do
                             {
                                 --tempLine;
-                                previousIndent = GetLineIndentation(tempLine);
-                                tempText = GetLine(tempLine).TrimEnd();
+                                tempText3 = GetLine(tempLine);
+                                tempText3 = tempText3.Substring(0, tempText3.Length - 1); //remove newline
+                                tempText2 = tempText3.TrimEnd();
+                                tempText = tempText2;
                                 if (tempText.Length == 0) previousIndent = -1;
+                                else previousIndent = GetLineIndentation(tempLine);
                             }
                             while ((tempLine > 0) && (previousIndent < 0));
-                            if (tempText.IndexOfOrdinal("//") > 0) // remove comment at end of line
+                            int commentIndex = tempText.IndexOfOrdinal("//");
+                            if (commentIndex > 0) // remove comment at end of line
                             {
-                                int slashes = this.MBSafeTextLength(tempText.Substring(0, tempText.IndexOfOrdinal("//") + 1));
+                                int slashes = this.MBSafeTextLength(tempText.Substring(0, commentIndex + 1));
                                 if (this.PositionIsOnComment(PositionFromLine(tempLine) + slashes))
-                                    tempText = tempText.Substring(0, tempText.IndexOfOrdinal("//")).Trim();
+                                    tempText = tempText.Substring(0, commentIndex).TrimEnd();
                             }
                             if (tempText.EndsWith('{'))
                             {
-                                int bracePos = CurrentPos - 1;
-                                while (bracePos > 0 && CharAt(bracePos) != '{') bracePos--;
+                                int bracePos = CurrentPos - 2 - (tempText3.Length - tempText.Length); //CurrentPos - 1 is always ch (newline)
                                 int style = BaseStyleAt(bracePos);
                                 if (bracePos >= 0 && CharAt(bracePos) == '{' && (style == 10/*CPP*/ || style == 5/*CSS*/))
+                                {
                                     previousIndent += TabWidth;
+                                    if (tempText.Length == tempText2.Length) //Doesn't end with comment
+                                    {
+                                        if (tempText3.Length > tempText.Length) //Ends with whitespace after {
+                                        {
+                                            AnchorPosition = bracePos + 1;
+                                            CurrentPos--; //before ch (newline)
+                                            DeleteBack();
+                                            CurrentPos = bracePos + 2; //same as CurrentPos++ (after ch)
+                            }
+                                    }
+                                }
                             }
                             // TODO: Should this test a config variable for indenting after case : statements?
                             if (Lexer == 3 && tempText.EndsWith(':') && !tempText.EndsWithOrdinal("::") && !this.PositionIsOnComment(PositionFromLine(tempLine)))
@@ -6052,14 +6099,11 @@ namespace ScintillaNet
                         this.BeginUndoAction();
                         try
                         {
-                            int position = CurrentPos;
-                            int curLine = LineFromPosition(position);
-                            int previousIndent = GetLineIndentation(curLine - 1);
-                            int match = SafeBraceMatch(position - 1);
-                            if (match != -1)
+                            int position = CurrentPos - 1;
+                            int match = SafeBraceMatch(position); //SafeBraceMatch() calls Colourise(0, -1)
+                            if (match != -1 && !PositionIsInString(position))
                             {
-                                previousIndent = GetLineIndentation(LineFromPosition(match));
-                                IndentLine(curLine, previousIndent);
+                                IndentLine(LineFromPosition(position), GetLineIndentation(LineFromPosition(match)));
                             }
                         }
                         finally
@@ -6078,22 +6122,33 @@ namespace ScintillaNet
         }
 
         /// <summary>
-        /// Detects the string-literal quote style
+        /// Detects the string-literal quote style. Returns space if undefined.
         /// </summary>
         /// <param name="position">lookup position</param>
         /// <returns>' or " or Space if undefined</returns>
         public char GetStringType(int position)
         {
-            char next = (char)CharAt(position);
-            char c;
+            char current;
+            char previous = (char) CharAt(position);
             for (int i = position; i > 0; i--)
             {
-                c = next;
-                next = (char)CharAt(i - 1);
+                current = previous;
+                previous = (char) CharAt(i - 1);
 
-                if (next == '\\' && (c == '\'' || c == '"')) i--;
-                if (c == '\'') return '\'';
-                else if (c == '"') return '"';
+                if (current == '\'' || current == '"')
+                {
+                    bool escaped = false;
+                    while (previous == '\\')
+                    {
+                        i--;
+                        previous = (char) CharAt(i - 1);
+                        escaped = !escaped;
+            }
+                    if (!escaped)
+                    {
+                        return current;
+                    }
+                }
             }
             return ' ';
         }
@@ -6486,6 +6541,49 @@ namespace ScintillaNet
                 style == 9);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Checks that if the specified position is in string.
+        /// You may need to manually update coloring: <see cref="Colourise(int, int)"/>.
+        /// </summary>
+        public bool PositionIsInString(int position)
+        {
+            return PositionIsInString(position, Lexer);
+        }
+
+        /// <summary>
+        /// Checks that if the specified position is in string.
+        /// You may need to manually update coloring: <see cref="Colourise(int, int)"/>.
+        /// </summary>
+        private bool PositionIsInString(int position, int lexer)
+        {
+            int style = BaseStyleAt(position);
+            
+            switch ((Enums.Lexer) lexer)
+            {
+                case Enums.Lexer.CPP:
+                case Enums.Lexer.BULLANT:
+                case Enums.Lexer.HTML:
+                case Enums.Lexer.XML:
+                case Enums.Lexer.PERL:
+                case Enums.Lexer.RUBY:
+                case Enums.Lexer.LUA:
+                case Enums.Lexer.SQL:
+                case Enums.Lexer.GAP:
+                case Enums.Lexer.R:
+                    return style == (int) CPP.STRING || style == (int) CPP.CHARACTER;
+                case Enums.Lexer.SMALLTALK:
+                    return style == (int) SMALLTALK.STRING;
+                case Enums.Lexer.PLM:
+                    return style == (int) PLM.STRING;
+                case Enums.Lexer.MAGIK:
+                case Enums.Lexer.POWERSHELL:
+                    return style == (int) MAGIK.STRING || style == (int) MAGIK.CHARACTER;
+                // TODO: and more...
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
@@ -7346,7 +7444,7 @@ namespace ScintillaNet
         /// </summary>
         public void CutAllowLineEx()
         {
-            if (this.SelTextSize == 0 && this.GetLine(this.CurrentLine).Trim() != "")
+            if (this.SelTextSize == 0 && this.GetLine(this.CurrentLine).Trim().Length > 0)
             {
                 this.LineCut();
             }
@@ -7354,11 +7452,11 @@ namespace ScintillaNet
         }
 
         /// <summary>
-        /// Cut the selection, if selection empty cut the line with the caret
+        /// Copy the selection, if selection empty copy the line with the caret
         /// </summary>
         public void CopyAllowLineEx()
         {
-            if (this.SelTextSize == 0 && this.GetLine(this.CurrentLine).Trim() != "")
+            if (this.SelTextSize == 0 && this.GetLine(this.CurrentLine).Trim().Length > 0)
             {
                 this.CopyAllowLine();
             }
@@ -7366,18 +7464,89 @@ namespace ScintillaNet
         }
 
         /// <summary>
+        /// Cut the selection in RTF. If selection is empty, cut the line containing the caret.
+        /// </summary>
+        public void CutRTFAllowLine()
+        {
+            if (this.SelTextSize == 0)
+            {
+                int line = this.CurrentLine;
+                this.AnchorPosition = this.PositionFromLine(line);
+                this.CurrentPos = this.PositionFromLine(line + 1);
+            }
+
+            this.CutRTF();
+        }
+
+        /// <summary>
+        /// Copy the selection in RTF. If selection is empty, copy the line containing the caret.
+        /// </summary>
+        public void CopyRTFAllowLine()
+        {
+            int start = this.SelectionStart;
+            int end = this.SelectionEnd;
+
+            if (start == end)
+            {
+                int line = this.CurrentLine;
+                start = this.PositionFromLine(line);
+                end = this.PositionFromLine(line + 1);
+            }
+
+            if (start < end)
+            {
+                this.CopyRTF(start, end);
+            }
+        }
+
+        /// <summary>
+        /// Cut the selection in RTF. If selection is empty and the current line is not empty, cut the line containing the caret.
+        /// </summary>
+        public void CutRTFAllowLineEx()
+        {
+            if (this.SelTextSize == 0 && this.GetLine(this.CurrentLine).Trim().Length > 0)
+            {
+                int line = this.CurrentLine;
+                this.AnchorPosition = this.PositionFromLine(line);
+                this.CurrentPos = this.PositionFromLine(line + 1);
+            }
+
+            this.CutRTF();
+        }
+
+        /// <summary>
+        /// Copy the selection in RTF. If selection is empty and the current line is not empty, copy the line containing the caret.
+        /// </summary>
+        public void CopyRTFAllowLineEx()
+        {
+            int start = this.SelectionStart;
+            int end = this.SelectionEnd;
+
+            if (start == end && this.GetLine(this.CurrentLine).Trim().Length > 0)
+            {
+                int line = this.CurrentLine;
+                start = this.PositionFromLine(line);
+                end = this.PositionFromLine(line + 1);
+            }
+
+            if (start < end)
+            {
+                this.CopyRTF(start, end);
+            }
+        }
+
+        /// <summary>
         /// Gets the word to the left of the cursor
         /// </summary>
         public string GetWordLeft(int position, bool skipWS)
         {
-            char c;
             string word = "";
-            string lang = this.ConfigurationLanguage;
-            Language config = ScintillaControl.Configuration.GetLanguage(lang);
+            string lang = ConfigurationLanguage;
+            Language config = Configuration.GetLanguage(lang);
             string characterClass = config.characterclass.Characters;
             while (position >= 0)
             {
-                c = (char)this.CharAt(position);
+                var c = (char)CharAt(position);
                 if (c <= ' ')
                 {
                     if (!skipWS) break;
@@ -7391,6 +7560,32 @@ namespace ScintillaNet
                 position--;
             }
             return word;
+        }
+
+        /// <summary>
+        /// Gets the word to the right of the cursor
+        /// </summary>
+        public string GetWordRight(int position, bool skipWS)
+        {
+            var result = string.Empty;
+            var characterClass = Configuration.GetLanguage(ConfigurationLanguage).characterclass.Characters;
+            var endPosition = TextLength;
+            while (position < endPosition)
+            {
+                var c = (char)CharAt(position);
+                if (c <= ' ')
+                {
+                    if (!skipWS) break;
+                }
+                else if (characterClass.IndexOf(c) < 0) break;
+                else
+                {
+                    result += c;
+                    skipWS = false;
+                }
+                position++;
+            }
+            return result;
         }
 
         /// <summary>
