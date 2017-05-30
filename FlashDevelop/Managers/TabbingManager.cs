@@ -1,130 +1,197 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows.Forms;
 using PluginCore;
+using PluginCore.Managers;
 
 namespace FlashDevelop.Managers
 {
-    internal static class TabbingManager
+    /// <summary>
+    /// A manager class for navigation through document tabs.
+    /// </summary>
+    internal class TabbingManager : IEventHandler, IDisposable
     {
-        internal static Timer TabTimer;
-        internal static List<ITabbedDocument> TabHistory;
-        internal static Int32 SequentialIndex;
+        private static TabbingManager instance;
+        private Container components;
+        private Timer timer;
+        private List<ITabbedDocument> history;
+        private int sequentialIndex;
 
-        static TabbingManager()
+        private TabbingManager()
         {
-            TabTimer = new Timer();
-            TabTimer.Interval = 100;
-            TabTimer.Tick += new EventHandler(OnTabTimer);
-            TabHistory = new List<ITabbedDocument>();
-            SequentialIndex = 0;
+            components = new Container();
+            timer = new Timer(components);
+            timer.Tick += Timer_Tick;
+            history = new List<ITabbedDocument>();
+            sequentialIndex = 0;
         }
 
-        internal static bool ProcessCmdKey(ref Message m, Keys keyData)
+        ~TabbingManager()
         {
-            switch (keyData)
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                case Keys.Control | Keys.PageDown:
-                case Keys.Control | Keys.Tab:
-                    TabTimer.Enabled = true;
-                    if (keyData == (Keys.Control | Keys.PageDown) || Globals.Settings.SequentialTabbing)
+                components?.Dispose();
+            }
+        }
+
+        internal static void Initialize()
+        {
+            instance = new TabbingManager();
+
+            EventManager.AddEventHandler(instance, EventType.ShortcutKey, HandlingPriority.Low);
+            Globals.MainForm.RegisterShortcut("View.TabNext", Keys.Control | Keys.Tab);
+            Globals.MainForm.RegisterShortcut("View.TabPrevious", Keys.Control | Keys.Shift | Keys.Tab);
+            Globals.MainForm.RegisterShortcut("View.TabNextSequential", Keys.Control | Keys.PageDown);
+            Globals.MainForm.RegisterShortcut("View.TabPreviousSequential", Keys.Control | Keys.PageUp);
+        }
+
+        /// <summary>
+        /// Adds a document to the tab history.
+        /// </summary>
+        internal static void AddTabHistory(ITabbedDocument document)
+        {
+            if (!instance.timer.Enabled)
+            {
+                instance.history.Remove(document);
+                instance.history.Add(document);
+            }
+        }
+
+        /// <summary>
+        /// Removes a document from the tab history.
+        /// </summary>
+        internal static void RemoveTabHistory(ITabbedDocument document)
+        {
+            instance.history.Remove(document);
+            if (Globals.Settings.SequentialTabbing)
+            {
+                if (instance.sequentialIndex == 0) NavigateTabsSequentially(0);
+                else NavigateTabsSequentially(-1);
+            }
+            else NavigateTabHistory(0);
+        }
+
+        /// <summary>
+        /// Sets the current index to the index of the specified document.
+        /// </summary>
+        internal static void UpdateSequentialIndex(ITabbedDocument document)
+        {
+            int index = Array.IndexOf(Globals.MainForm.Documents, document);
+            if (index >= 0)
+            {
+                instance.sequentialIndex = index;
+            }
+        }
+
+        /// <summary>
+        /// Navigates through the documents in tabs sequentially.
+        /// </summary>
+        internal static void NavigateTabsSequentially(int direction)
+        {
+            Navigate(direction, Globals.MainForm.Documents);
+        }
+
+        /// <summary>
+        /// Performs Visual Studio style keyboard tab navigation: similar to Alt-Tab.
+        /// </summary>
+        internal static void NavigateTabHistory(int direction)
+        {
+            Navigate(direction, instance.history);
+        }
+
+        /// <summary>
+        /// Navigates through the list using the specified direction.
+        /// </summary>
+        private static void Navigate(int direction, IList<ITabbedDocument> list)
+        {
+            if (direction == 0)
+            {
+                if (list.Count > 0)
+                {
+                    list[0].Activate();
+                }
+                return;
+            }
+            int c = list.Count - 1;
+            if (c > 0)
+            {
+                int i = list.IndexOf(Globals.CurrentDocument);
+                if (i >= 0)
+                {
+                    if (direction > 0)
                     {
-                        NavigateTabsSequentially(1);
+                        if (i < c) list[i + 1].Activate();
+                        else list[0].Activate();
                     }
                     else
                     {
-                        NavigateTabHistory(1);
+                        if (i > 0) list[i - 1].Activate();
+                        else list[c].Activate();
                     }
-                    return true;
-
-                case Keys.Control | Keys.PageUp:
-                case Keys.Control | Keys.Shift | Keys.Tab:
-                    TabTimer.Enabled = true;
-                    if (keyData == (Keys.Control | Keys.PageUp) || Globals.Settings.SequentialTabbing)
-                    {
-                        NavigateTabsSequentially(-1);
-                    }
-                    else
-                    {
-                        NavigateTabHistory(-1);
-                    }
-                    return true;
-
-                default:
-                    return false;
+                }
             }
         }
 
         /// <summary>
         /// Checks to see if the Control key has been released
         /// </summary>
-        private static void OnTabTimer(Object sender, EventArgs e)
+        private void Timer_Tick(object sender, EventArgs e)
         {
-            if ((Control.ModifierKeys & Keys.Control) == 0)
+            if ((Control.ModifierKeys & Keys.Control) != Keys.Control)
             {
-                TabTimer.Enabled = false;
-                TabHistory.Remove(Globals.MainForm.CurrentDocument);
-                TabHistory.Insert(0, Globals.MainForm.CurrentDocument);
+                timer.Stop();
+                AddTabHistory(Globals.MainForm.CurrentDocument);
             }
         }
 
-        /// <summary>
-        /// Sets an index of the current document
-        /// </summary>
-        internal static void UpdateSequentialIndex(ITabbedDocument document)
+        void IEventHandler.HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)
         {
-            ITabbedDocument[] documents = Globals.MainForm.Documents;
-            Int32 count = documents.Length;
-            for (Int32 i = 0; i < count; i++)
+            if (e.Type == EventType.ShortcutKey)
             {
-                if (document == documents[i])
+                string command = ((ShortcutKeyEvent) e).Command;
+                switch (command)
                 {
-                    SequentialIndex = i;
-                    return;
+                    case "View.TabNext":
+                    case "View.TabNextSequential":
+                        timer.Start();
+                        if (command == "View.TabNextSequential" || Globals.Settings.SequentialTabbing)
+                        {
+                            NavigateTabsSequentially(1);
+                        }
+                        else
+                        {
+                            NavigateTabHistory(1);
+                        }
+                        e.Handled = true;
+                        break;
+
+                    case "View.TabPrevious":
+                    case "View.TabPreviousSequential":
+                        timer.Start();
+                        if (command == "View.TabPreviousSequential" || Globals.Settings.SequentialTabbing)
+                        {
+                            NavigateTabsSequentially(-1);
+                        }
+                        else
+                        {
+                            NavigateTabHistory(-1);
+                        }
+                        e.Handled = true;
+                        break;
                 }
             }
-        }
-
-        /// <summary>
-        /// Activates next document in tabs
-        /// </summary>
-        internal static void NavigateTabsSequentially(Int32 direction)
-        {
-            ITabbedDocument current = Globals.CurrentDocument;
-            ITabbedDocument[] documents = Globals.MainForm.Documents;
-            Int32 count = documents.Length; if (count <= 1) return;
-            for (Int32 i = 0; i < count; i++)
-            {
-                if (documents[i] == current)
-                {
-                    if (direction > 0)
-                    {
-                        if (i < count - 1) documents[i + 1].Activate();
-                        else documents[0].Activate();
-                    }
-                    else if (direction < 0)
-                    {
-                        if (i > 0) documents[i - 1].Activate();
-                        else documents[count - 1].Activate();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Visual Studio style keyboard tab navigation: similar to Alt-Tab
-        /// </summary>
-        internal static void NavigateTabHistory(Int32 direction)
-        {
-            Int32 currentIndex = 0;
-            if (TabHistory.Count < 1) return;
-            if (direction != 0)
-            {
-                currentIndex = TabHistory.IndexOf(Globals.MainForm.CurrentDocument);
-                currentIndex = (currentIndex + direction) % TabHistory.Count;
-                if (currentIndex == -1) currentIndex = TabHistory.Count - 1;
-            }
-            TabHistory[currentIndex].Activate();
         }
     }
 }

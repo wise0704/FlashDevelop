@@ -986,6 +986,7 @@ namespace FlashDevelop
                 LayoutManager.BuildLayoutSystems(FileNameHelper.LayoutData);
                 ShortcutManager.LoadCustomShortcuts();
                 ArgumentDialog.LoadCustomArguments();
+                TabbingManager.Initialize();
                 ClipboardManager.Initialize(this);
             }
             catch (Exception ex)
@@ -1373,11 +1374,7 @@ namespace FlashDevelop
                 * unless you're currently cycling through tabs with the keyboard
                 */
                 TabbingManager.UpdateSequentialIndex(this.CurrentDocument);
-                if (!TabbingManager.TabTimer.Enabled)
-                {
-                    TabbingManager.TabHistory.Remove(this.CurrentDocument);
-                    TabbingManager.TabHistory.Insert(0, this.CurrentDocument);
-                }
+                TabbingManager.AddTabHistory(this.CurrentDocument);
                 if (this.CurrentDocument.IsEditable)
                 {
                     /**
@@ -1485,15 +1482,9 @@ namespace FlashDevelop
         public void OnDocumentClosed(Object sender, System.EventArgs e)
         {
             ITabbedDocument document = sender as ITabbedDocument;
-            TabbingManager.TabHistory.Remove(document);
             TextEvent ne = new TextEvent(EventType.FileClose, document.FileName);
             EventManager.DispatchEvent(this, ne);
-            if (this.appSettings.SequentialTabbing)
-            {
-                if (TabbingManager.SequentialIndex == 0) this.Documents[0].Activate();
-                else TabbingManager.NavigateTabsSequentially(-1);
-            }
-            else TabbingManager.NavigateTabHistory(0);
+            TabbingManager.RemoveTabHistory(document);
             if (document.IsEditable && !document.IsUntitled)
             {
                 if (this.appSettings.RestoreFileStates) FileStateManager.SaveFileState(document);
@@ -1739,11 +1730,7 @@ namespace FlashDevelop
             {
                 var e = new KeyEvent(EventType.Keys, keyData);
                 handler.HandleEvent(this, e);
-                handled = e.Handled ||
-                    handler == this && TabbingManager.ProcessCmdKey(ref m, keyData);
-                // Hacky... it would be better to make tabbing into a proper shortcut.
-                // That will make it handle the keys during ShortcutKeyEvent, which is before KeyEvent rather than after KeyEvent like currently,
-                // but that's when it should really be handled anyway.
+                handled = e.Handled;
             }
 
             /*
