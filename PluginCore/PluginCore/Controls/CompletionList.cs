@@ -836,12 +836,12 @@ namespace PluginCore.Controls
         
         #region Event Handling
         
-        static public IntPtr GetHandle()
+        public static IntPtr GetHandle()
         {
             return completionList.Handle;
         }
 
-        static public void OnChar(ScintillaControl sci, int value)
+        public static void OnChar(ScintillaControl sci, int value)
         {
             char c = (char)value;
             string characterClass = ScintillaControl.Configuration.GetLanguage(sci.ConfigurationLanguage).characterclass.Characters;
@@ -879,151 +879,117 @@ namespace PluginCore.Controls
             }
         }
 
-        static public bool HandleKeys(ScintillaControl sci, Keys key)
+        internal static bool HandleShortcut(ShortcutKeyEvent e, ScintillaControl sci)
         {
-            int index;
-            switch (key)
+            switch (e.Command)
             {
-                case Keys.Back:
-                    var wordLength = word.Length;
-                    if (wordLength > 0 && wordLength >= MinWordLength)
+                case "Scintilla.NewLine":
+                    if (!noAutoInsert && ReplaceText(sci, '\n'))
                     {
-                        word = word.Substring(0, wordLength - 1);
-                        currentPos = sci.CurrentPos - 1;
+                        return true;
+                    }
+                    return false;
+
+                case "Scintilla.Tab":
+                    if (ReplaceText(sci, '\t'))
+                    {
+                        return true;
+                    }
+                    return false;
+
+                case "Scintilla.LineUp":
+                    noAutoInsert = false;
+                    // If the list was hidden and it should not appear.
+                    if (!completionList.Visible)
+                    {
+                        return false;
+                    }
+                    if (completionList.SelectedIndex > 0)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex--;
+                    }
+                    else if (PluginBase.Settings.WrapList)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex = completionList.Items.Count - 1;
+                    }
+                    return true;
+
+                case "Scintilla.LineDown":
+                    noAutoInsert = false;
+                    // If the list was hidden and it should not appear.
+                    if (!completionList.Visible)
+                    {
+                        return false;
+                    }
+                    if (completionList.SelectedIndex < completionList.Items.Count - 1)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex++;
+                    }
+                    else if (PluginBase.Settings.WrapList)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex = 0;
+                    }
+                    return true;
+
+                case "Scintilla.PageUp":
+                    noAutoInsert = false;
+                    // If the list was hidden and it should not appear.
+                    if (!completionList.Visible)
+                    {
+                        return false;
+                    }
+                    if (completionList.SelectedIndex > 0)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex = Math.Max(completionList.SelectedIndex - completionList.Height / completionList.ItemHeight, 0);
+                    }
+                    return true;
+
+                case "Scintilla.PageDown":
+                    noAutoInsert = false;
+                    // If the list was hidden and it should not appear.
+                    if (!completionList.Visible)
+                    {
+                        return false;
+                    }
+                    if (completionList.SelectedIndex < completionList.Items.Count - 1)
+                    {
+                        RefreshTip();
+                        completionList.SelectedIndex = Math.Min(completionList.SelectedIndex + completionList.Height / completionList.ItemHeight, completionList.Items.Count - 1);
+                    }
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        internal static void OnShortcutHandled(ScintillaControl sender, ShortcutKeyEvent e)
+        {
+            switch (e.Command)
+            {
+                case "Scintilla.DeleteBack":
+                    if (word.Length > MinWordLength)
+                    {
+                        word = word.Remove(word.Length - 1);
+                        currentPos = sender.CurrentPos;
                         lastIndex = 0;
                         FindWordStartingWith(word);
                     }
-                    else CompletionList.Hide((char)8);
-                    return false;
-                    
-                case Keys.Enter:
-                    if (noAutoInsert || !ReplaceText(sci, '\n'))
+                    else
                     {
-                        CompletionList.Hide();
-                        return false;
+                        Hide((char) Keys.Back);
                     }
-                    return true;
-
-                case Keys.Tab:
-                    if (!ReplaceText(sci, '\t'))
-                    {
-                        CompletionList.Hide();
-                        return false;
-                    }
-                    return true;
-                    
-                case Keys.Space:
-                    if (noAutoInsert) CompletionList.Hide();
-                    return false;
-
-                case Keys.Up:
-                    noAutoInsert = false;
-                    // the list was hidden and it should not appear
-                    if (!completionList.Visible)
-                    {
-                        CompletionList.Hide();
-                        if (key == Keys.Up) sci.LineUp(); 
-                        else sci.CharLeft();
-                        return false;
-                    }
-                    // go up the list
-                    if (completionList.SelectedIndex > 0)
-                    {
-                        RefreshTip();
-                        index = completionList.SelectedIndex-1;
-                        completionList.SelectedIndex = index;
-                    }
-                    // wrap
-                    else if (PluginBase.MainForm.Settings.WrapList)
-                    {
-                        RefreshTip();
-                        index = completionList.Items.Count-1;
-                        completionList.SelectedIndex = index;
-                    }
-                    break;
-
-                case Keys.Down:
-                    noAutoInsert = false;
-                    // the list was hidden and it should not appear
-                    if (!completionList.Visible)
-                    {
-                        CompletionList.Hide();
-                        if (key == Keys.Down) sci.LineDown(); 
-                        else sci.CharRight();
-                        return false;
-                    }
-                    // go down the list
-                    if (completionList.SelectedIndex < completionList.Items.Count-1)
-                    {
-                        RefreshTip();
-                        index = completionList.SelectedIndex+1;
-                        completionList.SelectedIndex = index;
-                    }
-                    // wrap
-                    else if (PluginBase.MainForm.Settings.WrapList)
-                    {
-                        RefreshTip();
-                        index = 0;
-                        completionList.SelectedIndex = index;
-                    }
-                    break;
-
-                case Keys.PageUp:
-                    noAutoInsert = false;
-                    // the list was hidden and it should not appear
-                    if (!completionList.Visible)
-                    {
-                        CompletionList.Hide();
-                        sci.PageUp();
-                        return false;
-                    }
-                    // go up the list
-                    if (completionList.SelectedIndex > 0)
-                    {
-                        RefreshTip();
-                        index = completionList.SelectedIndex-completionList.Height/completionList.ItemHeight;
-                        if (index < 0) index = 0;
-                        completionList.SelectedIndex = index;
-                    }
-                    break;
-
-                case Keys.PageDown:
-                    noAutoInsert = false;
-                    // the list was hidden and it should not appear
-                    if (!completionList.Visible)
-                    {
-                        CompletionList.Hide();
-                        sci.PageDown();
-                        return false;
-                    }
-                    // go down the list
-                    if (completionList.SelectedIndex < completionList.Items.Count-1)
-                    {
-                        RefreshTip();
-                        index = completionList.SelectedIndex+completionList.Height/completionList.ItemHeight;
-                        if (index > completionList.Items.Count-1) index = completionList.Items.Count-1;
-                        completionList.SelectedIndex = index;
-                    }
-                    break;
-                
-                case (Keys.Control | Keys.Space):
-                    break;
-                
-                case Keys.Left:
-                    sci.CharLeft();
-                    CompletionList.Hide();
-                    break;
-
-                case Keys.Right:
-                    sci.CharRight();
-                    CompletionList.Hide();
                     break;
 
                 default:
-                    CompletionList.Hide();
-                    return false;
+                    Hide();
+                    break;
             }
-            return true;
         }
 
         private static void RefreshTip()

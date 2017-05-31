@@ -160,78 +160,49 @@ namespace PluginCore.Controls
 
         public new void UpdateTip(ScintillaControl sci)
         {
-            if (OnUpdateCallTip != null) OnUpdateCallTip(sci, currentPos);
+            OnUpdateCallTip?.Invoke(sci, currentPos);
         }
 
-        public bool HandleKeys(ScintillaControl sci, Keys key)
+        internal bool HandleShortcut(ShortcutKeyEvent e, ScintillaControl sci)
         {
-            switch (key)
+            if (!Focused)
             {
-                case Keys.Multiply:
-                case Keys.Subtract:
-                case Keys.Divide:
-                case Keys.Decimal:
-                case Keys.Add:
-                    return false;
+                return false;
+            }
 
-                case Keys.Up:
-                    if (!CompletionList.Active) sci.LineUp();
-                    return false;
-                case Keys.Down:
-                    if (!CompletionList.Active) sci.LineDown();
-                    return false;
-                case Keys.Up | Keys.Shift:
-                    sci.LineUpExtend();
-                    return false;
-                case Keys.Down | Keys.Shift:
-                    sci.LineDownExtend();
-                    return false;
-                case Keys.Left | Keys.Shift:
-                    sci.CharLeftExtend();
-                    return false;
-                case Keys.Right | Keys.Shift:
-                    sci.CharRightExtend();
-                    return false;
-
-                case Keys.Right:
-                    if (!CompletionList.Active)
-                    {
-                        sci.CharRight();
-                        currentPos = sci.CurrentPos;
-                        if (sci.CurrentLine != currentLine) Hide();
-                        else if (OnUpdateCallTip != null) OnUpdateCallTip(sci, currentPos);
-                    }
+            switch (e.Command)
+            {
+                case "Edit.Copy":
+                    toolTipRTB.Copy();
                     return true;
 
-                case Keys.Left:
-                    if (!CompletionList.Active)
-                    {
-                        sci.CharLeft();
-                        currentPos = sci.CurrentPos;
-                        if (currentPos < startPos) Hide();
-                        else
-                        {
-                            if (sci.CurrentLine != currentLine) Hide();
-                            else if (OnUpdateCallTip != null) OnUpdateCallTip(sci, currentPos);
-                        }
-                    }
+                case "Edit.SelectAll":
+                    toolTipRTB.SelectAll();
                     return true;
-
-                case Keys.Back:
-                    currentPos = sci.CurrentPos - 1;
-                    if (currentPos + deltaPos <= startPos)
-                        Hide();
-                    else if (OnUpdateCallTip != null)
-                        OnUpdateCallTip.Invoke(sci, currentPos);
-                    return false;
-
-                case Keys.Tab:
-                case Keys.Space:
-                    return false;
 
                 default:
-                    if (!CompletionList.Active) Hide();
                     return false;
+            }
+        }
+
+        internal void OnShortcutHandled(ScintillaControl sender, ShortcutKeyEvent e)
+        {
+            currentPos = sender.CurrentPos;
+            if (currentPos < startPos)
+            {
+                Hide();
+            }
+            else
+            {
+                int endPos = sender.BraceMatch(startPos - 1);
+                if (endPos != -1 ? currentPos > endPos : currentLine != sender.CurrentLine)
+                {
+                    Hide();
+                }
+                else
+                {
+                    UpdateTip(sender);
+                }
             }
         }
 

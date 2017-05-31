@@ -110,7 +110,7 @@ namespace PluginCore.Controls
             //
             PluginBase.MainForm.DockPanel.ActivePaneChanged += new EventHandler(DockPanel_ActivePaneChanged);
             EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.High); // Handle and delegate "Completion.ListMembers" and "Completion.ParameterInfo" at the highest priority.
-            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.Keys);
+            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command);
             EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.Low); // Handle ScintillaControl shortcuts at a low priority.
         }
 
@@ -162,13 +162,8 @@ namespace PluginCore.Controls
                     else if (priority == HandlingPriority.Low)
                     {
                         // Handle ScintillaControl events at a low priority, so that plugins can take custom actions on it with a normal priority and higher.
-                        var sci = PluginBase.MainForm.CurrentDocument.SciControl;
-                        e.Handled = sci != null && sci.IsFocus && sci.HandleShortcut((ShortcutKeyEvent) e);
+                        e.Handled = HandleShortcutLow((ShortcutKeyEvent) e);
                     }
-                    return;
-
-                case EventType.Keys:
-                    e.Handled = HandleKeys(((KeyEvent) e).KeyData);
                     return;
             }
             // most of the time, an event should hide the list
@@ -276,7 +271,7 @@ namespace PluginCore.Controls
             }
             else if (m.Msg == Win32.WM_KEYDOWN)
             {
-                if ((Keys) m.WParam == Keys.ControlKey) // Ctrl
+                if ((Keys) m.WParam == Keys.ControlKey)
                 {
                     if (CompletionList.Active) CompletionList.FadeOut();
                     if (callTip.CallTipActive && !callTip.Focused) callTip.FadeOut();
@@ -284,7 +279,7 @@ namespace PluginCore.Controls
             }
             else if (m.Msg == Win32.WM_KEYUP)
             {
-                if ((Keys) m.WParam == Keys.ControlKey || (Keys) m.WParam == Keys.Menu) // Ctrl / AltGr
+                if ((Keys) m.WParam == Keys.ControlKey || (Keys) m.WParam == Keys.Menu)
                 {
                     if (CompletionList.Active) CompletionList.FadeIn();
                     if (callTip.CallTipActive) callTip.FadeIn();
@@ -413,74 +408,64 @@ namespace PluginCore.Controls
                     return true;
 
                 default:
+                    // We need to handle it here instead of EventType.Keys because to F1 is registered for show help by ASCompletion.
+                    if (e.ShortcutKeys == ToggleShowDetailsKey)
+                    {
+                        if (simpleTip.Visible && !CompletionList.Active)
+                        {
+                            // Toggle "long-description" for the hover tooltip
+                            showDetails = !showDetails;
+                            simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
+                            return true;
+                        }
+
+                        var sci = (ScintillaControl) lockedSciControl?.Target;
+                        if (sci != null)
+                        {
+                            // Toggle "long-description"
+                            if (callTip.CallTipActive)
+                            {
+                                showDetails = !showDetails;
+                                callTip.UpdateTip(sci);
+                                return true;
+                            }
+                            if (CompletionList.Active)
+                            {
+                                showDetails = !showDetails;
+                                CompletionList.UpdateTip(null, null);
+                                return true;
+                            }
+                        }
+                    }
                     return false;
             }
         }
 
-        private bool HandleKeys(Keys key)
+        private bool HandleShortcutLow(ShortcutKeyEvent e)
         {
-            if (key == Keys.None)
+            var sci = PluginBase.MainForm.CurrentDocument.SciControl;
+            if (sci != null)
             {
-                return false;
-            }
-
-            if (key == ToggleShowDetailsKey)
-            {
-                // Toggle "long-description" for the hover tooltip
-                if (simpleTip.Visible && !CompletionList.Active)
+                // Let completion list and call tip handle the shortcut first.
+                if (CompletionList.Active && CompletionList.HandleShortcut(e, sci) ||
+                    callTip.CallTipActive && callTip.HandleShortcut(e, sci))
                 {
-                    showDetails = !showDetails;
-                    simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
                     return true;
                 }
-            }
-
-            // Are we currently displaying something?
-            if (CompletionList.Active || callTip.CallTipActive)
-            {
-                var sci = (ScintillaControl) lockedSciControl?.Target;
-
-                if (sci != null)
+                if (sci.Focused && sci.HandleShortcut(e))
                 {
-                    switch (key)
+                    // Let completion list and call tip know that the shortcut has been handled by the scintilla control,
+                    // so they can take appropriate actions.
+                    if (CompletionList.Active)
                     {
-                        case ToggleShowDetailsKey:
-                            // Toggle "long-description"
-                            showDetails = !showDetails;
-                            if (callTip.CallTipActive) callTip.UpdateTip(sci);
-                            else CompletionList.UpdateTip(null, null);
-                            return true;
-
-                        case Keys.Escape:
-                            // Hide if pressing Escape
-                            break;
-
-                        case Keys.Control | Keys.C: // Hacky...
-                        case Keys.Control | Keys.A:
-                            if (callTip.Focused)
-                            {
-                                return false; // Let text copy in tip
-                            }
-                            // Hide if pressing Ctrl+Key combination
-                            break;
-
-                        default:
-                            // Hide if pressing Ctrl+Key combination
-                            if ((key & Keys.Control) != 0 && (key & Keys.Modifiers) != (Keys.Control | Keys.Alt))
-                            {
-                                break;
-                            }
-                            // Handle special keys
-                            return (callTip.CallTipActive && callTip.HandleKeys(sci, key))
-                                | (CompletionList.Active && CompletionList.HandleKeys(sci, key));
+                        CompletionList.OnShortcutHandled(sci, e);
                     }
+                    if (callTip.CallTipActive)
+                    {
+                        callTip.OnShortcutHandled(sci, e);
+                    }
+                    return true;
                 }
-
-                // Hide - reach here with the 'break' statement
-                UnlockControl();
-                CompletionList.Hide((char) Keys.Escape);
-                codeTip.Hide();
-                callTip.Hide();
             }
 
             return false;
