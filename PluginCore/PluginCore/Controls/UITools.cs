@@ -332,7 +332,10 @@ namespace PluginCore.Controls
         private void OnGotFocus(object sender, EventArgs e)
         {
             var sci = (ScintillaControl)sender;
-            ((CompletionList.ScintillaHost)CompletionList.Host).SciControl = sci;
+            if (((CompletionList.ScintillaHost) CompletionList.Host).SciControl != sci)
+            {
+                CompletionList.Host = new CompletionList.ScintillaHost {SciControl = sci};
+            }
             var language = ScintillaControl.Configuration.GetLanguage(sci.ConfigurationLanguage);
             if (language != null)   // Should we provide some custom string otherwise?
                 CompletionList.CharacterClass = language.characterclass.Characters;
@@ -355,7 +358,8 @@ namespace PluginCore.Controls
             //    SendChar(sci, value);
             //    return;
             //}
-            
+
+            if (CompletionList.Active && CompletionList.CharacterClass.IndexOf((char) value) >= 0) return;
             SendChar(sci, value);
         }
 

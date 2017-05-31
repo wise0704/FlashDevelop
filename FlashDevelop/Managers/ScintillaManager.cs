@@ -246,6 +246,7 @@ namespace FlashDevelop.Managers
                 sci.UseHighlightGuides = !settings.HighlightGuide;
                 sci.Indent = settings.IndentSize;
                 sci.SmartIndentType = settings.SmartIndentType;
+                sci.Technology = settings.DrawingTechnology;
                 sci.IsBackSpaceUnIndents = settings.BackSpaceUnIndents;
                 sci.IsCaretLineVisible = settings.CaretLineVisible;
                 sci.IsIndentationGuides = settings.ViewIndentationGuides;
@@ -266,6 +267,7 @@ namespace FlashDevelop.Managers
                 sci.SetProperty("fold.html", Convert.ToInt32(settings.FoldHtml).ToString());
                 sci.SetProperty("lexer.cpp.track.preprocessor", "0");
                 sci.SetVirtualSpaceOptions((Int32)settings.VirtualSpaceMode);
+                sci.MultipleSelection = true;
                 sci.SetFoldFlags((Int32)settings.FoldFlags);
                 /**
                 * Set if themes should colorize the first margin

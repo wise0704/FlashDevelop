@@ -162,6 +162,14 @@ namespace PluginCore.Controls
         public ICompletionListHost Host
         {
             get { return host; }
+            set
+            {
+                if (host == value) return;
+                if (host != null) Hide();
+                host = value;
+                if (tip != null) tip.Owner = value;
+                if (callTip != null) callTip.Owner = value;
+            }
         }
 
         /// <summary>
@@ -233,12 +241,12 @@ namespace PluginCore.Controls
             {
                 if (!host.IsEditable)
                 {
-                    if (isActive) Hide();
+                    Hide();
                     return;
                 }
-                if ((itemList == null) || (itemList.Count == 0))
+                if (itemList == null || itemList.Count == 0)
                 {
-                    if (isActive) Hide();
+                    Hide();
                     return;
                 }
             }
@@ -274,11 +282,12 @@ namespace PluginCore.Controls
             // state
             if (!isActive)
             {
+                isActive = true;
+
                 // track key input
                 host.KeyDown += Target_KeyDown;
                 host.KeyPress += Target_KeyPress;
             }
-            isActive = true;
             tempoTip.Enabled = false;
             showTime = DateTime.Now.Ticks;
             disableSmartMatch = noAutoInsert || PluginBase.MainForm.Settings.DisableSmartMatch;
@@ -354,7 +363,7 @@ namespace PluginCore.Controls
         /// </summary> 	
         public void Hide()
         {
-            if (completionList != null && isActive)
+            if (isActive)
             {
                 RemoveHandlers();
                 tempo.Enabled = false;
@@ -362,7 +371,7 @@ namespace PluginCore.Controls
                 fullList = false;
                 bool visible = listHost.Visible;
                 listHost.Close();
-                if (completionList.Items.Count > 0) completionList.Items.Clear();
+                if (completionList != null && completionList.Items.Count > 0) completionList.Items.Clear();
                 currentItem = null;
                 allItems = null;
                 Tip.Hide();
@@ -376,7 +385,7 @@ namespace PluginCore.Controls
         /// </summary> 	
         public void Hide(char trigger)
         {
-            if (completionList != null && isActive)
+            if (isActive)
             {
                 Hide();
                 if (!host.IsEditable) return;
@@ -901,12 +910,14 @@ namespace PluginCore.Controls
         /// </summary> 
         public bool ReplaceText(string tail, char trigger)
         {
-            String triggers = PluginBase.Settings.InsertionTriggers ?? "";
-            if (triggers.Length > 0 && Regex.Unescape(triggers).IndexOf(trigger) < 0) return false;
-
+            var hostCopy = host;
             try
             {
+                hostCopy.BeginUndoAction();
                 ICompletionListItem item = null;
+                String triggers = PluginBase.Settings.InsertionTriggers ?? "";
+                if (triggers.Length > 0 && Regex.Unescape(triggers).IndexOf(trigger) < 0) return false;
+
                 if (completionList.SelectedIndex >= 0)
                 {
                     item = completionList.Items[completionList.SelectedIndex] as ICompletionListItem;
@@ -925,9 +936,8 @@ namespace PluginCore.Controls
                                 replace = replace.Substring(0, replace.IndexOfOrdinal(tail));
                             }
                         }
-                        host.BeginUndoAction();
-                        host.SetSelection(startPos, host.CurrentPos);
-                        host.SelectedText = replace;
+                        hostCopy.SetSelection(startPos, hostCopy.CurrentPos);
+                        hostCopy.SelectedText = replace;
                         OnItemInserted(replace, trigger, item);
                         //if (tail.Length > 0) host.SelectedText = tail;
                     }
@@ -937,7 +947,7 @@ namespace PluginCore.Controls
             }
             finally
             {
-                host.EndUndoAction();
+                hostCopy.EndUndoAction();
             }
         }
 
@@ -1104,9 +1114,10 @@ namespace PluginCore.Controls
             {
                 case Keys.Back:
                     suppressKeyPress = false;
-                    if (word.Length > MinWordLength)
+                    var wordLength = word.Length;
+                    if (wordLength > 0 && wordLength >= MinWordLength)
                     {
-                        word = word.Substring(0, word.Length - 1);
+                        word = word.Substring(0, wordLength - 1);
                         currentPos = host.CurrentPos - 1;
                         lastIndex = 0;
                         FindWordStartingWith(word);

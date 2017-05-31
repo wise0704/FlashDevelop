@@ -42,7 +42,7 @@ namespace PluginCore.Controls
         #endregion
         
         #region Control Creation
-        
+
         /// <summary>
         /// Creates the control 
         /// </summary> 
@@ -254,25 +254,22 @@ namespace PluginCore.Controls
         internal class ScintillaHost : ICompletionListHost
         {
 
-            private List<Control> controlHierarchy = new List<Control>();
+            private readonly List<Control> controlHierarchy = new List<Control>();
 
             private WeakReference sci = new WeakReference(null);
             internal ScintillaControl SciControl
             {
                 get
                 {
-                    if (sci.Target == null)
+                    if (sci.Target == null || !sci.IsAlive)
                         return null;
                     
-                    if (!sci.IsAlive)
-                        return PluginBase.MainForm.CurrentDocument.SciControl;
-
                     return (ScintillaControl)sci.Target;
                 }
                 set
                 {
                     if (sci.Target == value) return;
- 
+
                     sci.Target = value;
                     ClearControlHierarchy();
                 }
@@ -434,28 +431,24 @@ namespace PluginCore.Controls
 
             private void Control_LocationChanged(object sender, EventArgs e)
             {
-                if (positionChanged != null)
-                    positionChanged(sender, e);
+                positionChanged?.Invoke(sender, e);
             }
 
             private void Control_ParentChanged(object sender, EventArgs e)
             {
                 ClearControlHierarchy();
                 BuildControlHierarchy(SciControl);
-                if (positionChanged != null)
-                    positionChanged(sender, e);
+                positionChanged?.Invoke(sender, e);
             }
 
             private void Scintilla_Scroll(object sender, ScrollEventArgs e)
             {
-                if (positionChanged != null)
-                    positionChanged(sender, e);
+                positionChanged?.Invoke(sender, e);
             }
 
             private void Scintilla_Zoom(ScintillaControl sci)
             {
-                if (positionChanged != null)
-                    positionChanged(sci, EventArgs.Empty);
+                positionChanged?.Invoke(sci, EventArgs.Empty);
             }
 
         }

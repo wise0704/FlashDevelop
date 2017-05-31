@@ -92,6 +92,12 @@ td {{ border: 1px solid #000; padding: 2px 3px 2px 3px; }}";
             }
         }
 
+        public ICompletionListHost Owner
+        {
+            get { return owner; }
+            set { owner = value; }
+        }
+
         #endregion
 
         #region Control creation

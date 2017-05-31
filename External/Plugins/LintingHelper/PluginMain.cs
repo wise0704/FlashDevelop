@@ -118,6 +118,7 @@ namespace LintingHelper
             if (desc != string.Empty)
             {
                 desc = desc.Remove(0, 2); //remove \r\n
+                Tip.Owner = UITools.CompletionList.Host;
                 Tip.ShowAtMouseLocation(desc);
 
                 //move simpleTip up to not overlap linting tip
@@ -132,7 +133,7 @@ namespace LintingHelper
 
         private void InitBasics()
         {
-            Tip = new RichToolTip(PluginBase.MainForm);
+            Tip = new RichToolTip(UITools.CompletionList.Host);
 
             string dataPath = Path.Combine(PathHelper.DataDir, nameof(LintingHelper));
             if (!Directory.Exists(dataPath)) Directory.CreateDirectory(dataPath);
