@@ -59,6 +59,11 @@ namespace FlashDevelop.Dialogs
         
         private IEditorController ownerController;
 
+        static FRInFilesDialog()
+        {
+            TraceManager.RegisterTraceGroup(TraceGroup, TextHelper.GetString("FlashDevelop.Label.FindAndReplaceResults"), false, true, Globals.MainForm.FindImage("209"));
+        }
+
         public FRInFilesDialog(IEditorController ownerController)
         {
             if (ownerController == null)
@@ -76,8 +81,6 @@ namespace FlashDevelop.Dialogs
             this.ApplyLocalizedTexts();
             this.InitializeGraphics();
             this.UpdateSettings();
-
-            TraceManager.RegisterTraceGroup(TraceGroup, TextHelper.GetString("FlashDevelop.Label.FindAndReplaceResults"), false, true, Globals.MainForm.FindImage("209"));
         }
 
         #region Windows Form Designer Generated Code
