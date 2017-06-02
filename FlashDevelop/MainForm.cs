@@ -983,10 +983,10 @@ namespace FlashDevelop
                     if (Directory.Exists(userPluginDir)) PluginServices.FindPlugins(userPluginDir);
                     else Directory.CreateDirectory(userPluginDir);
                 }
+                TabbingManager.Initialize(); // TabbingManager "plugin" is loaded last
                 LayoutManager.BuildLayoutSystems(FileNameHelper.LayoutData);
                 ShortcutManager.LoadCustomShortcuts();
                 ArgumentDialog.LoadCustomArguments();
-                TabbingManager.Initialize();
                 ClipboardManager.Initialize(this);
             }
             catch (Exception ex)

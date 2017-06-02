@@ -42,7 +42,7 @@ namespace FlashDevelop.Managers
         {
             if (disposing)
             {
-                components?.Dispose();
+                components.Dispose();
             }
         }
 
