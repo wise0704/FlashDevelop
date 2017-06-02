@@ -46,89 +46,91 @@ namespace FlashDevelop
         public bool? ProcessCmdKey(Keys keyData)
         {
             /**
-            * Notify plugins. Don't notify ControlKey or ShiftKey as it polls a lot
-            */
-            KeyEvent ke = new KeyEvent(EventType.Keys, keyData);
-            Keys keyCode = keyData & Keys.KeyCode;
-            if ((keyCode != Keys.ControlKey) && (keyCode != Keys.ShiftKey))
+             * Notify plugins. Don't notify ControlKey or ShiftKey as it polls a lot
+             */
+            switch (keyData & Keys.KeyCode)
             {
-                EventManager.DispatchEvent(this, ke);
+                case Keys.ControlKey:
+                case Keys.ShiftKey:
+                case Keys.Menu:
+                    return null;
             }
-            if (!ke.Handled)
+            KeyEvent ke = new KeyEvent(EventType.Keys, keyData);
+            EventManager.DispatchEvent(this, ke);
+            if (ke.Handled)
             {
-                /**
-                * Ignore basic control keys if sci doesn't have focus.
-                */
-                if (Globals.SciControl == null || !Globals.SciControl.IsFocus)
+                return true;
+            }
+            /**
+             * Ignore basic control keys if sci doesn't have focus.
+             */
+            if (Globals.SciControl == null || !Globals.SciControl.IsFocus)
+            {
+                if (keyData == (Keys.Control | Keys.C)) return false;
+                else if (keyData == (Keys.Control | Keys.V)) return false;
+                else if (keyData == (Keys.Control | Keys.X)) return false;
+                else if (keyData == (Keys.Control | Keys.A)) return false;
+                else if (keyData == (Keys.Control | Keys.Z)) return false;
+                else if (keyData == (Keys.Control | Keys.Y)) return false;
+            }
+            /**
+             * Process special key combinations and allow "chaining" of 
+             * Ctrl-Tab commands if you keep holding control down.
+             */
+            if ((keyData & Keys.Control) != 0)
+            {
+                Boolean sequentialTabbing = Globals.MainForm.AppSettings.SequentialTabbing;
+                if ((keyData == (Keys.Control | Keys.Next)) || (keyData == (Keys.Control | Keys.Tab)))
                 {
-                    if (keyData == (Keys.Control | Keys.C)) return false;
-                    else if (keyData == (Keys.Control | Keys.V)) return false;
-                    else if (keyData == (Keys.Control | Keys.X)) return false;
-                    else if (keyData == (Keys.Control | Keys.A)) return false;
-                    else if (keyData == (Keys.Control | Keys.Z)) return false;
-                    else if (keyData == (Keys.Control | Keys.Y)) return false;
-                }
-                /**
-                * Process special key combinations and allow "chaining" of 
-                * Ctrl-Tab commands if you keep holding control down.
-                */
-                if ((keyData & Keys.Control) != 0)
-                {
-                    Boolean sequentialTabbing = Globals.MainForm.AppSettings.SequentialTabbing;
-                    if ((keyData == (Keys.Control | Keys.Next)) || (keyData == (Keys.Control | Keys.Tab)))
+                    TabbingManager.TabTimer.Enabled = true;
+                    if (keyData == (Keys.Control | Keys.Next) || sequentialTabbing)
                     {
-                        TabbingManager.TabTimer.Enabled = true;
-                        if (keyData == (Keys.Control | Keys.Next) || sequentialTabbing)
-                        {
-                            TabbingManager.NavigateTabsSequentially(1);
-                        }
-                        else TabbingManager.NavigateTabHistory(1);
-                        return true;
+                        TabbingManager.NavigateTabsSequentially(1);
                     }
-                    if ((keyData == (Keys.Control | Keys.Prior)) || (keyData == (Keys.Control | Keys.Shift | Keys.Tab)))
-                    {
-                        TabbingManager.TabTimer.Enabled = true;
-                        if (keyData == (Keys.Control | Keys.Prior) || sequentialTabbing)
-                        {
-                            TabbingManager.NavigateTabsSequentially(-1);
-                        }
-                        else TabbingManager.NavigateTabHistory(-1);
-                        return true;
-                    }
+                    else TabbingManager.NavigateTabHistory(1);
+                    return true;
                 }
-                if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.FindAndReplace").Custom)
+                if ((keyData == (Keys.Control | Keys.Prior)) || (keyData == (Keys.Control | Keys.Shift | Keys.Tab)))
                 {
+                    TabbingManager.TabTimer.Enabled = true;
+                    if (keyData == (Keys.Control | Keys.Prior) || sequentialTabbing)
+                    {
+                        TabbingManager.NavigateTabsSequentially(-1);
+                    }
+                    else TabbingManager.NavigateTabHistory(-1);
+                    return true;
+                }
+            }
+            string shortcutId = Globals.MainForm.GetShortcutItemId(keyData);
+            switch (shortcutId)
+            {
+                case "SearchMenu.FindAndReplace":
                     this.ShowFindAndReplace();
                     return true;
-                }
-                else if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.FindAndReplaceInFiles").Custom)
-                {
+                case "SearchMenu.FindAndReplaceInFiles":
                     this.ShowFindAndReplaceInFiles();
                     return true;
-                }
-                else if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.QuickFind").Custom)
-                {
+                case "SearchMenu.QuickFind":
                     this.ShowQuickFind();
                     return true;
-                }
-                else if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.QuickFindNext").Custom)
-                {
+                case "SearchMenu.QuickFindNext":
                     this.FindNext();
                     return true;
-                }
-                else if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.QuickFindPrevious").Custom)
-                {
+                case "SearchMenu.QuickFindPrevious":
                     this.FindPrevious();
                     return true;
-                }
-                else if (keyData == ShortcutManager.GetRegisteredItem("SearchMenu.GotoPositionOrLine").Custom)
-                {
+                case "SearchMenu.GotoPositionOrLine":
                     this.ShowGoTo();
                     return true;
-                }
-                return null;
+                default:
+                    var menuItem = ShortcutManager.GetRegisteredItem(shortcutId)?.Item;
+                    if (menuItem != null && menuItem.Enabled && menuItem.Available && !menuItem.HasDropDownItems)
+                    {
+                        menuItem.PerformClick();
+                        return true;
+                    }
+                    return null;
             }
-            return true;
         }
 
         public void ApplyAllSettings()

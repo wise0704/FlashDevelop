@@ -48,8 +48,6 @@ namespace FlashDevelop.Docking
 
             this.Controls.Add((Control)editorController.QuickFindControl);
 
-            CloneMenuStrip();
-
             ThemeManager.WalkControls(this);
             EventManager.AddEventHandler(this, EventType.ApplyTheme);
         }
@@ -58,37 +56,6 @@ namespace FlashDevelop.Docking
         {
             EventManager.RemoveEventHandler(this);
             base.Dispose(disposing);
-        }
-
-        private void CloneMenuStrip()
-        {
-            // Hack to get context menu, not handling if a shortcut is modified or multiple levels
-            var menuStripCopy = new MenuStrip();
-            menuStripCopy.Visible = false;
-            foreach (ToolStripMenuItem item in Globals.MainForm.MenuStrip.Items)
-            {
-                var itemCopy = new ToolStripMenuItem(item.Text);
-                menuStripCopy.Items.Add(itemCopy);
-
-                foreach (ToolStripItem item2 in item.DropDownItems)
-                {
-                    if (item2 is ToolStripSeparator) continue;
-                    var menuItem = item2 as ToolStripMenuItem;
-                    var menuItemCopy = new ToolStripMenuItem(item2.Text)
-                    {
-                        ShortcutKeys = menuItem.ShortcutKeys, Tag = menuItem.Tag, CheckOnClick = menuItem.CheckOnClick, Checked = menuItem.Checked
-                    };
-
-                    menuItem.EnabledChanged += (s, e) => menuItemCopy.Enabled = ((ToolStripMenuItem) s).Enabled;
-
-                    var eventsField = typeof(Component).GetField("events", BindingFlags.NonPublic | BindingFlags.Instance);
-                    var eventHandlerList = eventsField.GetValue(menuItem);
-                    eventsField.SetValue(menuItemCopy, eventHandlerList);
-                    itemCopy.DropDownItems.Add(menuItemCopy);
-                }
-            }
-
-            this.Controls.Add(menuStripCopy);
         }
 
         public override DockState DockState
@@ -107,13 +74,10 @@ namespace FlashDevelop.Docking
                 base.AllowEndUserDocking = value;
             }
         }
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            bool? processKeys = this.editorController.ProcessCmdKey(keyData);
-
-            if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
-
-            return processKeys.Value;
+            return this.editorController.ProcessCmdKey(keyData) ?? base.ProcessCmdKey(ref msg, keyData);
         }
 
         public void HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)

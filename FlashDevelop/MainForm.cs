@@ -1621,11 +1621,7 @@ namespace FlashDevelop
         /// </summary>
         protected override Boolean ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            bool? processKeys = this.editorController.ProcessCmdKey(keyData);
-
-            if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
-            
-            return processKeys.Value;
+            return this.editorController.ProcessCmdKey(keyData) ?? base.ProcessCmdKey(ref msg, keyData);
         }
 
         /// <summary>
