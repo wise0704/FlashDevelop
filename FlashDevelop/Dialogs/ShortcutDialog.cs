@@ -70,7 +70,7 @@ namespace FlashDevelop.Dialogs
         {
             if (disposing)
             {
-                components?.Dispose();
+                this.components.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -210,7 +210,6 @@ namespace FlashDevelop.Dialogs
             this.shortcutTextBox.Enabled = false;
             this.shortcutTextBox.Location = new System.Drawing.Point(12, 554);
             this.shortcutTextBox.Name = "shortcutTextBox";
-            this.shortcutTextBox.ShortcutsEnabled = false;
             this.shortcutTextBox.Size = new System.Drawing.Size(691, 27);
             this.shortcutTextBox.TabIndex = 5;
             // 
@@ -330,7 +329,7 @@ namespace FlashDevelop.Dialogs
             this.revertToDefault = new ToolStripMenuItem(TextHelper.GetString("Label.RevertToDefault"), null, this.RevertToDefault_Click);
             this.revertAllToDefault = new ToolStripMenuItem(TextHelper.GetString("Label.RevertAllToDefault"), null, this.RevertAllToDefault_Click);
 
-            this.listView.ContextMenuStrip = new ContextMenuStrip()
+            this.listView.ContextMenuStrip = new ContextMenuStrip(this.components)
             {
                 Font = Globals.Settings.DefaultFont,
                 ImageScalingSize = ScaleHelper.Scale(new Size(16, 16)),
@@ -343,6 +342,8 @@ namespace FlashDevelop.Dialogs
                 this.revertAllToDefault,
             });
             this.listView.ContextMenuStrip.Opening += this.ContextMenuStrip_Opening;
+
+            this.shortcutTextBox.ContextMenuStrip = new ContextMenuStrip(this.components);
         }
 
         /// <summary>
