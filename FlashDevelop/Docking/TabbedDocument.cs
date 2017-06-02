@@ -1,27 +1,25 @@
 using System;
-using System.IO;
-using System.Text;
-using System.Drawing;
-using System.Windows.Forms;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
+using System.IO;
 using System.Reflection;
-using WeifenLuo.WinFormsUI;
-using WeifenLuo.WinFormsUI.Docking;
-using PluginCore.Localization;
-using FlashDevelop.Managers;
-using FlashDevelop.Helpers;
+using System.Text;
+using System.Windows.Forms;
 using FlashDevelop.Controls;
-using PluginCore.Utilities;
-using PluginCore.Managers;
-using PluginCore.Helpers;
-using PluginCore.Controls;
-using ScintillaNet;
+using FlashDevelop.Managers;
 using PluginCore;
+using PluginCore.Controls;
+using PluginCore.Helpers;
+using PluginCore.Localization;
+using PluginCore.Managers;
+using PluginCore.Utilities;
+using ScintillaNet;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace FlashDevelop.Docking
 {
-    public class CustomFloatWindow : FloatWindow, IEventHandler
+    public class CustomFloatWindow : FloatWindow
     {
         private IEditorController editorController;
 
@@ -40,24 +38,14 @@ namespace FlashDevelop.Docking
         private void InitializeComponents()
         {
             FormBorderStyle = FormBorderStyle.Sizable;
-            Icon = new Icon(ResourceHelper.GetStream("FlashDevelopIcon.ico"));
+            Icon = Globals.MainForm.Icon;
             ShowInTaskbar = true;
             Owner = null;
-            DoubleClickTitleBarToDock = false;
             editorController = new WinFormsEditorController(this);
-
             this.Controls.Add((Control)editorController.QuickFindControl);
 
             CloneMenuStrip();
-
             ThemeManager.WalkControls(this);
-            EventManager.AddEventHandler(this, EventType.ApplyTheme);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            EventManager.RemoveEventHandler(this);
-            base.Dispose(disposing);
         }
 
         private void CloneMenuStrip()
@@ -96,17 +84,6 @@ namespace FlashDevelop.Docking
             get { return DockState.FloatDocument; }
         }
 
-        public override bool AllowEndUserDocking
-        {
-            get
-            {
-                return false;
-            }
-            set
-            {
-                base.AllowEndUserDocking = value;
-            }
-        }
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             bool? processKeys = this.editorController.ProcessCmdKey(keyData);
@@ -114,11 +91,6 @@ namespace FlashDevelop.Docking
             if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
 
             return processKeys.Value;
-        }
-
-        public void HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)
-        {
-            ThemeManager.WalkControls(this);
         }
     }
 
