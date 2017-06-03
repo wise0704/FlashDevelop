@@ -13,7 +13,7 @@ using PluginCore.Managers;
 
 namespace FlashDevelop.Dialogs
 {
-    public class SettingDialog : SmartForm, IShortcutHandlerModalForm
+    public class SettingDialog : SmartForm, IShortcutHandlerForm
     {
         private System.String helpUrl;
         private System.Windows.Forms.ListView itemListView;
@@ -190,6 +190,7 @@ namespace FlashDevelop.Dialogs
             this.filterText.Name = "FilterText";
             this.filterText.Size = new System.Drawing.Size(120, 20);
             this.filterText.TabIndex = 10;
+            this.filterText.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.FilterTextPreviewKeyDown);
             this.filterText.TextChanged += new System.EventHandler(this.FilterTextTextChanged);
             // 
             // clearFilterButton
@@ -381,19 +382,40 @@ namespace FlashDevelop.Dialogs
         }
 
         /// <summary>
-        /// Lets the key be handled by the window procedure.
-        /// </summary>
-        bool IShortcutHandlerModalForm.IsInputKey(Keys keyData)
-        {
-            return this.filterText.Focused;
-        }
-
-        /// <summary>
         /// Processes mnemonic key input.
         /// </summary>
         bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
         {
             return ProcessMnemonic(charCode);
+        }
+
+        /// <summary>
+        /// Let filter text handle certain keys in the window procedure.
+        /// </summary>
+        private void FilterTextPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (this.filterText.ShortcutsEnabled)
+            {
+                switch (e.KeyData)
+                {
+                    case (Keys) Shortcut.CtrlZ:
+                    case (Keys) Shortcut.CtrlC:
+                    case (Keys) Shortcut.CtrlX:
+                    case (Keys) Shortcut.CtrlV:
+                    case (Keys) Shortcut.CtrlA:
+                    case (Keys) Shortcut.CtrlL:
+                    case (Keys) Shortcut.CtrlR:
+                    case (Keys) Shortcut.CtrlE:
+                    case (Keys) Shortcut.CtrlY:
+                    case (Keys) Shortcut.CtrlJ:
+                    case Keys.Control | Keys.Back:
+                    case (Keys) Shortcut.CtrlDel:
+                    case (Keys) Shortcut.ShiftDel:
+                    case (Keys) Shortcut.ShiftIns:
+                        e.IsInputKey = true;
+                        break;
+                }
+            }
         }
 
         /// <summary>
