@@ -1720,27 +1720,18 @@ namespace FlashDevelop
              * Dispatch events.
              */
             bool handled = false;
+            var target = FromChildHandle(m.HWnd);
             //if (shortcutItem != null) // MacroManager needs to process unregistered shortcut inputs...
             {
                 var e = new ShortcutKeyEvent(EventType.ShortcutKey, shortcutItem?.Command, currentKey);
-                handler.HandleEvent(this, e);
+                handler.HandleEvent(target, e);
                 handled = e.Handled;
             }
-            if (!handled && currentKey.IsSimple)
+            if (!handled && !currentKey.IsExtended)
             {
                 var e = new KeyEvent(EventType.Keys, keyData);
-                handler.HandleEvent(this, e);
-
-                if (e.Handled)
-                {
-                    handled = true;
-                }
-                else if (handler is IShortcutHandlerModalForm && ((IShortcutHandlerModalForm) handler).IsInputKey(keyData))
-                {
-                    // The handler wants the current key input to be handled in the window procedure.
-                    currentKey = ShortcutKey.None;
-                    return false;
-                }
+                handler.HandleEvent(target, e);
+                handled = e.Handled;
             }
 
             /*
@@ -1770,7 +1761,7 @@ namespace FlashDevelop
             /*
              * Let controls pre-process the message.
              */
-            if (!handled)
+            if (!handled && !currentKey.IsExtended)
             {
                 // This calls Control.PreProcessControlMessageInternal(), which calls Control.PreProcessMessage(), which in turn calls Control.ProcessCmdKey().
                 // One minor drawback is that if this returns MessageNotNeeded and MainForm.PreFilterMessage() returns false,
@@ -1779,6 +1770,15 @@ namespace FlashDevelop
                 {
                     case PreProcessControlState.MessageProcessed:
                         handled = true;
+                        break;
+                    case PreProcessControlState.MessageNeeded:
+                        // The target wants to process the key input in the window procedure.
+                        // For now, only allow when executing in a modal form.
+                        if (handler != this)
+                        {
+                            currentKey = ShortcutKey.None;
+                            return false;
+                        }
                         break;
                 }
             }

@@ -684,17 +684,4 @@ namespace PluginCore
         /// <param name="charCode">The character to process.</param>
         bool ProcessMnemonic(char charCode);
     }
-
-    /// <summary>
-    /// Represents a modal <see cref="Form"/> that handles the key input with the extended shortcut mechanism,
-    /// with the option to let certain keys skip the shortcut processing to be handled in the window procedure.
-    /// </summary>
-    public interface IShortcutHandlerModalForm : IShortcutHandlerForm
-    {
-        /// <summary>
-        /// Returns whether the modal form should receive the unhandled key in <see cref="Control.WndProc(ref Message)"/>.
-        /// </summary>
-        /// <param name="key">The unhandled key.</param>
-        bool IsInputKey(Keys keyData);
-    }
 }
