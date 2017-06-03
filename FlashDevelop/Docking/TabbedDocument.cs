@@ -77,7 +77,15 @@ namespace FlashDevelop.Docking
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            return this.editorController.ProcessCmdKey(keyData) ?? base.ProcessCmdKey(ref msg, keyData);
+            bool? processKeys = this.editorController.ProcessCmdKey(keyData);
+
+            if (processKeys.HasValue)
+            {
+                return processKeys.Value;
+            }
+
+            msg.HWnd = Globals.MainForm.Handle;
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         public void HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)

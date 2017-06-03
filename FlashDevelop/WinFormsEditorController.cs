@@ -123,12 +123,6 @@ namespace FlashDevelop
                     this.ShowGoTo();
                     return true;
                 default:
-                    var menuItem = ShortcutManager.GetRegisteredItem(shortcutId)?.Item;
-                    if (menuItem != null && menuItem.Enabled && menuItem.Available && !menuItem.HasDropDownItems)
-                    {
-                        menuItem.PerformClick();
-                        return true;
-                    }
                     return null;
             }
         }
