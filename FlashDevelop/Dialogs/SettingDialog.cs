@@ -13,7 +13,7 @@ using PluginCore.Managers;
 
 namespace FlashDevelop.Dialogs
 {
-    public class SettingDialog : SmartForm, IShortcutHandlerForm
+    public class SettingDialog : SmartForm, IShortcutHandlerModalForm
     {
         private System.String helpUrl;
         private System.Windows.Forms.ListView itemListView;
@@ -359,6 +359,9 @@ namespace FlashDevelop.Dialogs
             this.SelectCorrectItem(itemName);
         }
 
+        /// <summary>
+        /// Handles property grid collapsing/expanding shortcuts.
+        /// </summary>
         void IShortcutHandlerForm.HandleEvent(object sender, NotifyEvent e)
         {
             if (e.Type == EventType.ShortcutKey)
@@ -377,6 +380,17 @@ namespace FlashDevelop.Dialogs
             }
         }
 
+        /// <summary>
+        /// Lets the key be handled by the window procedure.
+        /// </summary>
+        bool IShortcutHandlerModalForm.IsInputKey(Keys keyData)
+        {
+            return this.filterText.Focused;
+        }
+
+        /// <summary>
+        /// Processes mnemonic key input.
+        /// </summary>
         bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
         {
             return ProcessMnemonic(charCode);
