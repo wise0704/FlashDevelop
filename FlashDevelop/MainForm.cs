@@ -1730,7 +1730,17 @@ namespace FlashDevelop
             {
                 var e = new KeyEvent(EventType.Keys, keyData);
                 handler.HandleEvent(this, e);
-                handled = e.Handled;
+
+                if (e.Handled)
+                {
+                    handled = true;
+                }
+                else if (handler is IShortcutHandlerModalForm && ((IShortcutHandlerModalForm) handler).IsInputKey(keyData))
+                {
+                    // The handler wants the current key input to be handled in the window procedure.
+                    currentKey = ShortcutKey.None;
+                    return false;
+                }
             }
 
             /*
