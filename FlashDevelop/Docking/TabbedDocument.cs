@@ -19,7 +19,7 @@ using WeifenLuo.WinFormsUI.Docking;
 
 namespace FlashDevelop.Docking
 {
-    public class CustomFloatWindow : FloatWindow
+    public class CustomFloatWindow : FloatWindow, IEventHandler
     {
         private IEditorController editorController;
 
@@ -46,6 +46,13 @@ namespace FlashDevelop.Docking
 
             CloneMenuStrip();
             ThemeManager.WalkControls(this);
+            EventManager.AddEventHandler(this, EventType.ApplyTheme);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            EventManager.RemoveEventHandler(this);
+            base.Dispose(disposing);
         }
 
         private void CloneMenuStrip()
@@ -91,6 +98,11 @@ namespace FlashDevelop.Docking
             if (processKeys == null) return base.ProcessCmdKey(ref msg, keyData);
 
             return processKeys.Value;
+        }
+
+        public void HandleEvent(object sender, NotifyEvent e, HandlingPriority priority)
+        {
+            Globals.MainForm.ThemeControls(this);
         }
     }
 
