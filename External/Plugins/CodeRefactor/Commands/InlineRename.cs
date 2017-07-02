@@ -846,11 +846,6 @@ namespace CodeRefactor.Commands
             }
         }
 
-        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
-        {
-            return false;
-        }
-
         #endregion
 
         #region Utilities

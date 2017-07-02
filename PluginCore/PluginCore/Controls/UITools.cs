@@ -109,9 +109,8 @@ namespace PluginCore.Controls
             // Events
             //
             PluginBase.MainForm.DockPanel.ActivePaneChanged += new EventHandler(DockPanel_ActivePaneChanged);
-            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.High); // Handle and delegate "Completion.ListMembers" and "Completion.ParameterInfo" at the highest priority.
-            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command);
-            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.Low); // Handle ScintillaControl shortcuts at a low priority.
+            EventManager.AddEventHandler(this, EventType.FileSave | EventType.Command | EventType.ShortcutKey);
+            EventManager.AddEventHandler(this, EventType.ShortcutKey, HandlingPriority.Low);
         }
 
         #endregion
@@ -152,17 +151,13 @@ namespace PluginCore.Controls
                     break;
 
                 case EventType.ShortcutKey:
-                    if (priority == HandlingPriority.High)
+                    if (priority == HandlingPriority.Normal)
                     {
-                        // Since HandleShortcut() checks for "Completion.ListMembers" and "Completion.ParameterInfo"
-                        // then dispatches the event, handle this at the highest priority.
-                        // HandleShortcut() returns true for "Completion.ListMembers" and "Completion.ParameterInfo" (i.e. event is already delegated).
-                        e.Handled = HandleShortcut((ShortcutKeyEvent) e);
+                        e.Handled = HandleShortcut(sender, (ShortcutKeyEvent) e);
                     }
                     else if (priority == HandlingPriority.Low)
                     {
-                        // Handle ScintillaControl events at a low priority, so that plugins can take custom actions on it with a normal priority and higher.
-                        e.Handled = HandleShortcutLow((ShortcutKeyEvent) e);
+                        e.Handled = HandleShortcutLow(sender, (ShortcutKeyEvent) e);
                     }
                     return;
             }
@@ -371,14 +366,43 @@ namespace PluginCore.Controls
             if (OnCharAdded != null) OnCharAdded(sci, value);   
         }
 
-        private bool HandleShortcut(ShortcutKeyEvent e)
+        private bool HandleShortcut(object sender, ShortcutKeyEvent e)
         {
-            // UITools is currently broadcasting a shortcut, ignore!
-            if (ignoreKeys || DisableEvents)
+            // We need to handle it here instead of EventType.Keys because to F1 is registered for show help by default by ASCompletion.
+            if (e.ShortcutKeys == ToggleShowDetailsKey)
             {
-                return false;
-            }
+                if (simpleTip.Visible && !CompletionList.Active)
+                {
+                    // Toggle "long-description" for the hover tooltip
+                    showDetails = !showDetails;
+                    simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
+                    return true;
+                }
 
+                var sci = (ScintillaControl) lockedSciControl?.Target;
+                if (sci != null)
+                {
+                    // Toggle "long-description"
+                    if (callTip.CallTipActive)
+                    {
+                        showDetails = !showDetails;
+                        callTip.UpdateTip(sci);
+                        return true;
+                    }
+                    if (CompletionList.Active)
+                    {
+                        showDetails = !showDetails;
+                        CompletionList.UpdateTip(null, null);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool HandleShortcutLow(object sender, ShortcutKeyEvent e)
+        {
+            // Handle ScintillaControl events at a low priority, so that plugins can take custom actions on it with a normal priority and higher.
             switch (e.Command)
             {
                 case "Completion.ListMembers":
@@ -391,68 +415,25 @@ namespace PluginCore.Controls
                         callTip.Hide();
                     }*/
 
-                    // Offer to handle the shortcut
-                    ignoreKeys = true;
-                    var newEvent = new ShortcutKeyEvent(EventType.ShortcutKey, e.Command, e.ShortcutKeys);
-                    EventManager.DispatchEvent(this, newEvent);
-                    ignoreKeys = false;
-                    if (!newEvent.Handled)
+                    // Show snippets
+                    if (PluginBase.MainForm.CurrentDocument.IsEditable
+                        && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
                     {
-                        // If not handled - show snippets
-                        if (PluginBase.MainForm.CurrentDocument.IsEditable
-                            && !PluginBase.MainForm.CurrentDocument.SciControl.IsSelectionRectangle)
-                        {
-                            PluginBase.MainForm.CallCommand("InsertSnippet", "null");
-                        }
+                        PluginBase.MainForm.CallCommand("InsertSnippet", "null");
                     }
                     return true;
-
-                default:
-                    // We need to handle it here instead of EventType.Keys because to F1 is registered for show help by ASCompletion.
-                    if (e.ShortcutKeys == ToggleShowDetailsKey)
-                    {
-                        if (simpleTip.Visible && !CompletionList.Active)
-                        {
-                            // Toggle "long-description" for the hover tooltip
-                            showDetails = !showDetails;
-                            simpleTip.UpdateTip(PluginBase.MainForm.CurrentDocument.SciControl);
-                            return true;
-                        }
-
-                        var sci = (ScintillaControl) lockedSciControl?.Target;
-                        if (sci != null)
-                        {
-                            // Toggle "long-description"
-                            if (callTip.CallTipActive)
-                            {
-                                showDetails = !showDetails;
-                                callTip.UpdateTip(sci);
-                                return true;
-                            }
-                            if (CompletionList.Active)
-                            {
-                                showDetails = !showDetails;
-                                CompletionList.UpdateTip(null, null);
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
             }
-        }
 
-        private bool HandleShortcutLow(ShortcutKeyEvent e)
-        {
             var sci = PluginBase.MainForm.CurrentDocument.SciControl;
             if (sci != null)
             {
                 // Let completion list and call tip handle the shortcut first.
-                if (CompletionList.Active && CompletionList.HandleShortcut(e, sci) ||
-                    callTip.CallTipActive && callTip.HandleShortcut(e, sci))
+                if (CompletionList.Active && CompletionList.HandleShortcut(sci, e) ||
+                    callTip.CallTipActive && callTip.HandleShortcut(sci, e))
                 {
                     return true;
                 }
-                if (sci.Focused && sci.HandleShortcut(e))
+                if (sender == sci && sci.Focused && sci.HandleShortcut(e))
                 {
                     // Let completion list and call tip know that the shortcut has been handled by the scintilla control,
                     // so they can take appropriate actions.

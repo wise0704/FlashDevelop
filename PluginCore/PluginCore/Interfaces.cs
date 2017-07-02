@@ -678,10 +678,5 @@ namespace PluginCore
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">An event object containing the shortcut keys event data.</param>
         void HandleEvent(object sender, NotifyEvent e);
-        /// <summary>
-        /// Calls <see cref="Form.ProcessMnemonic(char)"/>.
-        /// </summary>
-        /// <param name="charCode">The character to process.</param>
-        bool ProcessMnemonic(char charCode);
     }
 }

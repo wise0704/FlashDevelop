@@ -879,19 +879,19 @@ namespace PluginCore.Controls
             }
         }
 
-        internal static bool HandleShortcut(ShortcutKeyEvent e, ScintillaControl sci)
+        internal static bool HandleShortcut(ScintillaControl sender, ShortcutKeyEvent e)
         {
             switch (e.Command)
             {
                 case "Scintilla.NewLine":
-                    if (!noAutoInsert && ReplaceText(sci, '\n'))
+                    if (!noAutoInsert && ReplaceText(sender, '\n'))
                     {
                         return true;
                     }
                     return false;
 
                 case "Scintilla.Tab":
-                    if (ReplaceText(sci, '\t'))
+                    if (ReplaceText(sender, '\t'))
                     {
                         return true;
                     }
