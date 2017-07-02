@@ -203,11 +203,6 @@ namespace ProjectManager.Helpers
                     break;
             }
         }
-
-        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
-        {
-            return ProcessMnemonic(charCode);
-        }
     }
 
 }

@@ -1620,19 +1620,20 @@ namespace FlashDevelop
                     // Ensure that there aren't any modal forms present.
                     if (CanFocus)
                     {
-                        if (PreFilterControlMessage(this, ref m))
+                        if (PreFilterControlMessage(ref m, this))
                         {
                             return true;
                         }
                     }
                     else
                     {
+                        // Loop backwards to check from the most recent form.
                         for (int i = Application.OpenForms.Count - 1; i >= 0; i--)
                         {
                             var form = Application.OpenForms[i];
                             if (form.Modal && form is IShortcutHandlerForm)
                             {
-                                if (PreFilterControlMessage((IShortcutHandlerForm) form, ref m))
+                                if (PreFilterControlMessage(ref m, (IShortcutHandlerForm) form))
                                 {
                                     return true;
                                 }
@@ -1680,7 +1681,7 @@ namespace FlashDevelop
         /// <summary>
         /// Handles the application shortcuts
         /// </summary>
-        private bool PreFilterControlMessage(IShortcutHandlerForm handler, ref Message m)
+        private bool PreFilterControlMessage(ref Message m, IShortcutHandlerForm handler)
         {
             //if (m.Msg != Win32.WM_KEYDOWN && m.Msg != Win32.WM_SYSKEYDOWN)
             //{
@@ -1771,6 +1772,7 @@ namespace FlashDevelop
                     case PreProcessControlState.MessageProcessed:
                         handled = true;
                         break;
+
                     case PreProcessControlState.MessageNeeded:
                         // The target wants to process the key input in the window procedure.
                         // For now, only allow when executing in a modal form.
@@ -1778,6 +1780,22 @@ namespace FlashDevelop
                         {
                             currentKey = ShortcutKey.None;
                             return false;
+                        }
+                        break;
+
+                    case PreProcessControlState.MessageNotNeeded:
+                        // Mnemonics are fixed, and shortcuts are customisable. So shortcuts should disable mnemonics, not the other way around.
+                        // Thus check for extended shortcuts which start with the current keys.
+                        if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData))
+                        {
+                            var charM = m;
+                            charM.Msg = Win32.WM_SYSCHAR;
+                            switch (PreProcessControlMessage(ref charM))
+                            {
+                                case PreProcessControlState.MessageProcessed:
+                                    handled = true;
+                                    break;
+                            }
                         }
                         break;
                 }
@@ -1838,7 +1856,7 @@ namespace FlashDevelop
                 StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutUndefined"), currentKey);
                 return true;
             }
-            switch (GetUnhandledKeyType(ref m, keyData, handler))
+            switch (GetUnhandledKeyType(ref m, keyData))
             {
                 case 0: // Shortcut is a valid first key for an extended shortcut
                     StatusLabelText = string.Format(TextHelper.GetString("Info.ShortcutWaiting"), currentKey);
@@ -1852,12 +1870,11 @@ namespace FlashDevelop
                     return true;
 
                 case 3: // AltGr character input
-                case 4: // Mnemonic shortcut
                     currentKey = ShortcutKey.None;
                     return true;
 
-                case 5: // Menu key (F10)
-                case 6: // Not a shortcut
+                case 4: // Menu key (F10)
+                case 5: // Not a shortcut
                 default:
                     currentKey = ShortcutKey.None;
                     // We could directly call TranslateMessage() and DispatchMessage() here ourselves and return true
@@ -1876,24 +1893,15 @@ namespace FlashDevelop
         }
 
         /// <summary>
-        /// Calls <see cref="Form.ProcessMnemonic(char)"/>.
-        /// </summary>
-        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
-        {
-            return ProcessMnemonic(charCode);
-        }
-
-        /// <summary>
         /// Gets the type of the unhandled key input.
         /// <para/>0 - Input is a valid shortcut and a valid first key for an extended shortcut.
         /// <para/>1 - Input is a valid shortcut but not a valid first key for an extended shortcut.
         /// <para/>2 - Input is a valid shortcut but the extended shortcut feature is disabled.
         /// <para/>3 - Input is a character input with AltGr (Ctrl+Alt) and is handled.
-        /// <para/>4 - Input is a mnemonic shortcut and is handled.
-        /// <para/>5 - Input is a menu key.
-        /// <para/>6 - Input is not a valid shortcut.
+        /// <para/>4 - Input is a menu key.
+        /// <para/>5 - Input is not a valid shortcut.
         /// </summary>
-        private int GetUnhandledKeyType(ref Message m, Keys keyData, IShortcutHandlerForm handler)
+        private int GetUnhandledKeyType(ref Message m, Keys keyData)
         {
             switch (keyData & Keys.Modifiers)
             {
@@ -1906,23 +1914,11 @@ namespace FlashDevelop
                     {
                         if (m.Msg == Win32.WM_SYSKEYDOWN && keyCode == Keys.F10)
                         {
-                            return 5;
+                            return 4;
                         }
                         return 1;
                     }
-                    return 6;
-
-                case Keys.Alt:
-                    // Mnemonics are fixed, and shortcuts are customisable. So shortcuts should disable mnemonics, not the other way around.
-                    // Thus check for extended shortcuts which start with the current keys.
-                    if (m.Msg == Win32.WM_SYSKEYDOWN && !ShortcutManager.AltFirstKeys.Contains(keyData))
-                    {
-                        if (handler.ProcessMnemonic((char) keyData))
-                        {
-                            return 4;
-                        }
-                    }
-                    break;
+                    return 5;
 
                 case Keys.Control | Keys.Alt:
                 case Keys.Control | Keys.Alt | Keys.Shift:

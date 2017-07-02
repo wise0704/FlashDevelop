@@ -382,14 +382,6 @@ namespace FlashDevelop.Dialogs
         }
 
         /// <summary>
-        /// Processes mnemonic key input.
-        /// </summary>
-        bool IShortcutHandlerForm.ProcessMnemonic(char charCode)
-        {
-            return ProcessMnemonic(charCode);
-        }
-
-        /// <summary>
         /// Let filter text handle certain keys in the window procedure.
         /// </summary>
         private void FilterTextPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
