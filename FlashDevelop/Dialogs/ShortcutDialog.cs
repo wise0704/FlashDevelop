@@ -285,6 +285,7 @@ namespace FlashDevelop.Dialogs
             this.AcceptButton = this.saveButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.saveButton;
             this.ClientSize = new System.Drawing.Size(821, 642);
             this.Controls.Add(this.saveButton);
             this.Controls.Add(this.exportButton);
@@ -919,10 +920,6 @@ namespace FlashDevelop.Dialogs
             {
                 this.UpdateCurrentItemDetails();
                 this.UpdateSaveButton();
-            }
-            else
-            {
-                this.inputKeys = ShortcutKey.None;
             }
             this.shortcutTextBox.Select();
         }
