@@ -163,7 +163,7 @@ namespace PluginCore.Controls
             OnUpdateCallTip?.Invoke(sci, currentPos);
         }
 
-        internal bool HandleShortcut(ShortcutKeyEvent e, ScintillaControl sci)
+        internal bool HandleShortcut(ScintillaControl sender, ShortcutKeyEvent e)
         {
             if (!Focused)
             {
