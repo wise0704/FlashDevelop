@@ -162,7 +162,7 @@ namespace PluginCore.Controls
                     else if (priority == HandlingPriority.Low)
                     {
                         // Handle ScintillaControl events at a low priority, so that plugins can take custom actions on it with a normal priority and higher.
-                        e.Handled = HandleShortcutLow((ShortcutKeyEvent) e);
+                        e.Handled = HandleShortcutLow(sender, (ShortcutKeyEvent) e);
                     }
                     return;
             }
@@ -441,7 +441,7 @@ namespace PluginCore.Controls
             }
         }
 
-        private bool HandleShortcutLow(ShortcutKeyEvent e)
+        private bool HandleShortcutLow(object sender, ShortcutKeyEvent e)
         {
             var sci = PluginBase.MainForm.CurrentDocument.SciControl;
             if (sci != null)
@@ -452,7 +452,7 @@ namespace PluginCore.Controls
                 {
                     return true;
                 }
-                if (sci.Focused && sci.HandleShortcut(e))
+                if (sender == sci && sci.Focused && sci.HandleShortcut(e))
                 {
                     // Let completion list and call tip know that the shortcut has been handled by the scintilla control,
                     // so they can take appropriate actions.
